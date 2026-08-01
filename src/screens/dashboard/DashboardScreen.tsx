@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthContext';
@@ -86,10 +86,11 @@ export default function DashboardScreen({ navigation }: Props) {
 
         {/* ── Top bar ── */}
         <View style={s.topBar}>
-          <View style={s.logoRow}>
-            <Icon name="voleybol-topu" size={28} />
-            <Text style={s.logoTxt}>VoleyPro</Text>
-          </View>
+          <Image
+            source={require('../../assets/logo-voleypro.png')}
+            style={s.logo}
+            resizeMode="contain"
+          />
           <View style={{ flex: 1 }} />
           <TouchableOpacity
             style={s.iconBtn}
@@ -261,8 +262,8 @@ const s = StyleSheet.create({
   scroll: { paddingBottom: 40 },
 
   topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 10 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  logoTxt: { color: colors.foreground, fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
+  // Source art is 548x132; keep that ratio so the wordmark never distorts.
+  logo: { height: 26, width: 108 },
   iconBtn: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.card,
     borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center',

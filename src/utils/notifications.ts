@@ -200,7 +200,15 @@ function todayKey(): string {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
+// Dashboard remounts on every tab focus, re-running the effect that calls this.
+// The AsyncStorage guard below is async, so back-to-back mounts can both read
+// "not sent today" before either finishes writing — guard synchronously first.
+let motivationCheckedThisSession = false;
+
 export async function maybeSendMotivation() {
+  if (motivationCheckedThisSession) return;
+  motivationCheckedThisSession = true;
+
   const last = await AsyncStorage.getItem(MOTIVATION_KEY);
   const key = todayKey();
   if (last === key) return;
