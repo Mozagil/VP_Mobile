@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { TrainingPlan } from '../data/types';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
+import { Colors } from '../theme/palettes';
 
 type Props = {
   plan: TrainingPlan;
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export default function PlanCard({ plan, onPress }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const total = plan.drills.length;
   const done = plan.drills.filter((d) => d.completed).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -51,30 +54,32 @@ export default function PlanCard({ plan, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  top: { padding: 16, paddingBottom: 12 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  name: { color: colors.foreground, fontSize: 16, fontWeight: '700', flex: 1, marginRight: 8 },
-  activeBadge: {
-    backgroundColor: colors.success + '20', borderRadius: 20,
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderWidth: 1, borderColor: colors.success + '40',
-  },
-  activeBadgeText: { color: colors.success, fontSize: 11, fontWeight: '600' },
-  team: { color: colors.muted, fontSize: 13, marginBottom: 4 },
-  goal: { color: colors.muted, fontSize: 12, lineHeight: 18 },
-  bottom: { borderTopWidth: 1, borderTopColor: colors.border, padding: 12 },
-  barBg: { height: 6, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
-  barFill: { height: 6, backgroundColor: colors.accent, borderRadius: 3 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  statsText: { color: colors.muted, fontSize: 12 },
-  pct: { color: colors.accent, fontSize: 12, fontWeight: '700' },
-  metaRow: { flexDirection: 'row', gap: 12 },
-  meta: { color: colors.muted, fontSize: 11 },
-});
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 14, marginBottom: 12,
+      borderWidth: 1, borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    top: { padding: 16, paddingBottom: 12 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+    name: { color: colors.foreground, fontSize: 16, fontWeight: '700', flex: 1, marginRight: 8 },
+    activeBadge: {
+      backgroundColor: colors.success + '20', borderRadius: 20,
+      paddingHorizontal: 8, paddingVertical: 2,
+      borderWidth: 1, borderColor: colors.success + '40',
+    },
+    activeBadgeText: { color: colors.success, fontSize: 11, fontWeight: '600' },
+    team: { color: colors.muted, fontSize: 13, marginBottom: 4 },
+    goal: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+    bottom: { borderTopWidth: 1, borderTopColor: colors.border, padding: 12 },
+    barBg: { height: 6, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
+    barFill: { height: 6, backgroundColor: colors.accent, borderRadius: 3 },
+    statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    statsText: { color: colors.muted, fontSize: 12 },
+    pct: { color: colors.accent, fontSize: 12, fontWeight: '700' },
+    metaRow: { flexDirection: 'row', gap: 12 },
+    meta: { color: colors.muted, fontSize: 11 },
+  });
+}

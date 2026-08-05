@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans, useUpdatePlanStatus } from '../../hooks/useTrainingPlans';
 import { useScheduledSessions, useCreateScheduledSession, useUpdateScheduledSessionTime } from '../../hooks/useScheduledSessions';
 import { useProfile } from '../../hooks/useProfile';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import {
   buildPhaseBreakdown, findNextSession, formatSessionBadge, planTotalMinutes,
@@ -16,12 +17,15 @@ import Icon, { IconName } from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'StartTraining'>;
+type Styles = ReturnType<typeof makeStyles>;
 
 const levelLabels: Record<string, string> = {
   başlangıç: 'Başlangıç', baslangic: 'Başlangıç', orta: 'Orta', ileri: 'İleri', profesyonel: 'Profesyonel',
 };
 
 export default function StartTrainingScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
@@ -43,13 +47,13 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
   }
 
   const total = plan.drills.length;
-  const minutes = planTotalMinutes(plan);
+  const minutes = planTotalMinutes(plan, colors);
   const nextSession = findNextSession(sessions, plan.id);
   const dayLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time)
     ?? formatSessionBadge(plan.start_date)
     ?? 'Planlanmadı';
   const levelLabel = plan.level ? (levelLabels[plan.level] ?? plan.level) : '—';
-  const phaseBreakdown = buildPhaseBreakdown(plan);
+  const phaseBreakdown = buildPhaseBreakdown(plan, colors);
 
   const goToPhase = (phase: string) => navigation.navigate('PhaseSequence', { planId: plan.id, phase });
 
@@ -119,7 +123,7 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
         <View style={s.card}>
           <View style={s.cardHeaderRow}>
             <View style={s.iconBox}>
-              <Text style={s.icon}>📋</Text>
+              <Icon name="antrenmanlar" size={22} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.planName} numberOfLines={2}>{plan.name}</Text>
@@ -131,11 +135,11 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
 
         <View style={s.infoCard}>
           <TouchableOpacity activeOpacity={0.7} onPress={openScheduleEditor}>
-            <InfoRow iconName="takvim" label="Gün" value={dayLabel} editable />
+            <InfoRow iconName="takvim" label="Gün" value={dayLabel} editable s={s} />
           </TouchableOpacity>
-          <InfoRow iconName="hedefler" label="Hedef" value={plan.goal || '—'} />
-          <InfoRow iconName="ilerleme" label="Seviye" value={levelLabel} />
-          <InfoRow iconName="antrenmanlar" label="Ekipman" value={profile?.equipment_status || '—'} />
+          <InfoRow iconName="hedefler" label="Hedef" value={plan.goal || '—'} s={s} />
+          <InfoRow iconName="ilerleme" label="Seviye" value={levelLabel} s={s} />
+          <InfoRow iconName="antrenmanlar" label="Ekipman" value={profile?.equipment_status || '—'} s={s} />
         </View>
 
         <Text style={s.sectionTitle}>Antrenman Bölümleri</Text>
@@ -196,7 +200,9 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
   );
 }
 
-function InfoRow({ iconName, label, value, editable }: { iconName: IconName; label: string; value: string; editable?: boolean }) {
+function InfoRow({
+  iconName, label, value, editable, s,
+}: { iconName: IconName; label: string; value: string; editable?: boolean; s: Styles }) {
   return (
     <View style={s.infoRow}>
       <Icon name={iconName} size={15} />
@@ -207,7 +213,8 @@ function InfoRow({ iconName, label, value, editable }: { iconName: IconName; lab
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
 
@@ -257,4 +264,5 @@ const s = StyleSheet.create({
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
   primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   primaryBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

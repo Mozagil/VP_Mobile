@@ -6,17 +6,20 @@ import { useIsFocused } from '@react-navigation/native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTrainingPlans, useToggleDrillComplete } from '../../hooks/useTrainingPlans';
 import { allDrills } from '../../data/drills';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import {
-  buildPhaseBreakdown, drillsInPhase, resolveDrillMinutes, resolveDrillName, skillIcons,
+  buildPhaseBreakdown, drillsInPhase, resolveDrillMinutes, resolveDrillName,
 } from '../../utils/trainingPlan';
 import { videoUrlFor } from '../../utils/drillVideos';
 import { parseDrillDesc } from '../../utils/drillText';
 import { PlanDrill } from '../../data/types';
 import Icon from '../../components/ui/Icon';
+import PhaseIcon from '../../components/ui/PhaseIcon';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'DrillPlayer'>;
+type Styles = ReturnType<typeof makeStyles>;
 
 function drillInfo(pd: PlanDrill) {
   const catalog = allDrills.find((d) => d.id === pd.drill_id);
@@ -28,7 +31,7 @@ function drillInfo(pd: PlanDrill) {
   return { name, minutes, skill, amac, aciklama, catalog };
 }
 
-function DrillVideo({ url }: { url: string }) {
+function DrillVideo({ url, s }: { url: string; s: Styles }) {
   const player = useVideoPlayer(url, (p) => {
     p.loop = true;
     p.play();
@@ -41,6 +44,8 @@ function DrillVideo({ url }: { url: string }) {
 }
 
 export default function DrillPlayerScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId, phase, index } = route.params;
   const { data: plans = [] } = useTrainingPlans();
   const toggle = useToggleDrillComplete();
@@ -64,7 +69,7 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
     return <View style={s.center}><ActivityIndicator color={colors.accent} size="large" /></View>;
   }
 
-  const breakdown = buildPhaseBreakdown(plan);
+  const breakdown = buildPhaseBreakdown(plan, colors);
   const phaseIdx = breakdown.findIndex((p) => p.phase === phase);
   const phaseNum = phaseIdx + 1;
   const isLastInPhase = index === drills.length - 1;
@@ -118,7 +123,7 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
             <View style={s.nextCard}>
               <Text style={s.nextLabel}>Sıradaki Hareket</Text>
               <View style={s.nextRow}>
-                <View style={s.nextIconBox}><Text style={s.nextIcon}>📋</Text></View>
+                <View style={s.nextIconBox}><Icon name="antrenmanlar" size={18} /></View>
                 <View>
                   <Text style={s.nextName}>{nextInfo.name}</Text>
                   <Text style={s.nextMeta}>{nextInfo.minutes} dakika</Text>
@@ -160,7 +165,7 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
       </View>
 
       <View style={[s.heroCard, mode === 'playing' && s.heroCardActive]}>
-        {videoUrl && <DrillVideo key={videoUrl} url={videoUrl} />}
+        {videoUrl && <DrillVideo key={videoUrl} url={videoUrl} s={s} />}
         <View style={s.heroBody}>
           {!videoUrl && (
             <>
@@ -168,7 +173,7 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
                 <Text style={s.heroBadgeTxt}>{info.minutes} dakika</Text>
               </View>
               <View style={s.heroIconCircle}>
-                <Text style={s.heroIconTxt}>{skillIcons[info.skill] ?? '🏐'}</Text>
+                <PhaseIcon phase={phase} size={26} />
               </View>
             </>
           )}
@@ -256,7 +261,8 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
 
@@ -338,4 +344,5 @@ const s = StyleSheet.create({
   nextName: { color: colors.foreground, fontSize: 14, fontWeight: '700', marginBottom: 2 },
   nextMeta: { color: colors.muted, fontSize: 12 },
   readyHint: { color: colors.muted, fontSize: 12 },
-});
+  });
+}

@@ -5,7 +5,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans, useCreatePlan } from '../../hooks/useTrainingPlans';
 import { useScheduledSessions } from '../../hooks/useScheduledSessions';
 import { Drill, TrainingPlan } from '../../data/types';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { planTotalMinutes, formatSessionBadge, parseLocalDate } from '../../utils/trainingPlan';
 import Icon from '../../components/ui/Icon';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
@@ -25,6 +26,8 @@ const TABS = [
 type TabKey = typeof TABS[number]['key'];
 
 export default function AddToTrainingScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { drill } = route.params;
   const [tab, setTab] = useState<TabKey>('upcoming');
   const [search, setSearch] = useState('');
@@ -92,7 +95,7 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
         onPress={() => setSelectedPlanId(plan.id)}
       >
         <View style={s.rowIconBox}>
-          <Text style={s.rowIcon}>📋</Text>
+          <Icon name="antrenmanlar" size={18} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.rowName} numberOfLines={1}>{plan.name}</Text>
@@ -161,7 +164,7 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
                 const plan = planFor(sess.plan_id);
                 if (!plan) return null;
                 const dateLine = formatSessionBadge(sess.session_date, sess.session_time);
-                const minutes = planTotalMinutes(plan);
+                const minutes = planTotalMinutes(plan, colors);
                 return renderPlanRow(plan, dateLine, `${minutes > 0 ? `${minutes} dk` : 'Süre belirtilmedi'} • ${plan.drills.length} kişi`);
               })
             )}
@@ -173,7 +176,7 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
                   const plan = planFor(sess.plan_id);
                   if (!plan) return null;
                   const dateLine = formatSessionBadge(sess.session_date, sess.session_time);
-                  const minutes = planTotalMinutes(plan);
+                  const minutes = planTotalMinutes(plan, colors);
                   return renderPlanRow(plan, dateLine, `${minutes > 0 ? `${minutes} dk` : 'Süre belirtilmedi'} • ${plan.drills.length} kişi`);
                 })}
               </>
@@ -188,7 +191,7 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
               <Text style={s.empty}>Program bulunamadı.</Text>
             ) : (
               filteredOwnPlans.map((plan) => {
-                const minutes = planTotalMinutes(plan);
+                const minutes = planTotalMinutes(plan, colors);
                 return renderPlanRow(plan, null, `${minutes > 0 ? `${minutes} dk` : 'Süre belirtilmedi'} • ${plan.drills.length} kişi`);
               })
             )}
@@ -234,7 +237,8 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
@@ -277,4 +281,5 @@ const s = StyleSheet.create({
   primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   primaryBtnDisabled: { opacity: 0.5 },
   primaryBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

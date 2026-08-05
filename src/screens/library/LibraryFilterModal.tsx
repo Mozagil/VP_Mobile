@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { FULL_CATEGORIES, DIFFICULTIES, PLAYER_COUNTS } from '../../utils/libraryFilters';
 import Slider from '../../components/ui/Slider';
 
@@ -27,6 +28,8 @@ function toggle(list: string[], value: string): string[] {
 }
 
 export default function LibraryFilterModal({ visible, filters, onApply, onClose }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const [draft, setDraft] = useState<LibraryFilters>(filters);
 
   useEffect(() => {
@@ -119,7 +122,8 @@ export default function LibraryFilterModal({ visible, filters, onApply, onClose 
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, paddingBottom: 28 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
@@ -138,4 +142,5 @@ const s = StyleSheet.create({
 
   applyBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 22 },
   applyBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

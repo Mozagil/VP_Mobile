@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, KeyboardAvoidingView,
   ScrollView, TouchableOpacity, Alert,
@@ -8,7 +8,8 @@ import { useAuth } from '../../auth/AuthContext';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import StepProgressBar from '../../components/StepProgressBar';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 
 const LEVELS = [
   { value: 'başlangıç', label: 'Başlangıç', desc: 'Yeni başlıyorum' },
@@ -41,6 +42,8 @@ const FREQUENCIES = [
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -182,7 +185,8 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { flexGrow: 1, padding: 24, paddingTop: 16 },
   heading: { color: colors.foreground, fontSize: 24, fontWeight: '700', marginBottom: 20 },
@@ -212,4 +216,5 @@ const styles = StyleSheet.create({
   chipText: { color: colors.muted, fontSize: 13 },
   chipTextSelected: { color: colors.accent, fontWeight: '600' },
   navRow: { flexDirection: 'row' },
-});
+  });
+}

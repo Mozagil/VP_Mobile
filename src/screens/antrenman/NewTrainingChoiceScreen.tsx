@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
+import Icon from '../../components/ui/Icon';
 
 type Props = { navigation: NativeStackNavigationProp<AntrenmanStackParamList, 'NewTrainingChoice'> };
 
 export default function NewTrainingChoiceScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <View style={s.header}>
@@ -31,7 +35,7 @@ export default function NewTrainingChoiceScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('CreatePlan')}
         >
           <View style={[s.iconBox, { backgroundColor: colors.accent + '20' }]}>
-            <Text style={s.icon}>📋</Text>
+            <Icon name="antrenmanlar" size={22} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.optionTitle}>Kendi Antrenmanını Oluştur</Text>
@@ -46,7 +50,7 @@ export default function NewTrainingChoiceScreen({ navigation }: Props) {
           onPress={() => navigation.getParent()?.navigate('ÖzelliklerStack' as any, { screen: 'AIWizard' } as any)}
         >
           <View style={[s.iconBox, { backgroundColor: colors.blue + '20' }]}>
-            <Text style={s.icon}>🤖</Text>
+            <Icon name="ai-koc" size={22} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.optionTitle}>AI ile Antrenman Oluştur</Text>
@@ -59,7 +63,8 @@ export default function NewTrainingChoiceScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
@@ -80,4 +85,5 @@ const s = StyleSheet.create({
   optionTitle: { color: colors.foreground, fontSize: 15, fontWeight: '700', marginBottom: 3 },
   optionDesc: { color: colors.muted, fontSize: 12, lineHeight: 17 },
   arrow: { color: colors.muted, fontSize: 22 },
-});
+  });
+}

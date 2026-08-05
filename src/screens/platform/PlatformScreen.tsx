@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 
 type PlatformParamList = {
   PlatformMain: undefined;
@@ -30,7 +31,8 @@ type Feature = {
   dest?: 'ai' | 'library' | 'gelisim' | 'sozluk' | 'dashboard' | 'okul' | 'wizard';
 };
 
-const FEATURES: Feature[] = [
+function getFeatures(colors: Colors): Feature[] {
+  return [
   {
     icon: '🤖', color: colors.accent, tag: 'BAŞLAT',
     title: 'AI Antrenman Sihirbazı',
@@ -83,9 +85,13 @@ const FEATURES: Feature[] = [
     title: 'Takım Yönetimi',
     desc: 'Takımınız için özel planlar oluşturun. U18, U16 gibi kategorilere göre antrenman programları.',
   },
-];
+  ];
+}
 
 export default function PlatformScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const FEATURES = useMemo(() => getFeatures(colors), [colors]);
   const tabNav = navigation.getParent();
 
   const handleFeaturePress = (dest?: Feature['dest']) => {
@@ -165,7 +171,8 @@ export default function PlatformScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe:  { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: 32 },
 
@@ -221,4 +228,5 @@ const styles = StyleSheet.create({
   footerText: { color: colors.border, fontSize: 12 },
 
   indigo: {},
-});
+  });
+}

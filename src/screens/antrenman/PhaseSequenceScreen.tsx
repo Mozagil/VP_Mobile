@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans } from '../../hooks/useTrainingPlans';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import {
-  buildPhaseBreakdown, drillsInPhase, phaseDisplay, resolveDrillMinutes, resolveDrillName,
+  buildPhaseBreakdown, drillsInPhase, getPhaseDisplay, resolveDrillMinutes, resolveDrillName,
 } from '../../utils/trainingPlan';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
@@ -14,6 +15,8 @@ import PhaseIcon from '../../components/ui/PhaseIcon';
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'PhaseSequence'>;
 
 export default function PhaseSequenceScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId, phase, showAll } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
   const plan = plans.find((p) => p.id === planId);
@@ -25,7 +28,7 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
     return <View style={s.center}><Text style={{ color: colors.muted }}>Antrenman bulunamadı</Text></View>;
   }
 
-  const breakdown = buildPhaseBreakdown(plan);
+  const breakdown = buildPhaseBreakdown(plan, colors);
 
   if (showAll) {
     const totalDrills = breakdown.reduce((sum, p) => sum + p.count, 0);
@@ -82,13 +85,16 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
     );
   }
 
-  const phaseIndex = breakdown.findIndex((p) => p.phase === phase) + 1;
+  const phaseIdx = breakdown.findIndex((p) => p.phase === phase);
+  const phaseIndex = phaseIdx + 1;
   const drills = drillsInPhase(plan, phase);
   const activeDrillId = drills.find((pd) => !pd.completed)?.id ?? null;
   const totalMinutes = drills.reduce((sum, pd) => sum + resolveDrillMinutes(pd), 0);
   const doneCount = drills.filter((pd) => pd.completed).length;
   const pct = drills.length > 0 ? Math.round((doneCount / drills.length) * 100) : 0;
-  const display = phaseDisplay[phase] ?? { label: phase, icon: '🏐', color: colors.accent };
+  const display = getPhaseDisplay(colors)[phase] ?? { label: phase, icon: '🏐', color: colors.accent };
+  const prevPhase = phaseIdx > 0 ? breakdown[phaseIdx - 1] : null;
+  const nextPhase = phaseIdx >= 0 && phaseIdx < breakdown.length - 1 ? breakdown[phaseIdx + 1] : null;
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -125,11 +131,46 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {drills.length > 0 && (
+        <TouchableOpacity
+          style={s.startBtn}
+          activeOpacity={0.85}
+          onPress={() => {
+            const startIndex = drills.findIndex((pd) => !pd.completed);
+            navigation.navigate('DrillPlayer', { planId, phase, index: startIndex >= 0 ? startIndex : 0 });
+          }}
+        >
+          <Text style={s.primaryBtnTxt}>Antrenmanı Başlat</Text>
+        </TouchableOpacity>
+      )}
+
+      {(prevPhase || nextPhase) && (
+        <View style={s.footerRow}>
+          <TouchableOpacity
+            style={[s.secondaryBtn, !prevPhase && s.navBtnDisabled]}
+            activeOpacity={0.8}
+            disabled={!prevPhase}
+            onPress={() => prevPhase && navigation.navigate('PhaseSequence', { planId, phase: prevPhase.phase })}
+          >
+            <Text style={s.secondaryBtnTxt} numberOfLines={1}>‹ {prevPhase ? prevPhase.label : 'Önceki'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.primaryBtn, { flex: 1 }, !nextPhase && s.navBtnDisabled]}
+            activeOpacity={0.85}
+            disabled={!nextPhase}
+            onPress={() => nextPhase && navigation.navigate('PhaseSequence', { planId, phase: nextPhase.phase })}
+          >
+            <Text style={s.primaryBtnTxt} numberOfLines={1}>{nextPhase ? `${nextPhase.label} ›` : 'Son Bölüm'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
 
@@ -170,4 +211,16 @@ const s = StyleSheet.create({
   rowNameDone: { textDecorationLine: 'line-through', color: colors.muted },
   rowDuration: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   rowArrow: { color: colors.muted, fontSize: 18 },
-});
+
+  startBtn: {
+    backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center',
+    marginHorizontal: 16, marginTop: 8,
+  },
+  footerRow: { flexDirection: 'row', gap: 10, padding: 16, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border },
+  secondaryBtn: { borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
+  secondaryBtnTxt: { color: colors.foreground, fontSize: 14, fontWeight: '700' },
+  primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  primaryBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  navBtnDisabled: { opacity: 0.4 },
+  });
+}

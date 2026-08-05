@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { categoryColor } from '../../data/sozlukTerms';
 import { useSozlukFavorites } from '../../hooks/useSozlukFavorites';
 import Icon from '../../components/ui/Icon';
@@ -11,9 +12,11 @@ import { SozlukStackParamList } from '../../navigation/SozlukStack';
 type Props = NativeStackScreenProps<SozlukStackParamList, 'TermDetail'>;
 
 export default function TermDetailScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { term } = route.params;
   const { isFavorite, toggleFavorite } = useSozlukFavorites();
-  const fav = isFavorite(term.term);
+  const fav = isFavorite(term.id);
   const accent = categoryColor[term.category] ?? colors.accent;
 
   return (
@@ -25,7 +28,7 @@ export default function TermDetailScreen({ route, navigation }: Props) {
         <Text style={s.headerTitle} numberOfLines={1}>{term.term}</Text>
         <TouchableOpacity
           style={s.iconBtn}
-          onPress={() => toggleFavorite(term.term)}
+          onPress={() => toggleFavorite(term.id)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Icon name="favori" size={18} opacity={fav ? 1 : 0.3} />
@@ -72,7 +75,7 @@ export default function TermDetailScreen({ route, navigation }: Props) {
         <TouchableOpacity
           style={[s.primaryBtn, fav && s.primaryBtnActive]}
           activeOpacity={0.85}
-          onPress={() => toggleFavorite(term.term)}
+          onPress={() => toggleFavorite(term.id)}
         >
           <Text style={s.primaryBtnTxt}>{fav ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}</Text>
         </TouchableOpacity>
@@ -81,7 +84,8 @@ export default function TermDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
@@ -111,4 +115,5 @@ const s = StyleSheet.create({
   primaryBtn: { flex: 1.4, backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   primaryBtnActive: { backgroundColor: colors.error },
   primaryBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
-});
+  });
+}

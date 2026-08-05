@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -6,7 +6,8 @@ import { useTrainingPlans, useUpdatePlanStatus } from '../../hooks/useTrainingPl
 import { useScheduledSessions, useCreateScheduledSession } from '../../hooks/useScheduledSessions';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import PhaseIcon from '../../components/ui/PhaseIcon';
 import {
   buildPhaseBreakdown, findNextSession, formatSessionBadge, locationLabel, planSkills, planTotalMinutes,
@@ -21,6 +22,8 @@ type PanelStackParamList = {
 type Props = NativeStackScreenProps<PanelStackParamList, 'NextTrainingDetail'>;
 
 export default function NextTrainingDetailScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
@@ -41,8 +44,8 @@ export default function NextTrainingDetailScreen({ route, navigation }: Props) {
   const dateLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time)
     ?? formatSessionBadge(plan.start_date)
     ?? 'Planlanmadı';
-  const phaseBreakdown = buildPhaseBreakdown(plan);
-  const totalMinutes = planTotalMinutes(plan);
+  const phaseBreakdown = buildPhaseBreakdown(plan, colors);
+  const totalMinutes = planTotalMinutes(plan, colors);
   const skills = planSkills(plan);
   const loc = locationLabel(plan.location);
 
@@ -142,7 +145,8 @@ export default function NextTrainingDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   container: { padding: 16, paddingBottom: 20 },
@@ -173,4 +177,5 @@ const s = StyleSheet.create({
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
     borderWidth: 1, borderColor: colors.border, fontSize: 14,
   },
-});
+  });
+}

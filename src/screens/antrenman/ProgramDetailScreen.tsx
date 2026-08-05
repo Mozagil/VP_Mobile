@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans, useToggleDrillComplete, useRemoveDrillFromPlan } from '../../hooks/useTrainingPlans';
 import { allDrills } from '../../data/drills';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import PhaseIcon from '../../components/ui/PhaseIcon';
 
@@ -17,6 +18,8 @@ const TABS = [
 ] as const;
 
 export default function ProgramDetailScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
   const toggle = useToggleDrillComplete();
@@ -163,7 +166,8 @@ export default function ProgramDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   container: { padding: 16, paddingBottom: 32 },
@@ -232,4 +236,5 @@ const s = StyleSheet.create({
 
   newBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
   newBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
-});
+  });
+}

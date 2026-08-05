@@ -5,8 +5,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useScheduledSessions } from '../../hooks/useScheduledSessions';
 import { useTrainingPlans } from '../../hooks/useTrainingPlans';
 import Calendar from '../../components/ui/Calendar';
-import { colors } from '../../theme/colors';
-import { buildPhaseBreakdown, dateKeyOf, isSessionMissed, parseLocalDate, phaseDisplay } from '../../utils/trainingPlan';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
+import { buildPhaseBreakdown, dateKeyOf, getPhaseDisplay, isSessionMissed, parseLocalDate } from '../../utils/trainingPlan';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
 
@@ -14,6 +15,8 @@ type PanelStackParamList = { TrainingCalendar: undefined };
 type Props = { navigation: NativeStackNavigationProp<PanelStackParamList, 'TrainingCalendar'> };
 
 export default function TrainingCalendarScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { data: sessions = [] } = useScheduledSessions();
   const { data: plans = [] } = useTrainingPlans();
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -37,11 +40,11 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
       const key = dateKeyOf(sess.session_date);
       const plan = plans.find((p) => p.id === sess.plan_id);
       if (!plan) return;
-      const colorsForPlan = buildPhaseBreakdown(plan).map((p) => p.color);
+      const colorsForPlan = buildPhaseBreakdown(plan, colors).map((p) => p.color);
       (map[key] ??= []).push(...colorsForPlan);
     });
     return map;
-  }, [sessions, plans]);
+  }, [sessions, plans, colors]);
 
   const sessionsForDay = useMemo(() => {
     if (!selectedDay) return [];
@@ -65,7 +68,7 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
         <Calendar markedDates={markedDates} dots={dayDots} onDayPress={setSelectedDay} />
 
         <View style={s.legend}>
-          {Object.entries(phaseDisplay).map(([phase, disp]) => (
+          {Object.entries(getPhaseDisplay(colors)).map(([phase, disp]) => (
             <View key={phase} style={s.legendItem}>
               <View style={[s.legendDot, { backgroundColor: disp.color }]} />
               <Text style={s.legendTxt}>{disp.label}</Text>
@@ -128,7 +131,7 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
                 {sessionsForDay.map((sess) => {
                   const plan = plans.find((p) => p.id === sess.plan_id);
                   if (!plan) return null;
-                  const breakdown = buildPhaseBreakdown(plan);
+                  const breakdown = buildPhaseBreakdown(plan, colors);
                   return (
                     <TouchableOpacity
                       key={sess.id}
@@ -166,7 +169,8 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { padding: 16, paddingBottom: 32 },
 
@@ -215,4 +219,5 @@ const s = StyleSheet.create({
     borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3,
   },
   phaseChipTxt: { fontSize: 11, fontWeight: '600' },
-});
+  });
+}

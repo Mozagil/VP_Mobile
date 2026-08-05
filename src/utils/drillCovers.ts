@@ -1,3 +1,5 @@
+import { coverPhotoUrlFor } from './drillCoverPhotos';
+
 const COVERS: Record<string, any> = {
   Atak: require('../assets/covers/attack.jpg'),
   Blok: require('../assets/covers/block.jpg'),
@@ -17,7 +19,11 @@ const PHASE_COVERS: Record<string, any> = {
 
 const FALLBACK = require('../assets/covers/game.jpg');
 
-export function coverFor(skill: string, phase: string) {
+export function coverFor(skill: string, phase: string, drillId?: number) {
+  if (drillId) {
+    const url = coverPhotoUrlFor(drillId);
+    if (url) return { uri: url };
+  }
   return COVERS[skill] ?? PHASE_COVERS[phase] ?? FALLBACK;
 }
 

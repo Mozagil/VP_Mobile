@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { CATEGORIES, KEYWORD_FILTERS } from '../../data/sozlukTerms';
 import { SozlukStackParamList, SortBy } from '../../navigation/SozlukStack';
 import Icon from '../../components/ui/Icon';
@@ -15,6 +16,8 @@ const SORT_OPTIONS: { key: SortBy; label: string }[] = [
 ];
 
 export default function SozlukFilterScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { current, onApply } = route.params;
   const [category, setCategory] = useState(current.category);
   const [keywords, setKeywords] = useState<string[]>(current.keywords);
@@ -110,7 +113,8 @@ export default function SozlukFilterScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
@@ -140,4 +144,5 @@ const s = StyleSheet.create({
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
   applyBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   applyBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

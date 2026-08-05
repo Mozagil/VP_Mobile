@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Alert, ActivityIndicator,
@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTrainingPlans, useDeletePlan } from '../../hooks/useTrainingPlans';
 import { TrainingPlan } from '../../data/types';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
+import Icon from '../../components/ui/Icon';
 
 type PlansStackParamList = {
   PlanList: undefined;
@@ -16,9 +18,10 @@ type PlansStackParamList = {
 };
 
 type Props = { navigation: NativeStackNavigationProp<PlansStackParamList, 'PlanList'> };
+type Styles = ReturnType<typeof makeStyles>;
 
 // Circular progress ring
-function Ring({ pct }: { pct: number }) {
+function Ring({ pct, colors, s }: { pct: number; colors: Colors; s: Styles }) {
   const color = pct >= 100 ? colors.success : pct > 0 ? colors.accent : colors.border;
   return (
     <View style={[s.ring, { borderColor: color }]}>
@@ -32,11 +35,15 @@ function PlanRow({
   onPress,
   onEdit,
   onDelete,
+  colors,
+  s,
 }: {
   plan: TrainingPlan;
   onPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  colors: Colors;
+  s: Styles;
 }) {
   const total = plan.drills.length;
   const done  = plan.drills.filter(d => d.completed).length;
@@ -47,7 +54,7 @@ function PlanRow({
 
   return (
     <TouchableOpacity style={s.card} onPress={onPress} activeOpacity={0.8}>
-      <Ring pct={pct} />
+      <Ring pct={pct} colors={colors} s={s} />
 
       {/* Main info */}
       <View style={s.cardMid}>
@@ -85,6 +92,8 @@ function PlanRow({
 }
 
 export default function PlansScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { data: plans = [], isLoading } = useTrainingPlans();
   const deletePlan = useDeletePlan();
 
@@ -111,7 +120,7 @@ export default function PlansScreen({ navigation }: Props) {
     <SafeAreaView style={s.safe} edges={['bottom']}>
       {plans.length === 0 ? (
         <View style={s.empty}>
-          <Text style={s.emptyIcon}>📋</Text>
+          <Icon name="antrenmanlar" size={60} style={{ marginBottom: 12 }} />
           <Text style={s.emptyTitle}>Henüz plan yok</Text>
           <Text style={s.emptyDesc}>Yeni bir antrenman planı oluşturun</Text>
           <View style={s.emptyBtnWrap}>
@@ -130,6 +139,8 @@ export default function PlansScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('PlanDetail', { planId: item.id })}
               onEdit={() => navigation.navigate('PlanDetail', { planId: item.id })}
               onDelete={() => handleDelete(item)}
+              colors={colors}
+              s={s}
             />
           )}
           contentContainerStyle={s.list}
@@ -147,7 +158,8 @@ export default function PlansScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe:   { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
   list:   { padding: 14, paddingBottom: 90 },
@@ -196,4 +208,5 @@ const s = StyleSheet.create({
     elevation: 6,
   },
   fabTxt: { color: '#fff', fontSize: 28, lineHeight: 32 },
-});
+  });
+}

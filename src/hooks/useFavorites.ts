@@ -1,28 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback } from 'react';
+import { useServerFavorites } from './useServerFavorites';
 
-const STORAGE_KEY = 'voleypro_favorites';
+// Account-synced drill favorites — uses the same backend key as the web app
+// (net-pro-plans-main/src/pages/TrainingLibrary.tsx) so favorites match
+// across mobile and web for the same account.
+const FAVORITES_KEY = 'voleypro_favorites';
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<number[]>([]);
-
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((val) => {
-      if (val) {
-        try { setFavorites(JSON.parse(val)); } catch {}
-      }
-    });
-  }, []);
+  const { items: favorites, setItems: setFavorites } = useServerFavorites(FAVORITES_KEY, []);
 
   const toggleFavorite = useCallback((drillId: number) => {
-    setFavorites((prev) => {
-      const next = prev.includes(drillId)
-        ? prev.filter((id) => id !== drillId)
-        : [...prev, drillId];
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+    setFavorites(favorites.includes(drillId) ? favorites.filter((id) => id !== drillId) : [...favorites, drillId]);
+  }, [favorites, setFavorites]);
 
   const isFavorite = useCallback(
     (drillId: number) => favorites.includes(drillId),

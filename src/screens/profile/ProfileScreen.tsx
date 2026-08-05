@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProfile, useUpdateProfile } from '../../hooks/useProfile';
 import Button from '../../components/ui/Button';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { WEEKDAY_LABELS } from '../../utils/trainingPlan';
 
 const LEVELS = ['başlangıç', 'orta', 'ileri', 'profesyonel'];
@@ -19,11 +20,14 @@ const INTENSITY_OPTIONS = ['Düşük', 'Orta', 'Yüksek'];
 const FOCUS_OPTIONS = ['Pas', 'Manşet', 'Servis', 'Hücum', 'Blok', 'Savunma', 'Zıplama', 'Çeviklik'];
 const EQUIPMENT_OPTIONS = ['Salon ekipmanı mevcut', 'Kısıtlı ekipman', 'Ekipman yok'];
 
+type Styles = ReturnType<typeof makeStyles>;
+type ModalStyles = ReturnType<typeof makeModalStyles>;
+
 function PickerModal({
-  visible, title, options, value, onSelect, onClose,
+  visible, title, options, value, onSelect, onClose, m,
 }: {
   visible: boolean; title: string; options: string[]; value: string;
-  onSelect: (v: string) => void; onClose: () => void;
+  onSelect: (v: string) => void; onClose: () => void; m: ModalStyles;
 }) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -55,7 +59,7 @@ function PickerModal({
   );
 }
 
-function ValueRow({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
+function ValueRow({ label, value, onPress, s }: { label: string; value: string; onPress: () => void; s: Styles }) {
   return (
     <TouchableOpacity style={s.row} activeOpacity={0.7} onPress={onPress}>
       <Text style={s.rowLabel}>{label}</Text>
@@ -68,6 +72,9 @@ function ValueRow({ label, value, onPress }: { label: string; value: string; onP
 }
 
 export default function ProfileScreen() {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+  const m = useMemo(() => makeModalStyles(colors), [colors]);
   const { data: profile, isLoading } = useProfile();
   const update = useUpdateProfile();
 
@@ -121,15 +128,15 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
         <Text style={s.sectionTitle}>Hedeflerin</Text>
         <View style={s.card}>
-          <ValueRow label="Ana Hedef" value={primaryGoal} onPress={() => setActivePicker('primaryGoal')} />
-          <ValueRow label="İkincil Hedef" value={secondaryGoal} onPress={() => setActivePicker('secondaryGoal')} />
-          <ValueRow label="Antrenman Seviyen" value={levelLabels[level] ?? level} onPress={() => setActivePicker('level')} />
+          <ValueRow label="Ana Hedef" value={primaryGoal} onPress={() => setActivePicker('primaryGoal')} s={s} />
+          <ValueRow label="İkincil Hedef" value={secondaryGoal} onPress={() => setActivePicker('secondaryGoal')} s={s} />
+          <ValueRow label="Antrenman Seviyen" value={levelLabels[level] ?? level} onPress={() => setActivePicker('level')} s={s} />
         </View>
 
         <Text style={s.sectionTitle}>Tercihlerin</Text>
         <View style={s.card}>
-          <ValueRow label="Antrenman Süresi" value={duration} onPress={() => setActivePicker('duration')} />
-          <ValueRow label="Antrenman Yoğunluğu" value={intensity} onPress={() => setActivePicker('intensity')} />
+          <ValueRow label="Antrenman Süresi" value={duration} onPress={() => setActivePicker('duration')} s={s} />
+          <ValueRow label="Antrenman Yoğunluğu" value={intensity} onPress={() => setActivePicker('intensity')} s={s} />
         </View>
 
         <View style={[s.card, { marginTop: 10, padding: 16 }]}>
@@ -168,7 +175,7 @@ export default function ProfileScreen() {
 
         <Text style={s.sectionTitle}>Ekipman Durumu</Text>
         <View style={s.card}>
-          <ValueRow label="Ekipman" value={equipment} onPress={() => setActivePicker('equipment')} />
+          <ValueRow label="Ekipman" value={equipment} onPress={() => setActivePicker('equipment')} s={s} />
         </View>
 
         <Button title="Kaydet" onPress={save} loading={update.isPending} style={{ marginTop: 24 }} />
@@ -176,35 +183,36 @@ export default function ProfileScreen() {
 
       <PickerModal
         visible={activePicker === 'primaryGoal'} title="Ana Hedef"
-        options={GOAL_OPTIONS} value={primaryGoal} onSelect={setPrimaryGoal} onClose={() => setActivePicker(null)}
+        options={GOAL_OPTIONS} value={primaryGoal} onSelect={setPrimaryGoal} onClose={() => setActivePicker(null)} m={m}
       />
       <PickerModal
         visible={activePicker === 'secondaryGoal'} title="İkincil Hedef"
-        options={GOAL_OPTIONS} value={secondaryGoal} onSelect={setSecondaryGoal} onClose={() => setActivePicker(null)}
+        options={GOAL_OPTIONS} value={secondaryGoal} onSelect={setSecondaryGoal} onClose={() => setActivePicker(null)} m={m}
       />
       <PickerModal
         visible={activePicker === 'level'} title="Antrenman Seviyen"
         options={LEVELS.map((l) => levelLabels[l])} value={levelLabels[level] ?? ''}
         onSelect={(v) => setLevel(LEVELS.find((l) => levelLabels[l] === v) ?? v)}
-        onClose={() => setActivePicker(null)}
+        onClose={() => setActivePicker(null)} m={m}
       />
       <PickerModal
         visible={activePicker === 'duration'} title="Antrenman Süresi"
-        options={DURATION_OPTIONS} value={duration} onSelect={setDuration} onClose={() => setActivePicker(null)}
+        options={DURATION_OPTIONS} value={duration} onSelect={setDuration} onClose={() => setActivePicker(null)} m={m}
       />
       <PickerModal
         visible={activePicker === 'intensity'} title="Antrenman Yoğunluğu"
-        options={INTENSITY_OPTIONS} value={intensity} onSelect={setIntensity} onClose={() => setActivePicker(null)}
+        options={INTENSITY_OPTIONS} value={intensity} onSelect={setIntensity} onClose={() => setActivePicker(null)} m={m}
       />
       <PickerModal
         visible={activePicker === 'equipment'} title="Ekipman Durumu"
-        options={EQUIPMENT_OPTIONS} value={equipment} onSelect={setEquipment} onClose={() => setActivePicker(null)}
+        options={EQUIPMENT_OPTIONS} value={equipment} onSelect={setEquipment} onClose={() => setActivePicker(null)} m={m}
       />
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
   container: { padding: 16, paddingBottom: 32 },
@@ -238,9 +246,11 @@ const s = StyleSheet.create({
   chipActive: { borderColor: colors.accent, backgroundColor: colors.accent + '20' },
   chipTxt: { color: colors.foreground, fontSize: 13, fontWeight: '600' },
   chipTxtActive: { color: colors.accent },
-});
+  });
+}
 
-const m = StyleSheet.create({
+function makeModalStyles(colors: Colors) {
+  return StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 20 },
   header: {
@@ -261,4 +271,5 @@ const m = StyleSheet.create({
   optionTxt: { color: colors.foreground, fontSize: 14 },
   optionTxtActive: { color: colors.accent, fontWeight: '700' },
   optionCheck: { color: colors.accent, fontSize: 14, fontWeight: '800' },
-});
+  });
+}

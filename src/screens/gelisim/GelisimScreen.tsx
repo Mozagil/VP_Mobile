@@ -4,22 +4,27 @@ import {
   Image, StyleSheet, Modal, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { allModules, getModuleCover, Module } from '../../data/modules';
 
 const CATEGORIES = ['Tümü', 'Bireysel Performans', 'Teknik Gelişim', 'Takım Organizasyonu', 'Temel Teknikler', 'Savunma Teknikleri', 'Atak Teknikleri', 'Servis Teknikleri'];
 const LEVELS = ['Tümü', 'Başlangıç', 'Orta', 'İleri'];
 
-const typeColors = {
-  module: { bg: '#1a2a5e', border: '#4a6090', text: '#8da3cc', label: 'Modül' },
-  technique: { bg: '#1e3060', border: colors.blue, text: colors.blue, label: 'Teknik' },
-};
+function getTypeColors(colors: Colors) {
+  return {
+    module: { bg: '#1a2a5e', border: '#4a6090', text: '#8da3cc', label: 'Modül' },
+    technique: { bg: '#1e3060', border: colors.blue, text: colors.blue, label: 'Teknik' },
+  };
+}
 
-const levelColors: Record<string, string> = {
-  Başlangıç: colors.success,
-  Orta: colors.warning,
-  İleri: colors.accent,
-};
+function getLevelColors(colors: Colors): Record<string, string> {
+  return {
+    Başlangıç: colors.success,
+    Orta: colors.warning,
+    İleri: colors.accent,
+  };
+}
 
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
@@ -31,7 +36,16 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
   );
 }
 
-function ModuleCard({ item, onPress }: { item: Module; onPress: () => void }) {
+type Styles = ReturnType<typeof makeStyles>;
+type DetailStyles = ReturnType<typeof makeDetailStyles>;
+type TypeColors = ReturnType<typeof getTypeColors>;
+type LevelColors = ReturnType<typeof getLevelColors>;
+
+function ModuleCard({
+  item, onPress, styles, typeColors, levelColors, colors,
+}: {
+  item: Module; onPress: () => void; styles: Styles; typeColors: TypeColors; levelColors: LevelColors; colors: Colors;
+}) {
   const cover = getModuleCover(item.category);
   const tc = typeColors[item.type];
   const lvlColor = levelColors[item.level] ?? colors.muted;
@@ -68,7 +82,11 @@ function ModuleCard({ item, onPress }: { item: Module; onPress: () => void }) {
   );
 }
 
-function ModuleDetail({ item, onClose }: { item: Module; onClose: () => void }) {
+function ModuleDetail({
+  item, onClose, detail, typeColors, colors,
+}: {
+  item: Module; onClose: () => void; detail: DetailStyles; typeColors: TypeColors; colors: Colors;
+}) {
   const cover = getModuleCover(item.category);
   const tc = typeColors[item.type];
 
@@ -128,6 +146,11 @@ function ModuleDetail({ item, onClose }: { item: Module; onClose: () => void }) 
 }
 
 export default function GelisimScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const detail = useMemo(() => makeDetailStyles(colors), [colors]);
+  const typeColors = useMemo(() => getTypeColors(colors), [colors]);
+  const levelColors = useMemo(() => getLevelColors(colors), [colors]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Tümü');
   const [level, setLevel] = useState('Tümü');
@@ -171,7 +194,10 @@ export default function GelisimScreen() {
         data={filtered}
         keyExtractor={(item) => `${item.type}-${item.id}`}
         renderItem={({ item }) => (
-          <ModuleCard item={item} onPress={() => setSelected(item)} />
+          <ModuleCard
+            item={item} onPress={() => setSelected(item)}
+            styles={styles} typeColors={typeColors} levelColors={levelColors} colors={colors}
+          />
         )}
         numColumns={2}
         columnWrapperStyle={styles.row}
@@ -179,12 +205,15 @@ export default function GelisimScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {selected && <ModuleDetail item={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <ModuleDetail item={selected} onClose={() => setSelected(null)} detail={detail} typeColors={typeColors} colors={colors} />
+      )}
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   searchRow: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   search: {
@@ -224,9 +253,11 @@ const styles = StyleSheet.create({
   cardBody: { padding: 10 },
   cardTitle: { color: colors.foreground, fontSize: 11, fontWeight: '800', marginBottom: 4, lineHeight: 15 },
   cardDesc: { color: colors.muted, fontSize: 10, lineHeight: 14 },
-});
+  });
+}
 
-const detail = StyleSheet.create({
+function makeDetailStyles(colors: Colors) {
+  return StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', overflow: 'hidden' },
   imageWrap: { width: '100%', height: 200, position: 'relative' },
@@ -256,4 +287,5 @@ const detail = StyleSheet.create({
   tipRow: { flexDirection: 'row', marginBottom: 6 },
   tipDot: { color: colors.accent, fontSize: 16, marginRight: 8, lineHeight: 20 },
   tipText: { color: colors.muted, fontSize: 13, lineHeight: 20, flex: 1 },
-});
+  });
+}

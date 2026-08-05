@@ -10,9 +10,11 @@ import {
   useRemoveDrillFromPlan, useAddDrillsToPlan,
 } from '../../hooks/useTrainingPlans';
 import { allDrills } from '../../data/drills';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
+import { normalizePhase } from '../../utils/trainingPlan';
 
 type PlansStackParamList = {
   PlanList: undefined;
@@ -25,11 +27,15 @@ type Props = NativeStackScreenProps<PlansStackParamList, 'PlanDetail'>;
 const PHASES = ['Isınma', 'Ana Antrenman', 'Soğuma'];
 const PHASE_FILTER = ['Tümü', ...PHASES];
 
-const phaseConfig: Record<string, { color: string }> = {
-  'Isınma':        { color: colors.phaseIsınma },
-  'Ana Antrenman': { color: colors.phaseAna },
-  'Soğuma':        { color: colors.phaseSoğuma },
-};
+function getPhaseConfig(colors: Colors): Record<string, { color: string }> {
+  return {
+    'Isınma':        { color: colors.phaseIsınma },
+    'Ana Antrenman': { color: colors.phaseAna },
+    'Soğuma':        { color: colors.phaseSoğuma },
+  };
+}
+
+type ModalStyles = ReturnType<typeof makeModalStyles>;
 
 // Android-safe chip
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
@@ -48,11 +54,15 @@ function AddDrillsModal({
   planDrillIds,
   onClose,
   onAdd,
+  colors,
+  m,
 }: {
   visible: boolean;
   planDrillIds: number[];
   onClose: () => void;
   onAdd: (ids: number[]) => void;
+  colors: Colors;
+  m: ModalStyles;
 }) {
   const [search, setSearch]   = useState('');
   const [phase, setPhase]     = useState('Tümü');
@@ -163,6 +173,10 @@ function AddDrillsModal({
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function PlanDetailScreen({ route }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+  const m = useMemo(() => makeModalStyles(colors), [colors]);
+  const phaseConfig = useMemo(() => getPhaseConfig(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
   const toggle       = useToggleDrillComplete();
@@ -289,7 +303,7 @@ export default function PlanDetailScreen({ route }: Props) {
           </View>
         ) : (
           PHASES.map(ph => {
-            const phaseDrills = plan.drills.filter(d => d.phase === ph);
+            const phaseDrills = plan.drills.filter(d => normalizePhase(d.phase) === ph);
             if (phaseDrills.length === 0) return null;
             const cfg = phaseConfig[ph] ?? { color: colors.accent };
 
@@ -356,6 +370,8 @@ export default function PlanDetailScreen({ route }: Props) {
         planDrillIds={planDrillIds}
         onClose={() => setShowAddModal(false)}
         onAdd={handleAddDrills}
+        colors={colors}
+        m={m}
       />
     </SafeAreaView>
   );
@@ -370,7 +386,8 @@ const c = StyleSheet.create({
   textActive: { color: '#f97316' },
 });
 
-const m = StyleSheet.create({
+function makeModalStyles(colors: Colors) {
+  return StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.background,
@@ -411,9 +428,11 @@ const m = StyleSheet.create({
   addBtnWrap:    { borderRadius: 10, overflow: 'hidden' },
   addBtn:        { backgroundColor: colors.accent, paddingHorizontal: 20, paddingVertical: 10 },
   addBtnTxt:     { color: '#fff', fontSize: 14, fontWeight: '700' },
-});
+  });
+}
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe:      { flex: 1, backgroundColor: colors.background },
   center:    { flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
   container: { padding: 16, paddingBottom: 40 },
@@ -461,4 +480,5 @@ const s = StyleSheet.create({
   emptyDrills: { alignItems: 'center', padding: 40 },
   emptyIcon:   { fontSize: 40, marginBottom: 12 },
   emptyText:   { color: colors.muted, fontSize: 15, marginBottom: 16 },
-});
+  });
+}

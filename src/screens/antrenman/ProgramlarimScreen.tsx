@@ -4,13 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTrainingPlans } from '../../hooks/useTrainingPlans';
 import { useScheduledSessions } from '../../hooks/useScheduledSessions';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import { TrainingPlan, ScheduledSession } from '../../data/types';
 import Calendar from '../../components/ui/Calendar';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
-import { buildPhaseBreakdown, dateKeyOf, isSessionMissed, parseLocalDate, phaseDisplay, planTotalMinutes } from '../../utils/trainingPlan';
+import { PHASES, buildPhaseBreakdown, dateKeyOf, getPhaseDisplay, isPlanPastDue, isSessionMissed, parseLocalDate, planEffectiveDate, planTotalMinutes, sessionDateTime } from '../../utils/trainingPlan';
 
 type Props = { navigation: NativeStackNavigationProp<AntrenmanStackParamList, 'AntrenmanHub'> };
 
@@ -43,29 +44,41 @@ const HISTORY_FILTERS: { key: HistoryFilter; label: string }[] = [
   { key: 'missed', label: 'Yapılmadı' },
 ];
 
+type HistoryPhaseFilter = 'all' | typeof PHASES[number];
+
 export default function ProgramlarimScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const [tab, setTab] = useState<TabKey>('list');
   const [sortNewestFirst, setSortNewestFirst] = useState(true);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('all');
+  const [historyPhaseFilter, setHistoryPhaseFilter] = useState<HistoryPhaseFilter>('all');
+  const [historySortNewestFirst, setHistorySortNewestFirst] = useState(true);
   const [showHistoryFilter, setShowHistoryFilter] = useState(false);
   const { data: plans = [], isLoading } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
 
   const sortedPlans = useMemo(() => {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const hasOnlyPastSessions = (planId: string) => {
-      const planSessions = sessions.filter((s) => s.plan_id === planId);
-      return planSessions.length > 0 && planSessions.every((s) => parseLocalDate(s.session_date) < todayStart);
-    };
     return [...plans]
-      .filter((p) => planStats(p).pct < 100 && !hasOnlyPastSessions(p.id))
+      .filter((p) => planStats(p).pct < 100 && !isPlanPastDue(p, sessions))
       .sort((a, b) => {
         const diff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         return sortNewestFirst ? diff : -diff;
       });
   }, [plans, sessions, sortNewestFirst]);
+
+  // Plans with no scheduled session at all still need to leave the active
+  // list and show up in Geçmiş once their day has passed — pastSessions
+  // below only covers plans that actually have a ScheduledSession row.
+  const pastPlansWithoutSessions = useMemo(() => {
+    return plans.filter((p) => {
+      const hasSession = sessions.some((s) => s.plan_id === p.id);
+      if (hasSession) return false;
+      const { pct } = planStats(p);
+      return pct === 100 || isPlanPastDue(p, sessions);
+    });
+  }, [plans, sessions]);
 
   const markedDates = useMemo(() => {
     const set = new Set<string>();
@@ -82,11 +95,11 @@ export default function ProgramlarimScreen({ navigation }: Props) {
       const key = dateKeyOf(sess.session_date);
       const plan = plans.find((p) => p.id === sess.plan_id);
       if (!plan) return;
-      const colorsForPlan = buildPhaseBreakdown(plan).map((p) => p.color);
+      const colorsForPlan = buildPhaseBreakdown(plan, colors).map((p) => p.color);
       (map[key] ??= []).push(...colorsForPlan);
     });
     return map;
-  }, [sessions, plans]);
+  }, [sessions, plans, colors]);
 
   const sessionsForDay = useMemo(() => {
     if (!selectedDay) return [];
@@ -104,18 +117,45 @@ export default function ProgramlarimScreen({ navigation }: Props) {
       .slice(0, 10);
   }, [sessions]);
 
-  const pastSessions = useMemo(() => {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    return sessions
-      .filter((sess) => parseLocalDate(sess.session_date) < todayStart)
-      .filter((sess) => {
-        if (historyFilter === 'done') return sess.completed;
-        if (historyFilter === 'missed') return !sess.completed;
+  type HistoryRow = {
+    id: string; planId: string; planName: string; date: Date; time?: string | null;
+    completed: boolean; phase: string | null;
+  };
+
+  const dominantPhase = (plan: TrainingPlan | undefined): string | null => {
+    if (!plan) return null;
+    const breakdown = buildPhaseBreakdown(plan, colors);
+    if (breakdown.length === 0) return null;
+    return [...breakdown].sort((a, b) => b.minutes - a.minutes)[0].phase;
+  };
+
+  const historyItems = useMemo<HistoryRow[]>(() => {
+    const fromSessions: HistoryRow[] = sessions
+      .filter((sess) => sess.completed || sessionDateTime(sess) < new Date())
+      .map((sess) => {
+        const plan = plans.find((p) => p.id === sess.plan_id);
+        return {
+          id: sess.id, planId: sess.plan_id, planName: plan?.name ?? 'Antrenman',
+          date: parseLocalDate(sess.session_date), time: sess.session_time, completed: sess.completed,
+          phase: dominantPhase(plan),
+        };
+      });
+
+    const fromOrphanPlans: HistoryRow[] = pastPlansWithoutSessions.map((p) => ({
+      id: `plan-${p.id}`, planId: p.id, planName: p.name,
+      date: planEffectiveDate(p), time: null, completed: planStats(p).pct === 100,
+      phase: dominantPhase(p),
+    }));
+
+    return [...fromSessions, ...fromOrphanPlans]
+      .filter((row) => {
+        if (historyFilter === 'done' && !row.completed) return false;
+        if (historyFilter === 'missed' && row.completed) return false;
+        if (historyPhaseFilter !== 'all' && row.phase !== historyPhaseFilter) return false;
         return true;
       })
-      .sort((a, b) => parseLocalDate(b.session_date).getTime() - parseLocalDate(a.session_date).getTime());
-  }, [sessions, historyFilter]);
+      .sort((a, b) => (historySortNewestFirst ? b.date.getTime() - a.date.getTime() : a.date.getTime() - b.date.getTime()));
+  }, [sessions, plans, pastPlansWithoutSessions, historyFilter, historyPhaseFilter, historySortNewestFirst, colors]);
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -161,14 +201,14 @@ export default function ProgramlarimScreen({ navigation }: Props) {
               <Text style={s.empty}>Yükleniyor…</Text>
             ) : sortedPlans.length === 0 ? (
               <View style={s.emptyCard}>
-                <Text style={s.emptyIcon}>📋</Text>
+                <Icon name="antrenmanlar" size={36} style={{ marginBottom: 12 }} />
                 <Text style={s.emptyTitle}>Henüz programınız yok</Text>
                 <Text style={s.emptyDesc}>Aşağıdaki butonla yeni bir program oluşturun.</Text>
               </View>
             ) : (
               sortedPlans.map((plan) => {
                 const { total, pct } = planStats(plan);
-                const minutes = planTotalMinutes(plan);
+                const minutes = planTotalMinutes(plan, colors);
                 const isScheduled = sessions.some((sess) => sess.plan_id === plan.id && !sess.completed);
                 return (
                   <TouchableOpacity
@@ -178,7 +218,7 @@ export default function ProgramlarimScreen({ navigation }: Props) {
                     onPress={() => navigation.navigate('StartTraining', { planId: plan.id })}
                   >
                     <View style={s.thumb}>
-                      <Text style={s.thumbIcon}>📋</Text>
+                      <Icon name="antrenmanlar" size={20} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -212,7 +252,7 @@ export default function ProgramlarimScreen({ navigation }: Props) {
             <Calendar markedDates={markedDates} dots={dayDots} onDayPress={setSelectedDay} />
 
             <View style={s.legend}>
-              {Object.entries(phaseDisplay).map(([phase, disp]) => (
+              {Object.entries(getPhaseDisplay(colors)).map(([phase, disp]) => (
                 <View key={phase} style={s.legendItem}>
                   <View style={[s.legendDot, { backgroundColor: disp.color }]} />
                   <Text style={s.legendTxt}>{disp.label}</Text>
@@ -280,7 +320,7 @@ export default function ProgramlarimScreen({ navigation }: Props) {
                       key={f.key}
                       style={[s.filterChip, active && s.filterChipActive]}
                       activeOpacity={0.8}
-                      onPress={() => { setHistoryFilter(f.key); setShowHistoryFilter(false); }}
+                      onPress={() => setHistoryFilter(f.key)}
                     >
                       <Text style={[s.filterChipTxt, active && s.filterChipTxtActive]}>{f.label}</Text>
                     </TouchableOpacity>
@@ -289,35 +329,80 @@ export default function ProgramlarimScreen({ navigation }: Props) {
               </View>
             )}
 
-            {pastSessions.length === 0 ? (
+            {showHistoryFilter && (
+              <>
+                <Text style={s.filterGroupLabel}>Antrenman Sınıfı</Text>
+                <View style={s.filterChipsRow}>
+                  <TouchableOpacity
+                    style={[s.filterChip, historyPhaseFilter === 'all' && s.filterChipActive]}
+                    activeOpacity={0.8}
+                    onPress={() => setHistoryPhaseFilter('all')}
+                  >
+                    <Text style={[s.filterChipTxt, historyPhaseFilter === 'all' && s.filterChipTxtActive]}>Tümü</Text>
+                  </TouchableOpacity>
+                  {PHASES.map((phase) => {
+                    const active = historyPhaseFilter === phase;
+                    const label = getPhaseDisplay(colors)[phase]?.label ?? phase;
+                    return (
+                      <TouchableOpacity
+                        key={phase}
+                        style={[s.filterChip, active && s.filterChipActive]}
+                        activeOpacity={0.8}
+                        onPress={() => setHistoryPhaseFilter(phase)}
+                      >
+                        <Text style={[s.filterChipTxt, active && s.filterChipTxtActive]}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={s.filterGroupLabel}>Tarihe Göre</Text>
+                <View style={s.filterChipsRow}>
+                  <TouchableOpacity
+                    style={[s.filterChip, historySortNewestFirst && s.filterChipActive]}
+                    activeOpacity={0.8}
+                    onPress={() => setHistorySortNewestFirst(true)}
+                  >
+                    <Text style={[s.filterChipTxt, historySortNewestFirst && s.filterChipTxtActive]}>Yeniden Eskiye</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[s.filterChip, !historySortNewestFirst && s.filterChipActive]}
+                    activeOpacity={0.8}
+                    onPress={() => setHistorySortNewestFirst(false)}
+                  >
+                    <Text style={[s.filterChipTxt, !historySortNewestFirst && s.filterChipTxtActive]}>Eskiden Yeniye</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {historyItems.length === 0 ? (
               <View style={s.emptyCard}>
                 <Text style={s.emptyIcon}>🏐</Text>
                 <Text style={s.emptyTitle}>Henüz geçmiş antrenman yok</Text>
                 <Text style={s.emptyDesc}>Günü geçen antrenmanların burada görünecek.</Text>
               </View>
             ) : (
-              pastSessions.map((sess) => {
-                const plan = plans.find((p) => p.id === sess.plan_id);
-                const missed = !sess.completed;
+              historyItems.map((row) => {
+                const missed = !row.completed;
                 return (
                   <TouchableOpacity
-                    key={sess.id}
+                    key={row.id}
                     style={s.historyRow}
                     activeOpacity={0.78}
-                    disabled={!plan}
-                    onPress={() => plan && navigation.navigate('StartTraining', { planId: plan.id })}
+                    onPress={() => navigation.navigate('StartTraining', { planId: row.planId })}
                   >
                     <View style={[s.checkIcon, missed && s.checkIconMissed]}>
                       <Icon name={missed ? 'tamamlanmadi' : 'tamamlandi'} size={16} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text style={s.historyName} numberOfLines={1}>{plan?.name ?? 'Antrenman'}</Text>
+                        <Text style={s.historyName} numberOfLines={1}>{row.planName}</Text>
                         <Text style={s.historyArrow}>›</Text>
                       </View>
                       <Text style={s.historyDate}>
-                        {parseLocalDate(sess.session_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {sess.session_time ? ` • ${sess.session_time}` : ''}
+                        {row.date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {row.time ? ` • ${row.time}` : ''}
                       </Text>
                     </View>
                     <Text style={[s.historyPct, missed && s.historyPctMissed]}>{missed ? 'Yapılmadı' : 'Tamamlandı'}</Text>
@@ -365,7 +450,7 @@ export default function ProgramlarimScreen({ navigation }: Props) {
                 {sessionsForDay.map((sess: ScheduledSession) => {
                   const plan = plans.find((p) => p.id === sess.plan_id);
                   if (!plan) return null;
-                  const breakdown = buildPhaseBreakdown(plan);
+                  const breakdown = buildPhaseBreakdown(plan, colors);
                   return (
                     <TouchableOpacity
                       key={sess.id}
@@ -403,7 +488,8 @@ export default function ProgramlarimScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
@@ -432,7 +518,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 6,
   },
   filterBtnTxt: { color: colors.foreground, fontSize: 12, fontWeight: '600' },
-  filterChipsRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  filterGroupLabel: { color: colors.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8 },
+  filterChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   filterChip: {
     borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card,
     paddingHorizontal: 14, paddingVertical: 8,
@@ -535,4 +622,5 @@ const s = StyleSheet.create({
     borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3,
   },
   phaseChipTxt: { fontSize: 11, fontWeight: '600' },
-});
+  });
+}

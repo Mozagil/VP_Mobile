@@ -6,7 +6,8 @@ import { allDrills } from '../../data/drills';
 import { Drill } from '../../data/types';
 import DrillCard from '../../components/DrillCard';
 import { useFavorites } from '../../hooks/useFavorites';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { QUICK_CATEGORIES, matchesCategory, matchesPlayerCount, minDurationMinutes } from '../../utils/libraryFilters';
 import { difficultyLabel } from '../../utils/drillCovers';
 import LibraryFilterModal, { LibraryFilters, DEFAULT_FILTERS } from './LibraryFilterModal';
@@ -18,8 +19,9 @@ type LibraryStackParamList = {
 };
 
 type Props = { navigation: NativeStackNavigationProp<LibraryStackParamList, 'DrillList'> };
+type Styles = ReturnType<typeof makeStyles>;
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Chip({ label, active, onPress, s }: { label: string; active: boolean; onPress: () => void; s: Styles }) {
   return (
     <TouchableOpacity style={[s.chip, active && s.chipActive]} onPress={onPress} activeOpacity={0.8}>
       <Text style={[s.chipTxt, active && s.chipTxtActive]}>{label}</Text>
@@ -28,6 +30,8 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 }
 
 export default function LibraryScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const [search, setSearch] = useState('');
   const [quickCategory, setQuickCategory] = useState<string>('Tümü');
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
@@ -81,7 +85,7 @@ export default function LibraryScreen({ navigation }: Props) {
           style={{ flex: 1 }}
         >
           {QUICK_CATEGORIES.map((c) => (
-            <Chip key={c} label={c} active={quickCategory === c} onPress={() => setQuickCategory(c)} />
+            <Chip key={c} label={c} active={quickCategory === c} onPress={() => setQuickCategory(c)} s={s} />
           ))}
         </ScrollView>
         <TouchableOpacity
@@ -146,7 +150,8 @@ export default function LibraryScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   searchRow: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
@@ -181,4 +186,5 @@ const s = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyIcon: { fontSize: 36, marginBottom: 12 },
   emptyTxt: { color: colors.muted, fontSize: 14, textAlign: 'center' },
-});
+  });
+}

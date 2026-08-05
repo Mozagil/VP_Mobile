@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthContext';
 import { useProfile } from '../../hooks/useProfile';
-import { apiClient } from '../../api/client';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 
 const levelLabels: Record<string, string> = {
   başlangıç: 'Başlangıç', baslangic: 'Başlangıç',
@@ -15,14 +15,18 @@ const levelLabels: Record<string, string> = {
 type PanelStackParamList = {
   ProfileShortcuts: undefined;
   NotificationSettings: undefined;
+  Logout: undefined;
+  DeleteAccount: undefined;
+  HelpSupport: undefined;
 };
 
 type Props = { navigation: NativeStackNavigationProp<PanelStackParamList, 'ProfileShortcuts'> };
 
 export default function ProfileShortcutsScreen({ navigation }: Props) {
-  const { user, signOut } = useAuth() as any;
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+  const { user } = useAuth() as any;
   const { data: profile } = useProfile();
-  const [deleting, setDeleting] = useState(false);
 
   const firstName = profile?.first_name || user?.email?.split('@')[0] || 'Oyuncu';
   const lastName = profile?.last_name || '';
@@ -36,47 +40,15 @@ export default function ProfileShortcutsScreen({ navigation }: Props) {
 
   const comingSoon = () => Alert.alert('Yakında', 'Bu bölüm yakında eklenecek.');
 
-  const handleSignOut = () => {
-    Alert.alert('Çıkış Yap', 'Hesabınızdan çıkmak istediğinize emin misiniz?', [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'Çıkış Yap', style: 'destructive', onPress: () => signOut?.() },
-    ]);
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Hesabı Sil',
-      'Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz (planlar, oturumlar, profil) kalıcı olarak silinecek. Devam etmek istiyor musunuz?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Hesabı Sil',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await apiClient.delete('/auth/me');
-              await signOut?.();
-            } catch {
-              Alert.alert('Hata', 'Hesap silinirken bir sorun oluştu.');
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ],
-    );
-  };
-
   const ITEMS: Array<{ title: string; onPress: () => void; destructive?: boolean }> = [
     { title: 'Uygulama Ayarları', onPress: () => goToParent('Ayarlar') },
     { title: 'Antrenman Tercihlerim', onPress: () => goToParent('Profil') },
     { title: 'Bildirim Ayarları', onPress: () => navigation.navigate('NotificationSettings') },
     { title: 'Gizlilik Politikası', onPress: comingSoon },
     { title: 'KVKK Metni', onPress: comingSoon },
-    { title: 'Yardım & Destek', onPress: comingSoon },
-    { title: 'Hesabı Sil', onPress: handleDeleteAccount, destructive: true },
-    { title: 'Çıkış Yap', onPress: handleSignOut, destructive: true },
+    { title: 'Yardım & Destek', onPress: () => navigation.navigate('HelpSupport') },
+    { title: 'Hesabı Sil', onPress: () => navigation.navigate('DeleteAccount'), destructive: true },
+    { title: 'Çıkış Yap', onPress: () => navigation.navigate('Logout'), destructive: true },
   ];
 
   return (
@@ -98,7 +70,6 @@ export default function ProfileShortcutsScreen({ navigation }: Props) {
               key={item.title}
               style={[s.card, item.destructive && s.cardDestructive]}
               activeOpacity={0.78}
-              disabled={deleting}
               onPress={item.onPress}
             >
               <Text style={[s.cardTitle, item.destructive && s.cardTitleDestructive]}>
@@ -112,7 +83,8 @@ export default function ProfileShortcutsScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 16, paddingBottom: 32 },
 
@@ -135,4 +107,5 @@ const s = StyleSheet.create({
   cardDestructive: { borderColor: colors.error + '70', backgroundColor: colors.error + '15' },
   cardTitle: { color: colors.foreground, fontSize: 13, fontWeight: '700', textAlign: 'center' },
   cardTitleDestructive: { color: colors.error },
-});
+  });
+}

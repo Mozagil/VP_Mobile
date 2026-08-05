@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,12 +6,13 @@ import { useAuth } from '../../auth/AuthContext';
 import { useProfile } from '../../hooks/useProfile';
 import { useTrainingPlans } from '../../hooks/useTrainingPlans';
 import { useScheduledSessions } from '../../hooks/useScheduledSessions';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import {
   buildPhaseBreakdown, buildPhaseCompletionBreakdown, buildWeekDays, findActivePlan, findNextUpcomingSession,
   formatSessionBadge, locationLabel, overallCompletionPct, planTotalMinutes, weekSessionsOf,
 } from '../../utils/trainingPlan';
-import { maybeNotifyWeeklyGoal, maybeSendMotivation } from '../../utils/notifications';
+import { maybeNotifyWeeklyGoal } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
 
@@ -31,7 +32,7 @@ const levelLabels: Record<string, string> = {
   orta: 'Orta', ileri: 'İleri', profesyonel: 'Profesyonel',
 };
 
-function CourtPlaceholder() {
+function CourtPlaceholder({ s }: { s: Styles }) {
   return (
     <View style={s.court}>
       <View style={s.courtNet} />
@@ -42,6 +43,8 @@ function CourtPlaceholder() {
 }
 
 export default function DashboardScreen({ navigation }: Props) {
+  const { colors, mode } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { user } = useAuth() as any;
   const { data: profile } = useProfile();
   const { data: plans = [] } = useTrainingPlans();
@@ -61,22 +64,18 @@ export default function DashboardScreen({ navigation }: Props) {
 
   const nextSession = findNextUpcomingSession(sessions, plans);
   const nextSessionPlan = nextSession ? plans.find((p) => p.id === nextSession.plan_id) : undefined;
-  const activePlan = nextSessionPlan ?? findActivePlan(plans);
-  const phaseBreakdown = activePlan ? buildPhaseBreakdown(activePlan) : [];
-  const totalMinutes = activePlan ? planTotalMinutes(activePlan) : 0;
+  const activePlan = nextSessionPlan ?? findActivePlan(plans, sessions);
+  const phaseBreakdown = activePlan ? buildPhaseBreakdown(activePlan, colors) : [];
+  const totalMinutes = activePlan ? planTotalMinutes(activePlan, colors) : 0;
   const nextDateLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time)
     ?? formatSessionBadge(activePlan?.start_date);
   const activeLocation = locationLabel(activePlan?.location);
   const overallPct = overallCompletionPct(plans);
-  const phaseCompletion = buildPhaseCompletionBreakdown(plans);
+  const phaseCompletion = buildPhaseCompletionBreakdown(plans, colors);
 
   useEffect(() => {
     maybeNotifyWeeklyGoal(weeklyDone, weeklyTarget);
   }, [weeklyDone, weeklyTarget]);
-
-  useEffect(() => {
-    maybeSendMotivation();
-  }, []);
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -86,11 +85,14 @@ export default function DashboardScreen({ navigation }: Props) {
 
         {/* ── Top bar ── */}
         <View style={s.topBar}>
-          <Image
-            source={require('../../assets/logo-voleypro.png')}
-            style={s.logo}
-            resizeMode="contain"
-          />
+          <View style={s.logoRow}>
+            <Image
+              source={require('../../assets/logo-voleypro-mark.png')}
+              style={s.logoMark}
+              resizeMode="contain"
+            />
+            <Text style={[s.logoTxt, { color: mode === 'light' ? '#0d1b3e' : '#ffffff' }]}>VoleyPro</Text>
+          </View>
           <View style={{ flex: 1 }} />
           <TouchableOpacity
             style={s.iconBtn}
@@ -221,7 +223,7 @@ export default function DashboardScreen({ navigation }: Props) {
                 {activePlan.team ? `  ·  ${activePlan.team}` : ''}
               </Text>
 
-              <CourtPlaceholder />
+              <CourtPlaceholder s={s} />
 
               {phaseBreakdown.length > 0 ? (
                 phaseBreakdown.map((p) => (
@@ -245,7 +247,7 @@ export default function DashboardScreen({ navigation }: Props) {
             </View>
           ) : (
             <View style={s.emptyCard}>
-              <Text style={s.emptyIcon}>📋</Text>
+              <Icon name="antrenmanlar" size={36} style={{ marginBottom: 12 }} />
               <Text style={s.emptyTitle}>Henüz antrenman planınız yok</Text>
               <Text style={s.emptyDesc}>Antrenman sekmesinden yeni bir plan oluşturun.</Text>
             </View>
@@ -257,13 +259,18 @@ export default function DashboardScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+type Styles = ReturnType<typeof makeStyles>;
+
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: 40 },
 
   topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 10 },
   // Source art is 548x132; keep that ratio so the wordmark never distorts.
-  logo: { height: 26, width: 108 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoMark: { height: 26, width: 26 },
+  logoTxt: { fontSize: 18, fontWeight: '800' },
   iconBtn: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.card,
     borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
@@ -363,4 +370,5 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 36, marginBottom: 12 },
   emptyTitle: { color: colors.foreground, fontSize: 15, fontWeight: '600', marginBottom: 6, textAlign: 'center' },
   emptyDesc: { color: colors.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 },
-});
+  });
+}

@@ -42,6 +42,8 @@ import Sil from '../../assets/icons/49-sil.svg';
 import VoleybolTopu from '../../assets/icons/50-voleybol-topu.svg';
 import Soguma from '../../assets/icons/51-soguma.svg';
 import AnaAntrenman from '../../assets/icons/52-ana-antrenman.svg';
+import Cikis from '../../assets/icons/53-cikis.svg';
+import Destek from '../../assets/icons/54-destek.svg';
 
 const registry = {
   menu: Menu,
@@ -85,6 +87,8 @@ const registry = {
   'voleybol-topu': VoleybolTopu,
   soguma: Soguma,
   'ana-antrenman': AnaAntrenman,
+  cikis: Cikis,
+  destek: Destek,
 };
 
 export type IconName = keyof typeof registry;

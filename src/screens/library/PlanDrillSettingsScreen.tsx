@@ -5,7 +5,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans, useAddDrillsToPlan } from '../../hooks/useTrainingPlans';
 import { Drill } from '../../data/types';
 import { coverFor, difficultyLabel } from '../../utils/drillCovers';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import Icon from '../../components/ui/Icon';
 
 type LibraryStackParamList = {
@@ -26,6 +27,8 @@ function parseDefaultDuration(duration: string): number {
 }
 
 export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { drill, planId } = route.params;
   const { data: plans = [] } = useTrainingPlans();
   const addDrills = useAddDrillsToPlan();
@@ -93,7 +96,7 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
         <View style={s.previewCard}>
-          <Image source={coverFor(drill.skill, drill.phase)} style={s.previewImg} resizeMode="cover" />
+          <Image source={coverFor(drill.skill, drill.phase, drill.id)} style={s.previewImg} resizeMode="cover" />
           <View style={{ flex: 1 }}>
             <Text style={s.previewName} numberOfLines={1}>{drill.name}</Text>
             <Text style={s.previewMeta}>{drill.skill} • {drill.players} Kişi</Text>
@@ -189,7 +192,8 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
 
@@ -246,4 +250,5 @@ const s = StyleSheet.create({
   primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

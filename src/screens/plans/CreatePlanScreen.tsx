@@ -10,11 +10,13 @@ import { useCreateScheduledSession } from '../../hooks/useScheduledSessions';
 import { useFavorites } from '../../hooks/useFavorites';
 import { allDrills } from '../../data/drills';
 import { Drill } from '../../data/types';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import Slider from '../../components/ui/Slider';
 import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/ScheduleStep';
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
+import PhaseIcon from '../../components/ui/PhaseIcon';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'CreatePlan'>;
@@ -23,7 +25,9 @@ const PLAN_TYPES = ['Teknik', 'Kondisyon', 'Kombinasyon', 'Diğer'];
 const PHASE_FILTERS = ['Tümü', 'Isınma', 'Ana Antrenman', 'Soğuma', 'Favoriler'];
 const PHASE_ORDER = ['Isınma', 'Ana Antrenman', 'Soğuma'];
 
-function StepBar({ step }: { step: number }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function StepBar({ step, s }: { step: number; s: Styles }) {
   return (
     <View style={s.stepBar}>
       {[0, 1, 2, 3].map((i) => (
@@ -41,6 +45,8 @@ function StepBar({ step }: { step: number }) {
 type SelectedDrill = { drill: Drill; phase: string };
 
 export default function CreatePlanScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const createPlan = useCreatePlan();
   const createSession = useCreateScheduledSession();
   const { isFavorite } = useFavorites();
@@ -162,7 +168,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
         <View style={{ width: 36 }} />
       </View>
 
-      <StepBar step={step} />
+      <StepBar step={step} s={s} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {step === 0 && (
@@ -261,7 +267,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                 return (
                   <View style={s.drillRow}>
                     <View style={s.drillIconBox}>
-                      <Text style={s.drillIcon}>📋</Text>
+                      <PhaseIcon phase={item.phase} size={18} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.drillName} numberOfLines={1}>{item.name}</Text>
@@ -314,7 +320,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                         </View>
                       ) : (
                         <View style={s.drillIconBox}>
-                          <Text style={s.drillIcon}>📋</Text>
+                          <PhaseIcon phase={sd.drill.phase} size={18} />
                         </View>
                       )}
                       <View style={{ flex: 1 }}>
@@ -374,7 +380,8 @@ export default function CreatePlanScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
@@ -460,4 +467,5 @@ const s = StyleSheet.create({
   },
   numberBadgeTxt: { color: '#fff', fontSize: 12, fontWeight: '800' },
   menuDots: { color: colors.muted, fontSize: 18, fontWeight: '800' },
-});
+  });
+}

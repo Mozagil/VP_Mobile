@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import Calendar from './Calendar';
 
 type Props = {
@@ -42,6 +43,8 @@ function parseTime(hhmm: string): { h: string; m: string } {
 }
 
 export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeChange, durationMinutes }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const markedDates = useMemo(() => new Set(selectedDate ? [selectedDate] : []), [selectedDate]);
   const endTime = addMinutes(time, durationMinutes);
   const [showPicker, setShowPicker] = useState(false);
@@ -132,39 +135,41 @@ export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeC
   );
 }
 
-const s = StyleSheet.create({
-  fieldLabel: { color: colors.foreground, fontSize: 14, fontWeight: '700', marginTop: 18, marginBottom: 8 },
-  hint: { color: colors.muted, fontSize: 12, marginTop: 10 },
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    fieldLabel: { color: colors.foreground, fontSize: 14, fontWeight: '700', marginTop: 18, marginBottom: 8 },
+    hint: { color: colors.muted, fontSize: 12, marginTop: 10 },
 
-  timeBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: colors.card, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    borderWidth: 1, borderColor: colors.border,
-  },
-  timeBtnTxt: { color: colors.foreground, fontSize: 15, fontWeight: '700' },
-  timeBtnArrow: { color: colors.muted, fontSize: 14 },
+    timeBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: colors.card, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
+      borderWidth: 1, borderColor: colors.border,
+    },
+    timeBtnTxt: { color: colors.foreground, fontSize: 15, fontWeight: '700' },
+    timeBtnArrow: { color: colors.muted, fontSize: 14 },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, paddingBottom: 28 },
-  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  sheetTitle: { color: colors.foreground, fontSize: 16, fontWeight: '800' },
-  closeBtn: {
-    width: 30, height: 30, borderRadius: 15, backgroundColor: colors.card,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border,
-  },
-  closeTxt: { color: colors.foreground, fontSize: 14, fontWeight: '700' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, paddingBottom: 28 },
+    sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+    sheetTitle: { color: colors.foreground, fontSize: 16, fontWeight: '800' },
+    closeBtn: {
+      width: 30, height: 30, borderRadius: 15, backgroundColor: colors.card,
+      alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border,
+    },
+    closeTxt: { color: colors.foreground, fontSize: 14, fontWeight: '700' },
 
-  columnsRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', gap: 10 },
-  column: { flex: 1, maxWidth: 120 },
-  columnLabel: { color: colors.muted, fontSize: 11, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
-  columnScroll: { height: 220, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
-  colon: { color: colors.foreground, fontSize: 22, fontWeight: '800', marginTop: 28 },
+    columnsRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', gap: 10 },
+    column: { flex: 1, maxWidth: 120 },
+    columnLabel: { color: colors.muted, fontSize: 11, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+    columnScroll: { height: 220, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+    colon: { color: colors.foreground, fontSize: 22, fontWeight: '800', marginTop: 28 },
 
-  optionRow: { paddingVertical: 12, alignItems: 'center' },
-  optionRowActive: { backgroundColor: colors.accent + '25' },
-  optionTxt: { color: colors.foreground, fontSize: 15, fontWeight: '600' },
-  optionTxtActive: { color: colors.accent, fontWeight: '800' },
+    optionRow: { paddingVertical: 12, alignItems: 'center' },
+    optionRowActive: { backgroundColor: colors.accent + '25' },
+    optionTxt: { color: colors.foreground, fontSize: 15, fontWeight: '600' },
+    optionTxtActive: { color: colors.accent, fontWeight: '800' },
 
-  confirmBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
-  confirmBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+    confirmBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
+    confirmBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  });
+}

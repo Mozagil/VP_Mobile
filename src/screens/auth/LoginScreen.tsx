@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, KeyboardAvoidingView,
   ScrollView, TouchableOpacity, Alert, StatusBar,
@@ -12,7 +12,8 @@ import { AuthStackParamList } from '../../navigation/AuthStack';
 import { useAuth } from '../../auth/AuthContext';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 
 const schema = z.object({
   email: z.string().email('Geçerli bir e-posta girin'),
@@ -24,6 +25,8 @@ type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'
 
 export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [loading, setLoading] = useState(false);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -109,7 +112,8 @@ export default function LoginScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
 
@@ -136,4 +140,5 @@ const styles = StyleSheet.create({
   link: { alignItems: 'center' },
   linkText: { color: colors.muted, fontSize: 14 },
   linkBold: { color: colors.accent, fontWeight: '600' },
-});
+  });
+}

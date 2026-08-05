@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { useCreatePlan } from '../../hooks/useTrainingPlans';
 import { useCreateScheduledSession } from '../../hooks/useScheduledSessions';
 import Slider from '../../components/ui/Slider';
@@ -50,6 +51,11 @@ const cooldownDB: DrillEntry[] = [
   { name: 'Statik germe - alt vücut', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
   { name: 'Nefes egzersizi + gevşeme', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
 ];
+
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function filterDrills(db: DrillEntry[], env: string, skills: string[]): DrillEntry[] {
   const valid = db.filter((d) => d.environments.includes(env));
@@ -102,7 +108,9 @@ const LEVELS = ['Başlangıç', 'Orta', 'İleri'];
 const FOCUS_OPTIONS = ['Pas', 'Servis', 'Smaç', 'Blok', 'Defans', 'Kondisyon'];
 const FOCUS_TO_SKILL: Record<string, string> = { Smaç: 'Atak', Defans: 'Savunma' };
 
-function StepBar({ step }: { step: number }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function StepBar({ step, s }: { step: number; s: Styles }) {
   return (
     <View style={s.stepBar}>
       {[0, 1, 2].map((i) => (
@@ -120,14 +128,17 @@ function StepBar({ step }: { step: number }) {
 type Props = { navigation: any };
 
 export default function AIWizardScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const createPlan = useCreatePlan();
   const createSession = useCreateScheduledSession();
   const [step, setStep] = useState(0);
   const [goalKey, setGoalKey] = useState<typeof GOALS[number]['key']>('teknik');
+  const [customName, setCustomName] = useState('');
   const [level, setLevel] = useState('Orta');
   const [duration, setDuration] = useState(60);
   const [focus, setFocus] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(todayKey());
   const [sessionTime, setSessionTime] = useState(getRoundedCurrentTime());
   const [saving, setSaving] = useState(false);
 
@@ -155,7 +166,7 @@ export default function AIWizardScreen({ navigation }: Props) {
         })),
       );
 
-      const planName = `AI - ${goal.title}`;
+      const planName = customName.trim() || `AI - ${goal.title}`;
       const plan = await createPlan.mutateAsync({
         name: planName,
         goal: goal.desc,
@@ -196,11 +207,20 @@ export default function AIWizardScreen({ navigation }: Props) {
         <View style={{ width: 36 }} />
       </View>
 
-      <StepBar step={step} />
+      <StepBar step={step} s={s} />
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
         {step === 0 && (
           <>
+            <Text style={s.fieldLabel}>Antrenmanına bir ad ver (opsiyonel)</Text>
+            <TextInput
+              style={s.input}
+              placeholder="Ör: Pazartesi Teknik Antrenman"
+              placeholderTextColor={colors.muted}
+              value={customName}
+              onChangeText={setCustomName}
+            />
+
             <Text style={s.question}>Hedefini seç</Text>
             {GOALS.map((g) => {
               const active = goalKey === g.key;
@@ -303,7 +323,8 @@ export default function AIWizardScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
@@ -338,6 +359,10 @@ const s = StyleSheet.create({
   goalDesc: { color: colors.muted, fontSize: 12, lineHeight: 17 },
 
   fieldLabel: { color: colors.foreground, fontSize: 13, fontWeight: '600', marginTop: 18, marginBottom: 8 },
+  input: {
+    backgroundColor: colors.card, color: colors.foreground, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 12, borderWidth: 1, borderColor: colors.border, fontSize: 14,
+  },
   durationValue: { color: colors.accent, fontSize: 13, fontWeight: '700', textAlign: 'center', marginTop: -6, marginBottom: 4 },
 
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -352,4 +377,5 @@ const s = StyleSheet.create({
   primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
   primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

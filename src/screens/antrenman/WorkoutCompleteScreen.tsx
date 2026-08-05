@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans, useUpdatePlanStatus } from '../../hooks/useTrainingPlans';
 import { useScheduledSessions, useCompleteScheduledSession } from '../../hooks/useScheduledSessions';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import { estimateCalories, findNextSession, planTotalMinutes } from '../../utils/trainingPlan';
 import { cancelSessionReminders, sendImmediateNotification } from '../../utils/notifications';
@@ -13,6 +14,8 @@ import Icon from '../../components/ui/Icon';
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'WorkoutComplete'>;
 
 export default function WorkoutCompleteScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
@@ -37,14 +40,14 @@ export default function WorkoutCompleteScreen({ route, navigation }: Props) {
     return <View style={s.center}><ActivityIndicator color={colors.accent} size="large" /></View>;
   }
 
-  const minutes = planTotalMinutes(plan);
+  const minutes = planTotalMinutes(plan, colors);
   const totalDrills = plan.drills.length;
   const calories = estimateCalories(minutes);
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <View style={s.body}>
-        <Text style={s.trophy}>🏆</Text>
+        <Icon name="basarilar" size={64} style={s.trophy} />
         <Text style={s.title}>Tebrikler!</Text>
         <Text style={s.subtitle}>Antrenmanınızı başarıyla tamamladınız.</Text>
 
@@ -94,7 +97,8 @@ export default function WorkoutCompleteScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
 
@@ -118,4 +122,5 @@ const s = StyleSheet.create({
   primaryBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
   secondaryBtn: { paddingVertical: 14, alignItems: 'center' },
   secondaryBtnTxt: { color: colors.muted, fontSize: 15, fontWeight: '600' },
-});
+  });
+}

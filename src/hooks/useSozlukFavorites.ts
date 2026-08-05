@@ -1,31 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback } from 'react';
+import { useServerFavorites } from './useServerFavorites';
 
-const STORAGE_KEY = 'voleypro_sozluk_favorites';
+// Account-synced glossary term favorites — uses the same backend key as the
+// web app (net-pro-plans-main/src/pages/Glossary.tsx) so favorites match
+// across mobile and web for the same account.
+const GLOSSARY_FAV_KEY = 'glossary_favorites';
 
 export function useSozlukFavorites() {
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const { items: favorites, setItems: setFavorites } = useServerFavorites(GLOSSARY_FAV_KEY, []);
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((val) => {
-      if (val) {
-        try { setFavorites(JSON.parse(val)); } catch {}
-      }
-    });
-  }, []);
-
-  const toggleFavorite = useCallback((term: string) => {
-    setFavorites((prev) => {
-      const next = prev.includes(term)
-        ? prev.filter((t) => t !== term)
-        : [...prev, term];
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const toggleFavorite = useCallback((termId: number) => {
+    setFavorites(favorites.includes(termId) ? favorites.filter((id) => id !== termId) : [...favorites, termId]);
+  }, [favorites, setFavorites]);
 
   const isFavorite = useCallback(
-    (term: string) => favorites.includes(term),
+    (termId: number) => favorites.includes(termId),
     [favorites],
   );
 

@@ -4,10 +4,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../auth/AuthContext';
 import AuthStack from './AuthStack';
 import AppTabs from './AppTabs';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function RootNavigator() {
   const { user, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (

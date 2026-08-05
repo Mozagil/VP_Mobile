@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Drill } from '../../data/types';
 import { coverFor, difficultyLabel } from '../../utils/drillCovers';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import Icon from '../../components/ui/Icon';
 
 type LibraryStackParamList = {
@@ -16,6 +17,8 @@ type LibraryStackParamList = {
 type Props = NativeStackScreenProps<LibraryStackParamList, 'AddToTrainingChoice'>;
 
 export default function AddToTrainingChoiceScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { drill } = route.params;
 
   const backToLibrary = () => navigation.navigate('DrillList');
@@ -32,7 +35,7 @@ export default function AddToTrainingChoiceScreen({ route, navigation }: Props) 
 
       <View style={s.body}>
         <View style={s.previewCard}>
-          <Image source={coverFor(drill.skill, drill.phase)} style={s.previewImg} resizeMode="cover" />
+          <Image source={coverFor(drill.skill, drill.phase, drill.id)} style={s.previewImg} resizeMode="cover" />
           <View style={{ flex: 1 }}>
             <Text style={s.previewName} numberOfLines={1}>{drill.name}</Text>
             <Text style={s.previewMeta}>{drill.skill} • {drill.players} Kişi</Text>
@@ -51,7 +54,7 @@ export default function AddToTrainingChoiceScreen({ route, navigation }: Props) 
           onPress={() => navigation.navigate('AddToTraining', { drill })}
         >
           <View style={s.iconBox}>
-            <Text style={s.icon}>📋</Text>
+            <Icon name="antrenmanlar" size={20} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.optionTitle}>Mevcut Bir Antrenmana Ekle</Text>
@@ -83,7 +86,8 @@ export default function AddToTrainingChoiceScreen({ route, navigation }: Props) 
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
@@ -117,4 +121,5 @@ const s = StyleSheet.create({
   footer: { padding: 16 },
   cancelBtn: { paddingVertical: 14, alignItems: 'center' },
   cancelBtnTxt: { color: colors.muted, fontSize: 15, fontWeight: '600' },
-});
+  });
+}

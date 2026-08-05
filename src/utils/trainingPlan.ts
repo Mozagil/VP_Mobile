@@ -1,6 +1,6 @@
 import { TrainingPlan, ScheduledSession } from '../data/types';
 import { allDrills } from '../data/drills';
-import { colors } from '../theme/colors';
+import { Colors } from '../theme/palettes';
 
 // Shared helpers for turning raw plan/session data into what the
 // Dashboard + "Sıradaki Antrenman" detail screen render.
@@ -21,11 +21,20 @@ export function dateKeyOf(dateStr: string): string {
 
 // `iconName` points at an SVG in the shared icon set; `icon` is the emoji fallback
 // used only for phases that have no matching SVG yet. Render via <PhaseIcon />.
-export const phaseDisplay: Record<string, { label: string; icon: string; iconName?: string; color: string }> = {
-  'Isınma':        { label: 'Isınma',         icon: '🔥', iconName: 'kalori',         color: colors.phaseIsınma },
-  'Ana Antrenman': { label: 'Ana Antrenman',  icon: '🎯', iconName: 'ana-antrenman',  color: colors.phaseAna },
-  'Soğuma':        { label: 'Soğuma',         icon: '❄️', iconName: 'soguma',         color: colors.phaseSoğuma },
-};
+export function getPhaseDisplay(colors: Colors): Record<string, { label: string; icon: string; iconName?: string; color: string }> {
+  return {
+    'Isınma':        { label: 'Isınma',         icon: '🔥', iconName: 'kalori',         color: colors.phaseIsınma },
+    'Ana Antrenman': { label: 'Ana Antrenman',  icon: '🎯', iconName: 'ana-antrenman',  color: colors.phaseAna },
+    'Soğuma':        { label: 'Soğuma',         icon: '❄️', iconName: 'soguma',         color: colors.phaseSoğuma },
+  };
+}
+
+// The web app still writes a 4th phase, 'Oyun', that mobile retired in favor of
+// a 3-phase model. Fold it into 'Ana Antrenman' wherever plan drills are grouped
+// by phase, so web-created "Oyun" drills don't silently vanish from mobile.
+export function normalizePhase(phase: string): string {
+  return phase === 'Oyun' ? 'Ana Antrenman' : phase;
+}
 
 export function resolveDrillMinutes(pd: { drill_id: number; custom_duration?: number | null }): number {
   if (pd.custom_duration) return pd.custom_duration;
@@ -41,30 +50,31 @@ export function resolveDrillName(pd: { drill_id: number; custom_name?: string | 
   return drill?.name ?? `Hareket #${pd.drill_id}`;
 }
 
-export function buildPhaseBreakdown(plan: TrainingPlan) {
+export function buildPhaseBreakdown(plan: TrainingPlan, colors: Colors) {
+  const phaseDisplay = getPhaseDisplay(colors);
   return PHASES.map((phase) => {
-    const rows = plan.drills.filter((d) => d.phase === phase);
+    const rows = plan.drills.filter((d) => normalizePhase(d.phase) === phase);
     const minutes = rows.reduce((sum, pd) => sum + resolveDrillMinutes(pd), 0);
     return { phase, ...phaseDisplay[phase], minutes, count: rows.length };
   }).filter((p) => p.count > 0);
 }
 
 export function drillsInPhase(plan: TrainingPlan, phase: string) {
-  return plan.drills.filter((d) => d.phase === phase).sort((a, b) => a.sort_order - b.sort_order);
+  return plan.drills.filter((d) => normalizePhase(d.phase) === phase).sort((a, b) => a.sort_order - b.sort_order);
 }
 
 export function estimateCalories(minutes: number): number {
   return Math.round(minutes * 8.5);
 }
 
-export function dominantPhaseColor(plan: TrainingPlan): string {
-  const breakdown = buildPhaseBreakdown(plan);
+export function dominantPhaseColor(plan: TrainingPlan, colors: Colors): string {
+  const breakdown = buildPhaseBreakdown(plan, colors);
   const top = [...breakdown].sort((a, b) => b.minutes - a.minutes)[0];
   return top?.color ?? colors.accent;
 }
 
-export function planTotalMinutes(plan: TrainingPlan): number {
-  return buildPhaseBreakdown(plan).reduce((sum, p) => sum + p.minutes, 0);
+export function planTotalMinutes(plan: TrainingPlan, colors: Colors): number {
+  return buildPhaseBreakdown(plan, colors).reduce((sum, p) => sum + p.minutes, 0);
 }
 
 export function planSkills(plan: TrainingPlan): string[] {
@@ -77,10 +87,50 @@ export function planSkills(plan: TrainingPlan): string[] {
   return Array.from(skills);
 }
 
-export function findActivePlan(plans: TrainingPlan[]): TrainingPlan | undefined {
-  return plans.find((p) => p.status === 'active')
-    ?? plans.find((p) => p.drills.some((d) => !d.completed))
-    ?? plans[0];
+// The calendar day a plan "belongs to" — its scheduled session date(s) if it
+// has any, otherwise the day it was started/created. Plans without a real
+// schedule still need a reference day so they don't linger forever.
+export function planEffectiveDate(plan: TrainingPlan): Date {
+  // start_date often comes back as '' rather than null/undefined, which `??`
+  // would let through — fall back on any empty value, not just nullish ones.
+  return parseLocalDate((plan.start_date || plan.created_at).slice(0, 10));
+}
+
+// A session's actual scheduled moment — date + time when a time was set.
+// Without a session_time (or an unscheduled plan), it's only "over" once the
+// whole calendar day has elapsed, not merely started.
+export function sessionDateTime(session: ScheduledSession): Date {
+  const dt = parseLocalDate(session.session_date);
+  if (session.session_time) {
+    const [hh, mm] = session.session_time.split(':').map(Number);
+    dt.setHours(hh || 0, mm || 0, 0, 0);
+  } else {
+    dt.setHours(23, 59, 59, 999);
+  }
+  return dt;
+}
+
+// A plan whose day has closed — every scheduled session's date+time is
+// already behind us, or (for unscheduled plans) its own reference day has
+// fully elapsed — has "yarıda kalmış" if still unfinished. It must not keep
+// surfacing as the Dashboard's active/next plan or in the "Antrenmanlarım"
+// active list; it belongs in the Geçmiş tab, marked "tamamlanmadı".
+export function isPlanPastDue(plan: TrainingPlan, sessions: ScheduledSession[]): boolean {
+  const now = new Date();
+  const planSessions = sessions.filter((s) => s.plan_id === plan.id);
+  if (planSessions.length > 0) {
+    return planSessions.every((s) => sessionDateTime(s) < now);
+  }
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  return planEffectiveDate(plan) < todayStart;
+}
+
+export function findActivePlan(plans: TrainingPlan[], sessions: ScheduledSession[] = []): TrainingPlan | undefined {
+  const notStale = (p: TrainingPlan) => !isPlanPastDue(p, sessions);
+  return plans.find((p) => p.status === 'active' && notStale(p))
+    ?? plans.find((p) => p.drills.some((d) => !d.completed) && notStale(p))
+    ?? plans.find(notStale);
 }
 
 // ── Overall / skill progress (all plans, real drill-completion data) ────────
@@ -125,14 +175,16 @@ export function buildSkillBreakdown(plans: TrainingPlan[], limit = 4): SkillBrea
 
 export type PhaseCompletion = { phase: string; label: string; icon: string; pct: number; count: number };
 
-export function buildPhaseCompletionBreakdown(plans: TrainingPlan[]): PhaseCompletion[] {
+export function buildPhaseCompletionBreakdown(plans: TrainingPlan[], colors: Colors): PhaseCompletion[] {
+  const phaseDisplay = getPhaseDisplay(colors);
   const byPhase = new Map<string, { done: number; total: number }>();
   plans.forEach((plan) => {
     plan.drills.forEach((pd) => {
-      const entry = byPhase.get(pd.phase) ?? { done: 0, total: 0 };
+      const phase = normalizePhase(pd.phase);
+      const entry = byPhase.get(phase) ?? { done: 0, total: 0 };
       entry.total += 1;
       if (pd.completed) entry.done += 1;
-      byPhase.set(pd.phase, entry);
+      byPhase.set(phase, entry);
     });
   });
 
@@ -202,16 +254,12 @@ export function findNextSession(sessions: ScheduledSession[], planId?: string): 
 
 export function isSessionMissed(session: ScheduledSession): boolean {
   if (session.completed) return false;
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  return parseLocalDate(session.session_date) < todayStart;
+  return sessionDateTime(session) < new Date();
 }
 
 export function findNextUpcomingSession(sessions: ScheduledSession[], plans: TrainingPlan[]): ScheduledSession | undefined {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
   return [...sessions]
-    .filter((s) => !s.completed && parseLocalDate(s.session_date) >= todayStart && plans.some((p) => p.id === s.plan_id))
+    .filter((s) => !isSessionMissed(s) && !s.completed && plans.some((p) => p.id === s.plan_id))
     .sort((a, b) => parseLocalDate(a.session_date).getTime() - parseLocalDate(b.session_date).getTime())[0];
 }
 

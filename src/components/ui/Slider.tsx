@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, PanResponder, LayoutChangeEvent } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 
 type Props = {
   min: number;
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export default function Slider({ min, max, step = 1, value, onChange, formatValue }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const trackRef = useRef<View>(null);
   const widthRef = useRef(0);
   const pageXRef = useRef(0);
@@ -60,17 +63,19 @@ export default function Slider({ min, max, step = 1, value, onChange, formatValu
   );
 }
 
-const s = StyleSheet.create({
-  track: {
-    height: 30, justifyContent: 'center', marginVertical: 10,
-  },
-  baseLine: { position: 'absolute', left: 0, right: 0, top: 12, height: 6, backgroundColor: colors.border, borderRadius: 3 },
-  fill: { position: 'absolute', left: 0, top: 12, height: 6, backgroundColor: colors.accent, borderRadius: 3 },
-  thumb: {
-    position: 'absolute', top: 3, width: 24, height: 24, borderRadius: 12,
-    backgroundColor: colors.accent, marginLeft: -12,
-    borderWidth: 3, borderColor: colors.background,
-  },
-  labelsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  labelTxt: { color: colors.muted, fontSize: 12, fontWeight: '600' },
-});
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    track: {
+      height: 30, justifyContent: 'center', marginVertical: 10,
+    },
+    baseLine: { position: 'absolute', left: 0, right: 0, top: 12, height: 6, backgroundColor: colors.border, borderRadius: 3 },
+    fill: { position: 'absolute', left: 0, top: 12, height: 6, backgroundColor: colors.accent, borderRadius: 3 },
+    thumb: {
+      position: 'absolute', top: 3, width: 24, height: 24, borderRadius: 12,
+      backgroundColor: colors.accent, marginLeft: -12,
+      borderWidth: 3, borderColor: colors.background,
+    },
+    labelsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    labelTxt: { color: colors.muted, fontSize: 12, fontWeight: '600' },
+  });
+}

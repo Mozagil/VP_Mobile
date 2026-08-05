@@ -182,38 +182,3 @@ export async function maybeNotifyWeeklyGoal(weeklyDone: number, weeklyTarget?: n
   );
 }
 
-// ── Motivational message (max once per calendar day) ─────────────────────────
-
-const MOTIVATION_KEY = 'voleypro_last_motivation_date';
-const MOTIVATION_CHANCE = 0.35;
-
-const MOTIVATION_MESSAGES = [
-  'Bugün attığın her adım seni hedeflerine yaklaştırıyor.',
-  'Küçük ilerlemeler, büyük sonuçlar doğurur. Devam et!',
-  'Bugün antrenman yapmasan bile, formda kalmayı düşünmen bile bir kazanım.',
-  'Disiplin, motivasyon bittiğinde de devam etmektir.',
-  'En iyi versiyonun, bugünkü çabanla şekilleniyor.',
-];
-
-function todayKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-// Dashboard remounts on every tab focus, re-running the effect that calls this.
-// The AsyncStorage guard below is async, so back-to-back mounts can both read
-// "not sent today" before either finishes writing — guard synchronously first.
-let motivationCheckedThisSession = false;
-
-export async function maybeSendMotivation() {
-  if (motivationCheckedThisSession) return;
-  motivationCheckedThisSession = true;
-
-  const last = await AsyncStorage.getItem(MOTIVATION_KEY);
-  const key = todayKey();
-  if (last === key) return;
-  if (Math.random() > MOTIVATION_CHANCE) return;
-  await AsyncStorage.setItem(MOTIVATION_KEY, key);
-  const msg = MOTIVATION_MESSAGES[Math.floor(Math.random() * MOTIVATION_MESSAGES.length)];
-  await sendImmediateNotification('motivation', 'Motivasyon Zamanı', msg, false);
-}

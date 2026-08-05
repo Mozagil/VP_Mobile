@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 
 type Props = {
   title: string;
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export default function Button({ title, onPress, variant = 'primary', loading, disabled, style }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const isDisabled = disabled || loading;
   return (
     <TouchableOpacity
@@ -29,19 +32,21 @@ export default function Button({ title, onPress, variant = 'primary', loading, d
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 50,
-  },
-  primary: { backgroundColor: colors.accent },
-  outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.accent },
-  ghost: { backgroundColor: 'transparent' },
-  disabled: { opacity: 0.5 },
-  text: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  textOutline: { color: colors.accent },
-});
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    base: {
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 50,
+    },
+    primary: { backgroundColor: colors.accent },
+    outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.accent },
+    ghost: { backgroundColor: 'transparent' },
+    disabled: { opacity: 0.5 },
+    text: { color: '#fff', fontSize: 16, fontWeight: '600' },
+    textOutline: { color: colors.accent },
+  });
+}

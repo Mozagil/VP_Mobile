@@ -11,6 +11,9 @@ import ProfileShortcutsScreen from '../screens/dashboard/ProfileShortcutsScreen'
 import TrainingHistoryScreen from '../screens/dashboard/TrainingHistoryScreen';
 import NotificationSettingsScreen from '../screens/settings/NotificationSettingsScreen';
 import BildirimlerScreen from '../screens/dashboard/BildirimlerScreen';
+import LogoutScreen from '../screens/dashboard/LogoutScreen';
+import DeleteAccountScreen from '../screens/dashboard/DeleteAccountScreen';
+import HelpSupportScreen from '../screens/dashboard/HelpSupportScreen';
 import PlatformScreen from '../screens/platform/PlatformScreen';
 import AIWizardScreen from '../screens/platform/AIWizardScreen';
 import VoIleybolOkuluScreen from '../screens/platform/VoIleybolOkuluScreen';
@@ -35,7 +38,8 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import SozlukStackNav from './SozlukStack';
 import GelisimScreen from '../screens/gelisim/GelisimScreen';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
+import { Colors } from '../theme/palettes';
 import { Drill } from '../data/types';
 
 export type AppTabsParamList = {
@@ -80,6 +84,9 @@ const PanelStack = createNativeStackNavigator<{
   TrainingHistory: undefined;
   NotificationSettings: undefined;
   Bildirimler: undefined;
+  Logout: undefined;
+  DeleteAccount: undefined;
+  HelpSupport: undefined;
 }>();
 
 const PlatformStack = createNativeStackNavigator<{
@@ -98,15 +105,19 @@ const KutuphaneStack = createNativeStackNavigator<{
   PlanDrillSettings: { drill: Drill; planId: string };
 }>();
 
-const stackOpts = {
-  headerStyle: { backgroundColor: colors.background },
-  headerTintColor: colors.foreground,
-  headerShadowVisible: false,
-  headerBackTitle: '',          // iOS: show only the back chevron, no text
-  contentStyle: { backgroundColor: colors.background },
-};
+function getStackOpts(colors: Colors) {
+  return {
+    headerStyle: { backgroundColor: colors.background },
+    headerTintColor: colors.foreground,
+    headerShadowVisible: false,
+    headerBackTitle: '',          // iOS: show only the back chevron, no text
+    contentStyle: { backgroundColor: colors.background },
+  };
+}
 
 function PanelStackNav() {
+  const { colors } = useTheme();
+  const stackOpts = getStackOpts(colors);
   return (
     <PanelStack.Navigator screenOptions={stackOpts}>
       <PanelStack.Screen name="PanelMain" component={DashboardScreen} options={{ headerShown: false }} />
@@ -117,11 +128,16 @@ function PanelStackNav() {
       <PanelStack.Screen name="TrainingHistory" component={TrainingHistoryScreen} options={{ title: 'Antrenman Geçmişim' }} />
       <PanelStack.Screen name="NotificationSettings" component={NotificationSettingsScreen} options={{ title: 'Bildirim Ayarları' }} />
       <PanelStack.Screen name="Bildirimler" component={BildirimlerScreen} options={{ headerShown: false }} />
+      <PanelStack.Screen name="Logout" component={LogoutScreen} options={{ headerShown: false }} />
+      <PanelStack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ headerShown: false }} />
+      <PanelStack.Screen name="HelpSupport" component={HelpSupportScreen} options={{ headerShown: false }} />
     </PanelStack.Navigator>
   );
 }
 
 function PlatformStackNav() {
+  const { colors } = useTheme();
+  const stackOpts = getStackOpts(colors);
   return (
     <PlatformStack.Navigator screenOptions={stackOpts}>
       <PlatformStack.Screen name="PlatformMain" component={PlatformScreen} options={{ title: 'Platform Özellikleri' }} />
@@ -132,6 +148,8 @@ function PlatformStackNav() {
 }
 
 function AntrenmanStackNav() {
+  const { colors } = useTheme();
+  const stackOpts = getStackOpts(colors);
   return (
     <AntrenmanStack.Navigator screenOptions={stackOpts}>
       <AntrenmanStack.Screen name="AntrenmanHub" component={ProgramlarimScreen} options={{ headerShown: false }} />
@@ -157,12 +175,14 @@ function AntrenmanStackNav() {
       <AntrenmanStack.Screen name="PlanDrillSettings" component={PlanDrillSettingsScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="GelisimMain" component={GelisimScreen} options={{ title: 'Gelişim Modülleri' }} />
       <AntrenmanStack.Screen name="Profil" component={ProfileScreen} options={{ title: 'Antrenman Tercihleri' }} />
-      <AntrenmanStack.Screen name="Ayarlar" component={SettingsScreen} options={{ title: 'Ayarlar' }} />
+      <AntrenmanStack.Screen name="Ayarlar" component={SettingsScreen} options={{ headerShown: false }} />
     </AntrenmanStack.Navigator>
   );
 }
 
 function KutuphaneStackNav() {
+  const { colors } = useTheme();
+  const stackOpts = getStackOpts(colors);
   return (
     <KutuphaneStack.Navigator screenOptions={stackOpts}>
       <KutuphaneStack.Screen name="DrillList" component={LibraryScreen} options={{ title: 'Antrenman Kütüphanesi' }} />
@@ -192,6 +212,7 @@ const resetTabOnPress = (initialScreen: string) => ({ navigation, route }: any) 
 });
 
 export default function AppTabs() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{

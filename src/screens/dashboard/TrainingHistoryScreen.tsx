@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScheduledSessions } from '../../hooks/useScheduledSessions';
 import { useTrainingPlans } from '../../hooks/useTrainingPlans';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { parseLocalDate } from '../../utils/trainingPlan';
 
 export default function TrainingHistoryScreen() {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { data: sessions = [], isLoading } = useScheduledSessions();
   const { data: plans = [] } = useTrainingPlans();
 
@@ -51,7 +54,8 @@ export default function TrainingHistoryScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { padding: 16, paddingBottom: 32 },
   empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
@@ -76,4 +80,5 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 36, marginBottom: 12 },
   emptyTitle: { color: colors.foreground, fontSize: 15, fontWeight: '600', marginBottom: 6, textAlign: 'center' },
   emptyDesc: { color: colors.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 },
-});
+  });
+}

@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { getFeed, markAllRead, markRead, NotificationEntry, NotificationType } from '../../utils/notifications';
 import Icon, { IconName } from '../../components/ui/Icon';
 
@@ -40,6 +41,8 @@ function relativeTime(iso: string): string {
 }
 
 export default function BildirimlerScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const [tab, setTab] = useState<TabKey>('all');
   const [feed, setFeed] = useState<NotificationEntry[]>([]);
 
@@ -130,7 +133,8 @@ export default function BildirimlerScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, gap: 8 },
@@ -167,4 +171,5 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 36, marginBottom: 12 },
   emptyTitle: { color: colors.foreground, fontSize: 15, fontWeight: '600', marginBottom: 6, textAlign: 'center' },
   emptyDesc: { color: colors.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 },
-});
+  });
+}

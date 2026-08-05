@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -9,7 +9,8 @@ import { useFavorites } from '../../hooks/useFavorites';
 import { coverFor, difficultyLabel } from '../../utils/drillCovers';
 import { videoUrlFor } from '../../utils/drillVideos';
 import { parseDrillDesc } from '../../utils/drillText';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import Icon from '../../components/ui/Icon';
 
 type LibraryStackParamList = {
@@ -19,8 +20,9 @@ type LibraryStackParamList = {
 };
 
 type Props = NativeStackScreenProps<LibraryStackParamList, 'DrillDetail'>;
+type Styles = ReturnType<typeof makeStyles>;
 
-function DrillVideo({ url }: { url: string }) {
+function DrillVideo({ url, s }: { url: string; s: Styles }) {
   const player = useVideoPlayer(url, (p) => {
     p.loop = true;
   });
@@ -32,6 +34,8 @@ function DrillVideo({ url }: { url: string }) {
 }
 
 export default function DrillDetailScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { drill } = route.params;
   const { isFavorite, toggleFavorite } = useFavorites();
   const videoUrl = videoUrlFor(drill.id);
@@ -42,9 +46,9 @@ export default function DrillDetailScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
         <View style={s.imageWrap}>
           {videoUrl ? (
-            <DrillVideo url={videoUrl} />
+            <DrillVideo url={videoUrl} s={s} />
           ) : (
-            <Image source={coverFor(drill.skill, drill.phase)} style={s.image} resizeMode="cover" />
+            <Image source={coverFor(drill.skill, drill.phase, drill.id)} style={s.image} resizeMode="cover" />
           )}
           <TouchableOpacity
             style={s.favBtn}
@@ -106,7 +110,8 @@ export default function DrillDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { padding: 16, paddingBottom: 20 },
 
@@ -139,4 +144,5 @@ const s = StyleSheet.create({
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
   addBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   addBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
-});
+  });
+}

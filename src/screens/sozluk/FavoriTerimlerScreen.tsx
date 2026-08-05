@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { SOZLUK_TERMS, categoryColor } from '../../data/sozlukTerms';
 import { useSozlukFavorites } from '../../hooks/useSozlukFavorites';
 import { SozlukStackParamList } from '../../navigation/SozlukStack';
@@ -11,11 +12,13 @@ import Icon from '../../components/ui/Icon';
 type Props = NativeStackScreenProps<SozlukStackParamList, 'FavoriTerimler'>;
 
 export default function FavoriTerimlerScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { favorites, isFavorite, toggleFavorite } = useSozlukFavorites();
 
   const favoriteTerms = useMemo(() => {
     return SOZLUK_TERMS
-      .filter((t) => favorites.includes(t.term))
+      .filter((t) => favorites.includes(t.id))
       .sort((a, b) => a.term.localeCompare(b.term, 'tr'));
   }, [favorites]);
 
@@ -56,10 +59,10 @@ export default function FavoriTerimlerScreen({ navigation }: Props) {
                   <Text style={[s.termCategory, { color: accent }]}>{item.category}</Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => toggleFavorite(item.term)}
+                  onPress={() => toggleFavorite(item.id)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Icon name="favori" size={18} opacity={isFavorite(item.term) ? 1 : 0.3} />
+                  <Icon name="favori" size={18} opacity={isFavorite(item.id) ? 1 : 0.3} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );
@@ -70,7 +73,8 @@ export default function FavoriTerimlerScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
@@ -97,4 +101,5 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 36, marginBottom: 12 },
   emptyTitle: { color: colors.foreground, fontSize: 15, fontWeight: '600', marginBottom: 6, textAlign: 'center' },
   emptyDesc: { color: colors.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 },
-});
+  });
+}

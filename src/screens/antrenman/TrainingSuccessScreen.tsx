@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'TrainingSuccess'>;
 
 export default function TrainingSuccessScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId, planName, drillName } = route.params;
 
   const goToStart = () => {
@@ -42,7 +45,8 @@ export default function TrainingSuccessScreen({ route, navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   checkCircle: {
@@ -58,4 +62,5 @@ const s = StyleSheet.create({
   primaryBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
   textBtn: { paddingVertical: 14, alignItems: 'center' },
   textBtnTxt: { color: colors.muted, fontSize: 14, fontWeight: '600' },
-});
+  });
+}

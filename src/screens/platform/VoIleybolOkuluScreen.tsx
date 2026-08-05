@@ -3,21 +3,24 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { allModules, Module } from '../../data/modules';
 import { useModuleFavorites } from '../../hooks/useModuleFavorites';
 
 const LEVELS = ['Tümü', 'Başlangıç', 'Orta', 'İleri'];
 
-const categoryColors: Record<string, string> = {
-  'Temel Teknikler':    colors.accent,
-  'Atak Teknikleri':    '#6366f1',
-  'Savunma Teknikleri': '#22c55e',
-  'Servis Teknikleri':  '#60a5fa',
-  'Bireysel Performans':'#f59e0b',
-  'Teknik Gelişim':     '#a78bfa',
-  'Takım Organizasyonu':'#f97316',
-};
+function getCategoryColors(colors: Colors): Record<string, string> {
+  return {
+    'Temel Teknikler':    colors.accent,
+    'Atak Teknikleri':    '#6366f1',
+    'Savunma Teknikleri': '#22c55e',
+    'Servis Teknikleri':  '#60a5fa',
+    'Bireysel Performans':'#f59e0b',
+    'Teknik Gelişim':     '#a78bfa',
+    'Takım Organizasyonu':'#f97316',
+  };
+}
 
 // Android-safe chip
 function LevelChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
@@ -30,8 +33,13 @@ function LevelChip({ label, active, onPress }: { label: string; active: boolean;
   );
 }
 
-function ModuleRow({ item, isFav, onToggleFav, onPress }: {
+type Styles = ReturnType<typeof makeStyles>;
+type DetailStyles = ReturnType<typeof makeDetailStyles>;
+type CategoryColors = ReturnType<typeof getCategoryColors>;
+
+function ModuleRow({ item, isFav, onToggleFav, onPress, colors, s, categoryColors }: {
   item: Module; isFav: boolean; onToggleFav: () => void; onPress: () => void;
+  colors: Colors; s: Styles; categoryColors: CategoryColors;
 }) {
   const catColor = categoryColors[item.category] ?? colors.muted;
   return (
@@ -61,7 +69,9 @@ function ModuleRow({ item, isFav, onToggleFav, onPress }: {
 }
 
 // Saved (small) row
-function SavedRow({ item, onRemove, onPress }: { item: Module; onRemove: () => void; onPress: () => void }) {
+function SavedRow({ item, onRemove, onPress, colors, s, categoryColors }: {
+  item: Module; onRemove: () => void; onPress: () => void; colors: Colors; s: Styles; categoryColors: CategoryColors;
+}) {
   const catColor = categoryColors[item.category] ?? colors.muted;
   return (
     <TouchableOpacity style={s.savedRow} onPress={onPress} activeOpacity={0.8}>
@@ -75,7 +85,9 @@ function SavedRow({ item, onRemove, onPress }: { item: Module; onRemove: () => v
   );
 }
 
-function ModuleDetail({ item, onClose }: { item: Module; onClose: () => void }) {
+function ModuleDetail({ item, onClose, colors, d }: {
+  item: Module; onClose: () => void; colors: Colors; d: DetailStyles;
+}) {
   return (
     <Modal animationType="slide" transparent onRequestClose={onClose}>
       <View style={d.overlay}>
@@ -125,6 +137,10 @@ function ModuleDetail({ item, onClose }: { item: Module; onClose: () => void }) 
 }
 
 export default function VoIleybolOkuluScreen() {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+  const d = useMemo(() => makeDetailStyles(colors), [colors]);
+  const categoryColors = useMemo(() => getCategoryColors(colors), [colors]);
   const [level, setLevel] = useState('Tümü');
   const [selected, setSelected] = useState<Module | null>(null);
   const { favorites, toggleFavorite, isFavorite } = useModuleFavorites();
@@ -181,6 +197,7 @@ export default function VoIleybolOkuluScreen() {
                   item={item}
                   onRemove={() => toggleFavorite(item.id)}
                   onPress={() => setSelected(item)}
+                  colors={colors} s={s} categoryColors={categoryColors}
                 />
               ))
             )}
@@ -194,11 +211,12 @@ export default function VoIleybolOkuluScreen() {
             isFav={isFavorite(item.id)}
             onToggleFav={() => toggleFavorite(item.id)}
             onPress={() => setSelected(item)}
+            colors={colors} s={s} categoryColors={categoryColors}
           />
         )}
       />
 
-      {selected && <ModuleDetail item={selected} onClose={() => setSelected(null)} />}
+      {selected && <ModuleDetail item={selected} onClose={() => setSelected(null)} colors={colors} d={d} />}
     </SafeAreaView>
   );
 }
@@ -211,7 +229,8 @@ const chip = StyleSheet.create({
   textActive: { color: '#f97316' },
 });
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe:      { flex: 1, backgroundColor: colors.background },
   filterRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   list:      { paddingHorizontal: 16, paddingBottom: 32 },
@@ -250,9 +269,11 @@ const s = StyleSheet.create({
 
   bookmarkBtn: { padding: 6, marginRight: 4 },
   arrow:       { color: colors.muted, fontSize: 22 },
-});
+  });
+}
 
-const d = StyleSheet.create({
+function makeDetailStyles(colors: Colors) {
+  return StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet:   { backgroundColor: colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%', overflow: 'hidden' },
   header:  { flexDirection: 'row', alignItems: 'flex-start', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
@@ -274,4 +295,5 @@ const d = StyleSheet.create({
   tipRow: { flexDirection: 'row', marginBottom: 6 },
   tipDot: { color: colors.accent, fontSize: 16, marginRight: 8, lineHeight: 20 },
   tipTxt: { color: colors.muted, fontSize: 13, lineHeight: 20, flex: 1 },
-});
+  });
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { SozlukTerm } from '../data/sozlukTerms';
 import SozlukScreen from '../screens/sozluk/SozlukScreen';
 import FavoriTerimlerScreen from '../screens/sozluk/FavoriTerimlerScreen';
@@ -25,6 +25,7 @@ export type SozlukStackParamList = {
 const Stack = createNativeStackNavigator<SozlukStackParamList>();
 
 export default function SozlukStackNav() {
+  const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{

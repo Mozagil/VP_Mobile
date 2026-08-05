@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { WEEKDAY_LABELS } from '../../utils/trainingPlan';
 
 const MONTH_LABELS = [
@@ -23,6 +24,8 @@ type Props = {
 const MAX_DOTS = 6;
 
 export default function Calendar({ markedDates, dots, onDayPress, disablePast, selectedDate }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const today = new Date();
   const todayKey = toKey(today.getFullYear(), today.getMonth(), today.getDate());
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -94,30 +97,32 @@ export default function Calendar({ markedDates, dots, onDayPress, disablePast, s
 
 const CELL = `${100 / 7}%` as const;
 
-const s = StyleSheet.create({
-  wrap: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 14 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  navBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  navTxt: { color: colors.accent, fontSize: 20, fontWeight: '700' },
-  title: { color: colors.foreground, fontSize: 15, fontWeight: '700' },
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
+    wrap: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 14 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    navBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+    navTxt: { color: colors.accent, fontSize: 20, fontWeight: '700' },
+    title: { color: colors.foreground, fontSize: 15, fontWeight: '700' },
 
-  weekRow: { flexDirection: 'row', marginBottom: 6 },
-  weekLabel: { width: CELL, textAlign: 'center', color: colors.muted, fontSize: 11, fontWeight: '600' },
+    weekRow: { flexDirection: 'row', marginBottom: 6 },
+    weekLabel: { width: CELL, textAlign: 'center', color: colors.muted, fontSize: 11, fontWeight: '600' },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: CELL, height: 52, alignItems: 'center', justifyContent: 'flex-start', marginBottom: 2, position: 'relative' },
-  dayDot: {
-    width: 28, height: 28, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  dayDotToday: { backgroundColor: colors.blue },
-  dayDotSelected: { backgroundColor: colors.accent },
-  dayTxt: { color: colors.foreground, fontSize: 12, fontWeight: '600' },
-  dayTxtToday: { color: '#fff', fontWeight: '800' },
-  dayTxtPast: { color: colors.border },
-  dotsRow: {
-    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
-    gap: 3, marginTop: 3, width: 34,
-  },
-  miniDot: { width: 5, height: 5, borderRadius: 2.5, marginBottom: 2 },
-});
+    grid: { flexDirection: 'row', flexWrap: 'wrap' },
+    cell: { width: CELL, height: 52, alignItems: 'center', justifyContent: 'flex-start', marginBottom: 2, position: 'relative' },
+    dayDot: {
+      width: 28, height: 28, borderRadius: 14,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    dayDotToday: { backgroundColor: colors.blue },
+    dayDotSelected: { backgroundColor: colors.accent },
+    dayTxt: { color: colors.foreground, fontSize: 12, fontWeight: '600' },
+    dayTxtToday: { color: '#fff', fontWeight: '800' },
+    dayTxtPast: { color: colors.border },
+    dotsRow: {
+      flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+      gap: 3, marginTop: 3, width: 34,
+    },
+    miniDot: { width: 5, height: 5, borderRadius: 2.5, marginBottom: 2 },
+  });
+}

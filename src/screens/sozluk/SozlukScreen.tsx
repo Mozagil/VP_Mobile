@@ -4,7 +4,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../theme/ThemeContext';
+import { Colors } from '../../theme/palettes';
 import { SOZLUK_TERMS, CATEGORIES, categoryColor, SozlukTerm } from '../../data/sozlukTerms';
 import { useSozlukFavorites } from '../../hooks/useSozlukFavorites';
 import { SozlukStackParamList, SozlukFilterState } from '../../navigation/SozlukStack';
@@ -15,6 +16,8 @@ type Props = NativeStackScreenProps<SozlukStackParamList, 'SozlukList'>;
 const ALPHABET = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
 
 export default function SozlukScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   const [search, setSearch] = useState('');
   const [quickCategory, setQuickCategory] = useState('Tümü');
   const [filter, setFilter] = useState<SozlukFilterState>({ category: 'Tümü', keywords: [], sortBy: 'az' });
@@ -133,7 +136,7 @@ export default function SozlukScreen({ navigation }: Props) {
           )}
           renderItem={({ item }) => {
             const accent = categoryColor[item.category] ?? colors.accent;
-            const fav = isFavorite(item.term);
+            const fav = isFavorite(item.id);
             return (
               <TouchableOpacity
                 style={s.row}
@@ -144,7 +147,7 @@ export default function SozlukScreen({ navigation }: Props) {
                   <Text style={s.termName}>{item.term}</Text>
                   <Text style={[s.termCategory, { color: accent }]}>{item.category}</Text>
                 </View>
-                <TouchableOpacity onPress={() => toggleFavorite(item.term)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity onPress={() => toggleFavorite(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Icon name="favori" size={17} opacity={fav ? 1 : 0.3} />
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -170,7 +173,8 @@ export default function SozlukScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: Colors) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
@@ -215,4 +219,5 @@ const s = StyleSheet.create({
   indexRail: { justifyContent: 'center', paddingRight: 6, paddingLeft: 2, gap: 1 },
   indexLetter: { color: colors.accent, fontSize: 10, fontWeight: '700', textAlign: 'center', width: 14 },
   indexLetterDisabled: { color: colors.border },
-});
+  });
+}
