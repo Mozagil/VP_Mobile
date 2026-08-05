@@ -20,7 +20,8 @@ type AuthContextType = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  signUp: (data: RegisterData) => Promise<void>;
+  signUp: (data: RegisterData) => Promise<{ access_token: string; refresh_token: string }>;
+  finalizeSignUp: (accessToken: string, refreshToken: string) => Promise<void>;
   refreshUser: () => Promise<void>;
 };
 
@@ -67,14 +68,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (payload: RegisterData) => {
     const { data } = await apiClient.post('/auth/register', payload);
-    await setTokens(data.access_token, data.refresh_token);
+    return { access_token: data.access_token, refresh_token: data.refresh_token };
+  };
+
+  const finalizeSignUp = async (accessToken: string, refreshToken: string) => {
+    await setTokens(accessToken, refreshToken);
     await fetchMe();
   };
 
   const refreshUser = fetchMe;
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp, finalizeSignUp, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, KeyboardAvoidingView,
-  ScrollView, TouchableOpacity, Alert,
+  ScrollView, TouchableOpacity, Alert, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../auth/AuthContext';
@@ -41,11 +41,13 @@ const FREQUENCIES = [
 ];
 
 export default function RegisterScreen() {
-  const { signUp } = useAuth();
+  const { signUp, finalizeSignUp } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showEmailSentModal, setShowEmailSentModal] = useState(false);
+  const [pendingSession, setPendingSession] = useState<{ access_token: string; refresh_token: string } | null>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -69,7 +71,9 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-      await signUp({ email, password, first_name: firstName, last_name: lastName, level, position, goals, frequency: String(frequency) });
+      const session = await signUp({ email, password, first_name: firstName, last_name: lastName, level, position, goals, frequency: String(frequency) });
+      setPendingSession(session);
+      setShowEmailSentModal(true);
     } catch (e: unknown) {
       const raw = (e as any)?.response?.data?.detail;
       const msg = Array.isArray(raw)
@@ -79,6 +83,12 @@ export default function RegisterScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const confirmEmailSentModal = async () => {
+    if (!pendingSession) return;
+    setShowEmailSentModal(false);
+    await finalizeSignUp(pendingSession.access_token, pendingSession.refresh_token);
   };
 
   return (
@@ -181,6 +191,21 @@ export default function RegisterScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={showEmailSentModal} transparent animationType="fade" onRequestClose={confirmEmailSentModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconCircle}>
+              <Text style={styles.modalIconText}>✉️</Text>
+            </View>
+            <Text style={styles.modalTitle}>E-posta Gönderildi</Text>
+            <Text style={styles.modalDesc}>
+              {email} adresine bir doğrulama bağlantısı gönderdik. Hesabınızı tam olarak kullanabilmek için gelen kutunuzu kontrol edip mailinizi doğrulayın.
+            </Text>
+            <Button title="Tamam" onPress={confirmEmailSentModal} style={{ width: '100%', marginTop: 8 }} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -216,5 +241,34 @@ function makeStyles(colors: Colors) {
   chipText: { color: colors.muted, fontSize: 13 },
   chipTextSelected: { color: colors.accent, fontWeight: '600' },
   navRow: { flexDirection: 'row' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.accent + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalIconText: { fontSize: 30 },
+  modalTitle: { color: colors.foreground, fontSize: 19, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  modalDesc: { color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: 'center' },
   });
 }
