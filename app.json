@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "VoleyPro-Mobile",
+    "name": "VoleyPro",
     "slug": "VoleyPro-Mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -24,7 +24,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.VoleyProMobile"
+      "package": "com.voleypro.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
