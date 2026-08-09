@@ -33,6 +33,12 @@
       "expo-video",
       "expo-notifications",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1bd58e07-104c-48a9-bffb-b7555cb3bcfb"
+      }
+    },
+    "owner": "hulagu"
   }
 }
