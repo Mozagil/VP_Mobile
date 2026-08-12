@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, KeyboardAvoidingView,
-  ScrollView, TouchableOpacity, Alert, Modal,
+  ScrollView, TouchableOpacity, Alert, Modal, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../auth/AuthContext';
@@ -10,6 +10,7 @@ import Input from '../../components/ui/Input';
 import StepProgressBar from '../../components/StepProgressBar';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { getWebmailUrl } from '../../utils/mailProvider';
 
 const LEVELS = [
   { value: 'başlangıç', label: 'Başlangıç', desc: 'Yeni başlıyorum' },
@@ -89,6 +90,16 @@ export default function RegisterScreen() {
     if (!pendingSession) return;
     setShowEmailSentModal(false);
     await finalizeSignUp(pendingSession.access_token, pendingSession.refresh_token);
+  };
+
+  const openWebmail = async () => {
+    const url = getWebmailUrl(email);
+    if (!url) return;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      // ignore — user stays on the modal and can dismiss manually
+    }
   };
 
   return (
@@ -202,7 +213,8 @@ export default function RegisterScreen() {
             <Text style={styles.modalDesc}>
               {email} adresine bir doğrulama bağlantısı gönderdik. Hesabınızı tam olarak kullanabilmek için gelen kutunuzu kontrol edip mailinizi doğrulayın.
             </Text>
-            <Button title="Tamam" onPress={confirmEmailSentModal} style={{ width: '100%', marginTop: 8 }} />
+            <Button title="E-postamı Aç" onPress={openWebmail} style={{ width: '100%', marginTop: 8 }} />
+            <Button title="Tamam" onPress={confirmEmailSentModal} variant="outline" style={{ width: '100%', marginTop: 8 }} />
           </View>
         </View>
       </Modal>
