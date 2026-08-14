@@ -15,6 +15,10 @@ import Input from '../../components/ui/Input';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 
+// Bump this string with every new EAS build so testers (and we) can confirm
+// which build is actually running on a device, without ambiguity.
+const BUILD_LABEL = 'v12';
+
 const schema = z.object({
   email: z.string().email('Geçerli bir e-posta girin'),
   password: z.string().min(1, 'Şifre zorunludur'),
@@ -55,7 +59,7 @@ export default function LoginScreen({ navigation }: Props) {
           {/* Logo */}
           <View style={styles.logoSection}>
             <View style={styles.logoCircle}>
-              <Image source={require('../../../assets/adaptive-icon.png')} style={styles.logoImage} resizeMode="contain" />
+              <Image source={require('../../../assets/logo-mark.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
             <Text style={styles.title}>VoleyPro</Text>
             <Text style={styles.subtitle}>Profesyonel voleybol antrenman platformu</Text>
@@ -106,6 +110,8 @@ export default function LoginScreen({ navigation }: Props) {
             </Text>
           </TouchableOpacity>
 
+          <Text style={styles.buildLabel}>Build: {BUILD_LABEL}</Text>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -140,5 +146,6 @@ function makeStyles(colors: Colors) {
   link: { alignItems: 'center' },
   linkText: { color: colors.muted, fontSize: 14 },
   linkBold: { color: colors.accent, fontWeight: '600' },
+  buildLabel: { color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 24, opacity: 0.5 },
   });
 }

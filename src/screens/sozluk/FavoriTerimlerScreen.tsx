@@ -36,7 +36,7 @@ export default function FavoriTerimlerScreen({ navigation }: Props) {
 
       {favoriteTerms.length === 0 ? (
         <View style={s.emptyCard}>
-          <Text style={s.emptyIcon}>⭐</Text>
+          <Icon name="favori" size={36} opacity={1} style={{ marginBottom: 12 }} />
           <Text style={s.emptyTitle}>Henüz favori terimin yok</Text>
           <Text style={s.emptyDesc}>Sözlükte bir terime girip yıldıza dokunarak favorilere ekleyebilirsin.</Text>
         </View>

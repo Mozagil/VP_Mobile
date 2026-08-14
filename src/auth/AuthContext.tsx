@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { setTokens, clearTokens } from './storage';
 
@@ -41,6 +42,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const fetchMe = async () => {
     try {
@@ -56,6 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Clear any cached data from a previous session before switching accounts,
+    // otherwise screens can briefly (or persistently) show the last user's
+    // profile/plans/favorites until each individual query happens to refetch.
+    queryClient.clear();
     const { data } = await apiClient.post('/auth/login', { email, password });
     await setTokens(data.access_token, data.refresh_token);
     await fetchMe();
@@ -64,9 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await clearTokens();
     setUser(null);
+    queryClient.clear();
   };
 
   const signUp = async (payload: RegisterData) => {
+    queryClient.clear();
     const { data } = await apiClient.post('/auth/register', payload);
     return { access_token: data.access_token, refresh_token: data.refresh_token };
   };

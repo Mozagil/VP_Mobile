@@ -40,8 +40,15 @@ export function resolveDrillMinutes(pd: { drill_id: number; custom_duration?: nu
   if (pd.custom_duration) return pd.custom_duration;
   const drill = allDrills.find((d) => d.id === pd.drill_id);
   if (!drill) return 5;
-  const m = parseInt(drill.duration, 10);
-  return Number.isNaN(m) ? 5 : m;
+  // Durations are stored as "MM:SS" (most drills are under a minute, e.g. "0:45").
+  // A plain parseInt would read only the leading digits before ":" and silently
+  // truncate anything under a minute to 0, so parse both parts and round up to
+  // at least 1 minute for any non-zero duration.
+  const [minPart, secPart] = drill.duration.split(':');
+  const min = parseInt(minPart, 10) || 0;
+  const sec = parseInt(secPart ?? '0', 10) || 0;
+  const totalMinutes = min + sec / 60;
+  return totalMinutes > 0 ? Math.max(1, Math.round(totalMinutes)) : 5;
 }
 
 export function resolveDrillName(pd: { drill_id: number; custom_name?: string | null }): string {

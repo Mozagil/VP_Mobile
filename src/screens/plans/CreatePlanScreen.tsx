@@ -228,7 +228,6 @@ export default function CreatePlanScreen({ navigation }: Props) {
           <View style={{ flex: 1 }}>
             <View style={s.searchRow}>
               <View style={s.searchBox}>
-                <Text style={s.searchIcon}>🔍</Text>
                 <TextInput
                   style={s.searchInput}
                   placeholder="Hareket ara..."
@@ -427,7 +426,6 @@ function makeStyles(colors: Colors) {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card,
     borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10,
   },
-  searchIcon: { fontSize: 14, marginRight: 6 },
   searchInput: { flex: 1, color: colors.foreground, fontSize: 14, paddingVertical: 10 },
 
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 10 },

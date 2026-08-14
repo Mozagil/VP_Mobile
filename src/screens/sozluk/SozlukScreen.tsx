@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  View, Text, TextInput, SectionList, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -22,7 +22,8 @@ export default function SozlukScreen({ navigation }: Props) {
   const [quickCategory, setQuickCategory] = useState('Tümü');
   const [filter, setFilter] = useState<SozlukFilterState>({ category: 'Tümü', keywords: [], sortBy: 'az' });
   const { isFavorite, toggleFavorite } = useSozlukFavorites();
-  const listRef = useRef<SectionList<SozlukTerm>>(null);
+  const listRef = useRef<ScrollView>(null);
+  const sectionOffsets = useRef<Record<string, number>>({});
 
   const effectiveCategory = filter.category !== 'Tümü' ? filter.category : quickCategory;
 
@@ -57,9 +58,9 @@ export default function SozlukScreen({ navigation }: Props) {
   const availableLetters = useMemo(() => new Set(sections.map((s) => s.title)), [sections]);
 
   const scrollToLetter = (letter: string) => {
-    const index = sections.findIndex((s) => s.title === letter);
-    if (index === -1) return;
-    listRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewPosition: 0 });
+    const y = sectionOffsets.current[letter];
+    if (y == null) return;
+    listRef.current?.scrollTo({ y, animated: true });
   };
 
   const openFilter = () => {
@@ -128,38 +129,43 @@ export default function SozlukScreen({ navigation }: Props) {
       </View>
 
       <View style={{ flex: 1, flexDirection: 'row' }}>
-        <SectionList
+        <ScrollView
           ref={listRef}
-          sections={sections}
-          keyExtractor={(item) => item.term}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
-          stickySectionHeadersEnabled
-          onScrollToIndexFailed={() => {}}
-          renderSectionHeader={({ section }) => (
-            <Text style={s.sectionHeader}>{section.title}</Text>
-          )}
-          renderItem={({ item }) => {
-            const accent = categoryColor[item.category] ?? colors.accent;
-            const fav = isFavorite(item.id);
-            return (
-              <TouchableOpacity
-                style={s.row}
-                activeOpacity={0.78}
-                onPress={() => navigation.navigate('TermDetail', { term: item })}
+        >
+          {sections.length === 0 && <Text style={s.empty}>Aramanla eşleşen terim bulunamadı.</Text>}
+          {sections.map((section) => (
+            <React.Fragment key={section.title}>
+              <Text
+                style={s.sectionHeader}
+                onLayout={(e) => { sectionOffsets.current[section.title] = e.nativeEvent.layout.y; }}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={s.termName}>{item.term}</Text>
-                  <Text style={[s.termCategory, { color: accent }]}>{item.category}</Text>
-                </View>
-                <TouchableOpacity onPress={() => toggleFavorite(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Icon name="favori" size={17} opacity={fav ? 1 : 0.3} />
-                </TouchableOpacity>
-              </TouchableOpacity>
-            );
-          }}
-          ListEmptyComponent={<Text style={s.empty}>Aramanla eşleşen terim bulunamadı.</Text>}
-        />
+                {section.title}
+              </Text>
+              {section.data.map((item) => {
+                const accent = categoryColor[item.category] ?? colors.accent;
+                const fav = isFavorite(item.id);
+                return (
+                  <TouchableOpacity
+                    key={item.term}
+                    style={s.row}
+                    activeOpacity={0.78}
+                    onPress={() => navigation.navigate('TermDetail', { term: item })}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.termName}>{item.term}</Text>
+                      <Text style={[s.termCategory, { color: accent }]}>{item.category}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => toggleFavorite(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Icon name="favori" size={17} opacity={fav ? 1 : 0.3} />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </ScrollView>
 
         <View style={s.indexRail}>
           {ALPHABET.map((letter) => (

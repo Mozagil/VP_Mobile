@@ -128,7 +128,11 @@ export default function LibraryScreen({ navigation }: Props) {
 
       {(quickCategory === '__favs__' ? filtered.filter((d) => favorites.includes(d.id)) : filtered).length === 0 ? (
         <View style={s.empty}>
-          <Text style={s.emptyIcon}>{quickCategory === '__favs__' ? '🤍' : '🔍'}</Text>
+          {quickCategory === '__favs__' ? (
+            <Icon name="favori" size={36} opacity={0.4} style={{ marginBottom: 12 }} />
+          ) : (
+            <Text style={s.emptyIcon}>🔍</Text>
+          )}
           <Text style={s.emptyTxt}>
             {quickCategory === '__favs__' ? 'Henüz favori eklemedin.' : 'Sonuç bulunamadı.'}
           </Text>
