@@ -194,4 +194,169 @@ export const SOZLUK_TERMS: SozlukTerm[] = [
     desc: 'Rakibin saldırısını blok veya kazanılan topla karşılayıp konter saldırıya geçme.',
     keywords: ['hücum', 'blok', 'defans'],
   },
+  {
+    id: 29, term: 'Arka Hat (Back Row)', category: 'Kural',
+    desc: '1-6 rotasyonunda sahanın arka üçlü bölgesi; buradaki oyuncular 3 metre çizgisinin önünden sıçrayarak hücum edemez.',
+    keywords: ['rotasyon', 'pozisyon', 'hücum'],
+  },
+  {
+    id: 30, term: 'Bekleme Bölgesi', category: 'Kural',
+    desc: 'Oyuna girecek veya çıkan oyuncuların bulunduğu alan.',
+    keywords: ['pozisyon'],
+  },
+  {
+    id: 31, term: 'Blok-Out', category: 'Hücum',
+    desc: 'Hücum topunun bloktan sekerek oyun alanı dışına çıkması; hücum eden takımın sayısı olur.',
+    keywords: ['hücum', 'blok'],
+  },
+  {
+    id: 32, term: 'Çift Blok', category: 'Blok',
+    desc: 'İki oyuncunun yan yana gelerek oluşturduğu blok türü.',
+    keywords: ['blok', 'savunma'],
+  },
+  {
+    id: 33, term: 'Çizgi Hakemi', category: 'Diğer',
+    desc: 'Dip ve yan çizgileri gözleyen hakem.',
+    keywords: ['kural'],
+  },
+  {
+    id: 34, term: 'Çizgi Şutu (Line Shot)', category: 'Hücum',
+    desc: 'Hücumun file kenarına paralel, düz bir çizgide vurulması.',
+    keywords: ['hücum', 'smaç'],
+  },
+  {
+    id: 35, term: 'Etkili Hücum Yüzdesi', category: 'Diğer',
+    desc: '(Sayı - Hata) / Toplam hücum formülüyle hesaplanan hücum performans ölçütü.',
+    keywords: ['hücum', 'istatistik'],
+  },
+  {
+    id: 36, term: 'File Hatası (Net Fault)', category: 'Kural',
+    desc: 'Oyun sırasında bir oyuncunun fileye veya antenlere kural dışı temas etmesi.',
+    keywords: ['blok', 'kural'],
+  },
+  {
+    id: 37, term: 'Formasyon', category: 'Savunma',
+    desc: 'Servis karşılama veya savunmada kullanılan, örneğin 2-1-3 gibi oyuncu dizilişi.',
+    keywords: ['defans', 'pozisyon', 'servis'],
+  },
+  {
+    id: 38, term: 'Geçiş Oyunu (Transition)', category: 'Diğer',
+    desc: 'Bir takımın savunmadan hücuma hızlı ve düzenli biçimde geçiş yapması.',
+    keywords: ['defans', 'hücum'],
+  },
+  {
+    id: 39, term: 'Gözlemci', category: 'Diğer',
+    desc: 'Müsabaka organizasyonunu ve hakem performansını denetleyen yetkili.',
+    keywords: ['kural'],
+  },
+  {
+    id: 40, term: 'Hızlı Hücum (1. Tempo)', category: 'Hücum',
+    desc: 'Pasörden top çıkarken hücumcunun zaten havada olduğu, çok hızlı tempolu hücum.',
+    keywords: ['hücum', 'pas', 'smaç'],
+  },
+  {
+    id: 41, term: 'Joust', category: 'Diğer',
+    desc: 'File üstünde iki karşı oyuncunun aynı anda topa temas etme mücadelesi.',
+    keywords: ['blok', 'kural'],
+  },
+  {
+    id: 42, term: 'Kaptan', category: 'Diğer',
+    desc: 'Takımın resmi temsilcisi; hakemlerle iletişimi yürüten oyuncu.',
+    keywords: ['pozisyon'],
+  },
+  {
+    id: 43, term: 'Maç Sayısı (Match Point)', category: 'Kural',
+    desc: 'Bir takımın kazanmasıyla maçı bitirecek olan kritik sayı fırsatı.',
+    keywords: ['kural'],
+  },
+  {
+    id: 44, term: 'Mola (Time-Out)', category: 'Kural',
+    desc: 'Antrenörün oyunun akışını değiştirmek için istediği zaman kullanabileceği kısa süre.',
+    keywords: ['kural'],
+  },
+  {
+    id: 45, term: 'Nötr Top (Free Ball)', category: 'Diğer',
+    desc: 'Hücum niyeti taşımayan, kolayca karşı sahaya dönen top.',
+    keywords: ['defans', 'hücum'],
+  },
+  {
+    id: 46, term: 'Orta Oyuncu (Middle Blocker)', category: 'Diğer',
+    desc: '3 numaradan merkez blok kuran ve hızlı hücum (1. tempo) yapan pozisyon.',
+    keywords: ['pozisyon', 'blok', 'hücum'],
+  },
+  {
+    id: 47, term: 'Overpass', category: 'Kural',
+    desc: 'Servis karşılama topunun kontrolsüzce doğrudan file üzerinden rakip sahaya geçmesi.',
+    keywords: ['servis', 'pas'],
+  },
+  {
+    id: 48, term: 'Oyuncu Değişikliği (Substitution)', category: 'Kural',
+    desc: 'Bir setin herhangi bir anında, kurallara uygun şekilde oyuncu değiştirme hakkı.',
+    keywords: ['kural', 'rotasyon'],
+  },
+  {
+    id: 49, term: 'Ön Hat (Front Row)', category: 'Kural',
+    desc: '2, 3 ve 4 numaralı bölgelerden oluşan, blok ve hücum ağırlıklı üçlü hat.',
+    keywords: ['rotasyon', 'pozisyon', 'blok', 'hücum'],
+  },
+  {
+    id: 50, term: 'Pasör Çaprazı (Opposite)', category: 'Diğer',
+    desc: 'Pasörün karşı pozisyonunda oynayan, servis karşılama yükü az olan takımın ana skoreri.',
+    keywords: ['pozisyon', 'hücum'],
+  },
+  {
+    id: 51, term: 'Plase', category: 'Hücum',
+    desc: 'Smaça benzer teknikle, topu blok arkasındaki boşluğa yumuşak şekilde bırakma.',
+    keywords: ['hücum', 'smaç', 'blok'],
+  },
+  {
+    id: 52, term: 'Pozisyon Hatası', category: 'Kural',
+    desc: 'Oyuncuların servis anında rotasyon sırasına veya doğru konuma uymamasından doğan ihlal.',
+    keywords: ['rotasyon', 'pozisyon', 'servis'],
+  },
+  {
+    id: 53, term: 'Servis Karşılama (Reception)', category: 'Savunma',
+    desc: 'Rakip servisine yapılan ilk temas; pasörün rahat oynamasını belirleyen kritik aşama.',
+    keywords: ['defans', 'servis', 'pas'],
+  },
+  {
+    id: 54, term: 'Smaçör (Outside Hitter)', category: 'Diğer',
+    desc: 'Genellikle 4 numaradan hücum eden, karşılama yükü de yüksek olan takımın ana hücumcusu.',
+    keywords: ['pozisyon', 'hücum', 'defans'],
+  },
+  {
+    id: 55, term: 'Şemsiye Savunma', category: 'Savunma',
+    desc: 'Blok arkasında kalan alanı yay şeklinde kapatan savunma yerleşimi.',
+    keywords: ['defans', 'blok'],
+  },
+  {
+    id: 56, term: 'Tek Blok', category: 'Blok',
+    desc: 'Filede yalnızca bir oyuncunun kurduğu blok türü.',
+    keywords: ['blok'],
+  },
+  {
+    id: 57, term: 'Teknik Mola', category: 'Kural',
+    desc: 'Bazı liglerde set içinde belirli sayılara ulaşıldığında otomatik olarak verilen kısa mola.',
+    keywords: ['kural'],
+  },
+  {
+    id: 58, term: 'Top Taşıma (Lift)', category: 'Kural',
+    desc: 'Topu kavrama ya da sürükleme gibi uzun süreli, kontrolsüz temas; kurala aykırıdır.',
+    keywords: ['pas', 'kural'],
+  },
+  {
+    id: 59, term: 'Uzatma (Deuce)', category: 'Kural',
+    desc: 'Setin 24-24 veya beşinci sette 14-14 olması durumunda, kazanmak için iki fark şartının arandığı an.',
+    keywords: ['kural'],
+  },
+  {
+    id: 60, term: 'Yardımlı Blok (Soft Block)', category: 'Blok',
+    desc: 'Topu doğrudan öldürmek yerine yumuşatarak takımın savunma yapmasına imkan veren blok.',
+    keywords: ['blok', 'defans'],
+  },
+  {
+    id: 61, term: 'Yüksek Top (High Ball)', category: 'Pas',
+    desc: 'Blok tam yerleşsin, hücumcu da doğrulanabilsin diye bilerek yüksek verilen pas.',
+    keywords: ['pas', 'blok', 'hücum'],
+  },
 ];

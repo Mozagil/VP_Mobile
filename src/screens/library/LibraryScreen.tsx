@@ -16,6 +16,7 @@ import Icon from '../../components/ui/Icon';
 type LibraryStackParamList = {
   DrillList: undefined;
   DrillDetail: { drill: Drill };
+  ReadyPrograms: undefined;
 };
 
 type Props = { navigation: NativeStackNavigationProp<LibraryStackParamList, 'DrillList'> };
@@ -67,6 +68,15 @@ export default function LibraryScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
+      <TouchableOpacity style={s.readyProgramsBanner} activeOpacity={0.85} onPress={() => navigation.navigate('ReadyPrograms')}>
+        <Icon name="antrenmanlar" size={18} />
+        <View style={{ flex: 1 }}>
+          <Text style={s.readyProgramsTitle}>Hazır Antrenmanlar</Text>
+          <Text style={s.readyProgramsDesc}>Servis, Atak, Defans, Parmak Pas, Manşet için 45 dk'lık hazır programlar</Text>
+        </View>
+        <Text style={s.arrow}>›</Text>
+      </TouchableOpacity>
+
       <View style={s.searchRow}>
         <TextInput
           style={s.searchInput}
@@ -153,6 +163,15 @@ export default function LibraryScreen({ navigation }: Props) {
 function makeStyles(colors: Colors) {
   return StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+
+  readyProgramsBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: colors.accent + '15', borderRadius: 14, borderWidth: 1, borderColor: colors.accent + '40',
+    marginHorizontal: 16, marginTop: 12, padding: 14,
+  },
+  readyProgramsTitle: { color: colors.foreground, fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  readyProgramsDesc: { color: colors.muted, fontSize: 11, lineHeight: 15 },
+  arrow: { color: colors.muted, fontSize: 20 },
 
   searchRow: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   searchInput: {

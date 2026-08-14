@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, KeyboardAvoidingView,
-  ScrollView, TouchableOpacity, Alert, StatusBar,
+  ScrollView, TouchableOpacity, Alert, StatusBar, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
@@ -55,7 +55,7 @@ export default function LoginScreen({ navigation }: Props) {
           {/* Logo */}
           <View style={styles.logoSection}>
             <View style={styles.logoCircle}>
-              <Text style={styles.logoEmoji}>🏐</Text>
+              <Image source={require('../../../assets/adaptive-icon.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
             <Text style={styles.title}>VoleyPro</Text>
             <Text style={styles.subtitle}>Profesyonel voleybol antrenman platformu</Text>
@@ -125,7 +125,7 @@ function makeStyles(colors: Colors) {
     marginBottom: 16,
     borderWidth: 2, borderColor: colors.accent + '60',
   },
-  logoEmoji: { fontSize: 42 },
+  logoImage: { width: 48, height: 48 },
   title: { color: colors.foreground, fontSize: 30, fontWeight: '700', marginBottom: 6 },
   subtitle: { color: colors.muted, fontSize: 14, textAlign: 'center' },
 

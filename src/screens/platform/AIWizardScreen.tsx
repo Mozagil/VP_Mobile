@@ -9,91 +9,56 @@ import Slider from '../../components/ui/Slider';
 import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/ScheduleStep';
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
-
-// ─── Drill databases (ported from web AIWizard.tsx) ──────────────────────────
-type DrillEntry = { name: string; skill: string; minPlayers: number; environments: string[] };
-
-const warmupDB: DrillEntry[] = [
-  { name: 'Hafif koşu + kol çemberleri', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Dinamik bacak germe', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Core aktivasyonu + plank', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Atlama ipi', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Duvara manşet çalışması', skill: 'Manşet', minPlayers: 1, environments: ['Salon', 'Ev'] },
-];
-
-const techDB: DrillEntry[] = [
-  { name: 'Duvara parmak pas tekrarı', skill: 'Pas', minPlayers: 1, environments: ['Salon', 'Ev'] },
-  { name: 'Duvara manşet tekrarı', skill: 'Manşet', minPlayers: 1, environments: ['Salon', 'Ev'] },
-  { name: 'Kendi kendine top fırlatıp servis mekaniği', skill: 'Servis', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev'] },
-  { name: 'Gölge blok atlayışları', skill: 'Blok', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Tek kişi savunma refleks drili', skill: 'Savunma', minPlayers: 1, environments: ['Salon', 'Ev'] },
-  { name: 'Atak kolu salınım tekniği', skill: 'Atak', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev'] },
-  { name: 'Pasörlük el pozisyonu drili', skill: 'Pasörlük', minPlayers: 1, environments: ['Salon', 'Ev'] },
-  { name: 'Çift kişi manşet pas çalışması', skill: 'Manşet', minPlayers: 2, environments: ['Salon', 'Açık Alan'] },
-  { name: 'Çift kişi parmak pas çalışması', skill: 'Pas', minPlayers: 2, environments: ['Salon', 'Açık Alan'] },
-  { name: 'Servis-karşılama çalışması', skill: 'Servis', minPlayers: 2, environments: ['Salon', 'Açık Alan'] },
-  { name: 'Blok zamanlama drili (partnerli)', skill: 'Blok', minPlayers: 2, environments: ['Salon'] },
-  { name: 'Savunma pozisyon alma drili', skill: 'Savunma', minPlayers: 2, environments: ['Salon', 'Açık Alan'] },
-];
-
-const gameDB: DrillEntry[] = [
-  { name: 'Tek kişi hayali atak simülasyonu', skill: 'Atak', minPlayers: 1, environments: ['Salon', 'Ev'] },
-  { name: "2'ye 2 mini oyun", skill: 'Taktik', minPlayers: 4, environments: ['Salon', 'Açık Alan'] },
-  { name: "3'e 3 yarım saha oyun", skill: 'Taktik', minPlayers: 6, environments: ['Salon', 'Açık Alan'] },
-  { name: 'Servis-karşılama rallisi', skill: 'Servis', minPlayers: 4, environments: ['Salon', 'Açık Alan'] },
-  { name: 'Kondisyon tabanlı devre antrenmanı', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Hedef bölge atak yarışması', skill: 'Atak', minPlayers: 2, environments: ['Salon', 'Açık Alan'] },
-];
-
-const cooldownDB: DrillEntry[] = [
-  { name: 'Hafif koşu', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Statik germe - üst vücut', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Statik germe - alt vücut', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-  { name: 'Nefes egzersizi + gevşeme', skill: 'Kondisyon', minPlayers: 1, environments: ['Salon', 'Açık Alan', 'Ev', 'Fitness'] },
-];
+import { allDrills } from '../../data/drills';
+import { Drill } from '../../data/types';
 
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function filterDrills(db: DrillEntry[], env: string, skills: string[]): DrillEntry[] {
-  const valid = db.filter((d) => d.environments.includes(env));
-  if (skills.length > 0) {
-    const pref = valid.filter((d) => skills.includes(d.skill));
-    if (pref.length >= 2) return pref;
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return valid;
+  return a;
 }
 
-function pickN(db: DrillEntry[], n: number, skills: string[]): DrillEntry[] {
-  const pool = [...db];
-  if (skills.length > 0) {
-    pool.sort((a, b) => (skills.includes(a.skill) ? 0 : 1) - (skills.includes(b.skill) ? 0 : 1));
-  }
-  return pool.slice(0, n);
+// Picks n real catalog drills for one phase, preferring drills whose skill
+// matches the selected goal/focus, without ever inventing a drill that isn't
+// in our video library.
+function pickRealDrills(pool: Drill[], n: number, skills: string[], usedIds: Set<number>): Drill[] {
+  const available = pool.filter((d) => !usedIds.has(d.id));
+  const preferred = skills.length > 0 ? available.filter((d) => skills.includes(d.skill)) : [];
+  const rest = available.filter((d) => !preferred.includes(d));
+  const ordered = [...shuffle(preferred), ...shuffle(rest)];
+  const picked = ordered.slice(0, n);
+  picked.forEach((d) => usedIds.add(d.id));
+  return picked;
 }
 
-type PlanSection = { phase: string; minutes: number; drills: { name: string; skill: string }[] };
+type PlanSection = { phase: string; minutes: number; drills: Drill[] };
 
 function buildPlan(totalMinutes: number, goalSkills: string[]): PlanSection[] {
-  const env = 'Salon';
   let wu: number, te: number, ga: number, co: number;
   if (totalMinutes <= 45) { wu = 8; te = 17; ga = 15; co = 5; }
   else if (totalMinutes <= 60) { wu = 10; te = 20; ga = 20; co = 5; }
   else if (totalMinutes <= 90) { wu = 10; te = 25; ga = 25; co = 8; }
   else { wu = 12; te = 30; ga = 30; co = 10; }
 
-  // Technique and game/tactic drills both belong to the single "Ana Antrenman" phase.
-  const mainDrills = [
-    ...pickN(filterDrills(techDB, env, goalSkills), te <= 20 ? 3 : 4, goalSkills),
-    ...pickN(filterDrills(gameDB, env, goalSkills), ga <= 20 ? 2 : 3, goalSkills),
-  ].map((d) => ({ name: d.name, skill: d.skill }));
+  const warmupPool = allDrills.filter((d) => d.phase === 'Isınma');
+  const mainPool = allDrills.filter((d) => d.phase === 'Ana Antrenman');
+  const cooldownPool = allDrills.filter((d) => d.phase === 'Soğuma');
+
+  const usedIds = new Set<number>();
+  const mainCount = (te <= 20 ? 3 : 4) + (ga <= 20 ? 2 : 3);
 
   return [
-    { phase: 'Isınma', minutes: wu, drills: pickN(filterDrills(warmupDB, env, []), wu <= 8 ? 2 : 3, []).map((d) => ({ name: d.name, skill: d.skill })) },
-    { phase: 'Ana Antrenman', minutes: te + ga, drills: mainDrills },
-    { phase: 'Soğuma', minutes: co, drills: pickN(filterDrills(cooldownDB, env, []), 2, []).map((d) => ({ name: d.name, skill: d.skill })) },
+    { phase: 'Isınma', minutes: wu, drills: pickRealDrills(warmupPool, wu <= 8 ? 2 : 3, [], usedIds) },
+    { phase: 'Ana Antrenman', minutes: te + ga, drills: pickRealDrills(mainPool, mainCount, goalSkills, usedIds) },
+    { phase: 'Soğuma', minutes: co, drills: pickRealDrills(cooldownPool, 2, [], usedIds) },
   ].filter((sec) => sec.drills.length > 0);
 }
 
@@ -157,12 +122,10 @@ export default function AIWizardScreen({ navigation }: Props) {
 
       const drills = sections.flatMap((sec, si) =>
         sec.drills.map((d, i) => ({
-          drill_id: -1,
+          drill_id: d.id,
           phase: sec.phase,
           sort_order: si * 10 + i,
           completed: false,
-          custom_name: d.name,
-          custom_skill: d.skill,
         })),
       );
 
@@ -241,10 +204,6 @@ export default function AIWizardScreen({ navigation }: Props) {
                 </TouchableOpacity>
               );
             })}
-
-            <TouchableOpacity style={s.primaryBtn} activeOpacity={0.85} onPress={() => setStep(1)}>
-              <Text style={s.primaryBtnTxt}>Devam Et</Text>
-            </TouchableOpacity>
           </>
         )}
 
@@ -287,38 +246,32 @@ export default function AIWizardScreen({ navigation }: Props) {
                 );
               })}
             </View>
-
-            <TouchableOpacity
-              style={s.primaryBtn}
-              activeOpacity={0.85}
-              onPress={() => setStep(2)}
-            >
-              <Text style={s.primaryBtnTxt}>Devam Et</Text>
-            </TouchableOpacity>
           </>
         )}
 
         {step === 2 && (
-          <>
-            <ScheduleStep
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-              time={sessionTime}
-              onTimeChange={setSessionTime}
-              durationMinutes={duration}
-            />
-
-            <TouchableOpacity
-              style={[s.primaryBtn, saving && s.primaryBtnDisabled]}
-              activeOpacity={0.85}
-              onPress={save}
-              disabled={saving}
-            >
-              <Text style={s.primaryBtnTxt}>{saving ? 'Oluşturuluyor…' : 'Kaydet'}</Text>
-            </TouchableOpacity>
-          </>
+          <ScheduleStep
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            time={sessionTime}
+            onTimeChange={setSessionTime}
+            durationMinutes={duration}
+          />
         )}
       </ScrollView>
+
+      <View style={s.footer}>
+        <TouchableOpacity
+          style={[s.primaryBtn, step === 2 && saving && s.primaryBtnDisabled]}
+          activeOpacity={0.85}
+          onPress={step === 0 ? () => setStep(1) : step === 1 ? () => setStep(2) : save}
+          disabled={step === 2 && saving}
+        >
+          <Text style={s.primaryBtnTxt}>
+            {step === 2 ? (saving ? 'Oluşturuluyor…' : 'Kaydet') : 'Devam Et'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -374,8 +327,9 @@ function makeStyles(colors: Colors) {
   chipTxt: { color: colors.foreground, fontSize: 13, fontWeight: '600' },
   chipTxtActive: { color: '#fff' },
 
-  primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
+  primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  footer: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 16, borderTopWidth: 1, borderTopColor: colors.border },
   });
 }

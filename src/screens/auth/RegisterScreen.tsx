@@ -77,9 +77,10 @@ export default function RegisterScreen() {
       setShowEmailSentModal(true);
     } catch (e: unknown) {
       const raw = (e as any)?.response?.data?.detail;
+      const noResponse = !(e as any)?.response;
       const msg = Array.isArray(raw)
         ? raw.map((d: any) => d.msg ?? d).join('\n')
-        : (raw ?? 'Kayıt başarısız.');
+        : (raw ?? (noResponse ? 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.' : 'Kayıt başarısız.'));
       Alert.alert('Hata', String(msg));
     } finally {
       setLoading(false);
@@ -115,7 +116,6 @@ export default function RegisterScreen() {
               <Input label="Soyad" placeholder="Soyadınız" value={lastName} onChangeText={setLastName} />
               <Input label="E-posta" placeholder="email@örnek.com" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
               <Input label="Şifre" placeholder="En az 6 karakter" secureTextEntry value={password} onChangeText={setPassword} />
-              <Button title="Devam" onPress={next} disabled={!email || !password} />
             </View>
           )}
 
@@ -132,10 +132,6 @@ export default function RegisterScreen() {
                   <Text style={styles.optionDesc}>{l.desc}</Text>
                 </TouchableOpacity>
               ))}
-              <View style={styles.navRow}>
-                <Button title="Geri" onPress={back} variant="outline" style={{ flex: 1, marginRight: 8 }} />
-                <Button title="Devam" onPress={next} style={{ flex: 1 }} disabled={!level} />
-              </View>
             </View>
           )}
 
@@ -152,10 +148,6 @@ export default function RegisterScreen() {
                     <Text style={[styles.chipText, position === p.value && styles.chipTextSelected]}>{p.label}</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
-              <View style={styles.navRow}>
-                <Button title="Geri" onPress={back} variant="outline" style={{ flex: 1, marginRight: 8 }} />
-                <Button title="Devam" onPress={next} style={{ flex: 1 }} disabled={!position} />
               </View>
             </View>
           )}
@@ -175,10 +167,6 @@ export default function RegisterScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-              <View style={styles.navRow}>
-                <Button title="Geri" onPress={back} variant="outline" style={{ flex: 1, marginRight: 8 }} />
-                <Button title="Devam" onPress={next} style={{ flex: 1 }} />
-              </View>
             </View>
           )}
 
@@ -194,13 +182,23 @@ export default function RegisterScreen() {
                   <Text style={[styles.optionTitle, frequency === f.value && styles.optionTitleSelected]}>{f.label}</Text>
                 </TouchableOpacity>
               ))}
-              <View style={[styles.navRow, { marginTop: 16 }]}>
-                <Button title="Geri" onPress={back} variant="outline" style={{ flex: 1, marginRight: 8 }} />
-                <Button title="Kayıt Ol" onPress={submit} loading={loading} style={{ flex: 1 }} />
-              </View>
             </View>
           )}
         </ScrollView>
+
+        <View style={styles.footer}>
+          {step > 0 && <Button title="Geri" onPress={back} variant="outline" style={{ flex: 1, marginRight: 8 }} />}
+          {step < 4 ? (
+            <Button
+              title="Devam"
+              onPress={next}
+              style={{ flex: 1 }}
+              disabled={step === 0 ? (!email || !password) : step === 1 ? !level : step === 2 ? !position : false}
+            />
+          ) : (
+            <Button title="Kayıt Ol" onPress={submit} loading={loading} style={{ flex: 1 }} />
+          )}
+        </View>
       </KeyboardAvoidingView>
 
       <Modal visible={showEmailSentModal} transparent animationType="fade" onRequestClose={confirmEmailSentModal}>
@@ -253,6 +251,14 @@ function makeStyles(colors: Colors) {
   chipText: { color: colors.muted, fontSize: 13 },
   chipTextSelected: { color: colors.accent, fontWeight: '600' },
   navRow: { flexDirection: 'row' },
+  footer: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.55)',

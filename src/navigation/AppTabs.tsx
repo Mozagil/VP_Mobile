@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon, { IconName } from '../components/ui/Icon';
 
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
@@ -28,6 +29,8 @@ import DrillDetailScreen from '../screens/library/DrillDetailScreen';
 import AddToTrainingScreen from '../screens/library/AddToTrainingScreen';
 import AddToTrainingChoiceScreen from '../screens/library/AddToTrainingChoiceScreen';
 import PlanDrillSettingsScreen from '../screens/library/PlanDrillSettingsScreen';
+import ReadyProgramsScreen from '../screens/library/ReadyProgramsScreen';
+import ReadyProgramDetailScreen from '../screens/library/ReadyProgramDetailScreen';
 import PhaseSequenceScreen from '../screens/antrenman/PhaseSequenceScreen';
 import DrillPlayerScreen from '../screens/antrenman/DrillPlayerScreen';
 import WorkoutCompleteScreen from '../screens/antrenman/WorkoutCompleteScreen';
@@ -103,6 +106,8 @@ const KutuphaneStack = createNativeStackNavigator<{
   AddToTrainingChoice: { drill: Drill };
   AddToTraining: { drill: Drill };
   PlanDrillSettings: { drill: Drill; planId: string };
+  ReadyPrograms: undefined;
+  ReadyProgramDetail: { programKey: string };
 }>();
 
 function getStackOpts(colors: Colors) {
@@ -194,6 +199,8 @@ function KutuphaneStackNav() {
       <KutuphaneStack.Screen name="AddToTrainingChoice" component={AddToTrainingChoiceScreen} options={{ headerShown: false }} />
       <KutuphaneStack.Screen name="AddToTraining" component={AddToTrainingScreen} options={{ headerShown: false }} />
       <KutuphaneStack.Screen name="PlanDrillSettings" component={PlanDrillSettingsScreen} options={{ headerShown: false }} />
+      <KutuphaneStack.Screen name="ReadyPrograms" component={ReadyProgramsScreen} options={{ headerShown: false }} />
+      <KutuphaneStack.Screen name="ReadyProgramDetail" component={ReadyProgramDetailScreen} options={{ headerShown: false }} />
     </KutuphaneStack.Navigator>
   );
 }
@@ -213,6 +220,7 @@ const resetTabOnPress = (initialScreen: string) => ({ navigation, route }: any) 
 
 export default function AppTabs() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -223,6 +231,9 @@ export default function AppTabs() {
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 6,
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,

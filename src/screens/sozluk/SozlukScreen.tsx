@@ -120,7 +120,12 @@ export default function SozlukScreen({ navigation }: Props) {
         })}
       </View>
 
-      <Text style={s.count}>Toplam {filtered.length} terim</Text>
+      <View style={s.countRow}>
+        <Text style={s.count}>Toplam {filtered.length} terim</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('ReportMissingTerm')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={s.reportLink}>Eksik terim bildir</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <SectionList
@@ -201,7 +206,9 @@ function makeStyles(colors: Colors) {
   chipTxt: { color: colors.foreground, fontSize: 12, fontWeight: '600' },
   chipTxtActive: { color: '#fff' },
 
-  count: { color: colors.muted, fontSize: 12, paddingHorizontal: 16, marginTop: 8, marginBottom: 4 },
+  countRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginTop: 8, marginBottom: 4 },
+  count: { color: colors.muted, fontSize: 12 },
+  reportLink: { color: colors.accent, fontSize: 12, fontWeight: '600' },
 
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   sectionHeader: { color: colors.accent, fontSize: 13, fontWeight: '800', backgroundColor: colors.background, paddingVertical: 6 },

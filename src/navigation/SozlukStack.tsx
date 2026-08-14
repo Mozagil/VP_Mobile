@@ -6,6 +6,7 @@ import SozlukScreen from '../screens/sozluk/SozlukScreen';
 import FavoriTerimlerScreen from '../screens/sozluk/FavoriTerimlerScreen';
 import SozlukFilterScreen from '../screens/sozluk/SozlukFilterScreen';
 import TermDetailScreen from '../screens/sozluk/TermDetailScreen';
+import ReportMissingTermScreen from '../screens/sozluk/ReportMissingTermScreen';
 
 export type SortBy = 'az' | 'za';
 
@@ -20,6 +21,7 @@ export type SozlukStackParamList = {
   FavoriTerimler: undefined;
   SozlukFilter: { current: SozlukFilterState; onApply: (next: SozlukFilterState) => void };
   TermDetail: { term: SozlukTerm };
+  ReportMissingTerm: undefined;
 };
 
 const Stack = createNativeStackNavigator<SozlukStackParamList>();
@@ -37,6 +39,7 @@ export default function SozlukStackNav() {
       <Stack.Screen name="FavoriTerimler" component={FavoriTerimlerScreen} />
       <Stack.Screen name="SozlukFilter" component={SozlukFilterScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="TermDetail" component={TermDetailScreen} />
+      <Stack.Screen name="ReportMissingTerm" component={ReportMissingTermScreen} />
     </Stack.Navigator>
   );
 }

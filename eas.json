@@ -20,6 +20,9 @@
     },
     "production": {
       "channel": "production",
+      "android": {
+        "autoIncrement": true
+      },
       "ios": {
         "resourceClass": "m-medium"
       }
