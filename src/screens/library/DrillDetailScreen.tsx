@@ -7,6 +7,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { Drill } from '../../data/types';
 import { useFavorites } from '../../hooks/useFavorites';
 import { coverFor, difficultyLabel } from '../../utils/drillCovers';
+import { useI18n, useContent, skillLabel } from '../../i18n';
 import { videoUrlFor } from '../../utils/drillVideos';
 import { parseDrillDesc } from '../../utils/drillText';
 import { useTheme } from '../../theme/ThemeContext';
@@ -15,8 +16,9 @@ import Icon from '../../components/ui/Icon';
 
 type LibraryStackParamList = {
   DrillList: undefined;
-  DrillDetail: { drill: Drill };
+  DrillDetail: { drill: Drill; targetPlanId?: string };
   AddToTrainingChoice: { drill: Drill };
+  PlanDrillSettings: { drill: Drill; planId: string };
 };
 
 type Props = NativeStackScreenProps<LibraryStackParamList, 'DrillDetail'>;
@@ -35,11 +37,14 @@ function DrillVideo({ url, s }: { url: string; s: Styles }) {
 
 export default function DrillDetailScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName, drillDesc, drillTags } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
-  const { drill } = route.params;
+  const { drill, targetPlanId } = route.params;
   const { isFavorite, toggleFavorite } = useFavorites();
   const videoUrl = videoUrlFor(drill.id);
-  const { amac, aciklama } = parseDrillDesc(drill.desc);
+  const { amac, aciklama } = parseDrillDesc(drillDesc(drill));
+  const tags = drillTags(drill);
 
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
@@ -59,35 +64,35 @@ export default function DrillDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <Text style={s.name}>{drill.name}</Text>
-        <Text style={s.meta}>{drill.skill} • {drill.players} Kişi</Text>
+        <Text style={s.name}>{drillName(drill)}</Text>
+        <Text style={s.meta}>{skillLabel(drill.skill, lang)} • {t('common.playerCount', { n: drill.players })}</Text>
         <View style={s.metaRow}>
           <Icon name="sure" size={13} />
           <Text style={s.metaChip}>{drill.duration}</Text>
           <View style={s.diffBadge}>
-            <Text style={s.diffBadgeTxt}>{difficultyLabel(drill.level)}</Text>
+            <Text style={s.diffBadgeTxt}>{difficultyLabel(drill.level, lang)}</Text>
           </View>
         </View>
 
         {amac && (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>Drill Amacı</Text>
+            <Text style={s.sectionTitle}>{t('library.drillGoal')}</Text>
             <Text style={s.sectionBody}>{amac}</Text>
           </View>
         )}
 
         {aciklama && (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>Drill Açıklaması</Text>
+            <Text style={s.sectionTitle}>{t('library.drillDescription')}</Text>
             <Text style={s.sectionBody}>{aciklama}</Text>
           </View>
         )}
 
-        {drill.tags.length > 0 && (
+        {tags.length > 0 && (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>Anahtar Kelimeler</Text>
+            <Text style={s.sectionTitle}>{t('library.keywords')}</Text>
             <View style={s.tagsRow}>
-              {drill.tags.map((tag) => (
+              {tags.map((tag) => (
                 <View key={tag} style={s.tag}>
                   <Text style={s.tagTxt}>#{tag}</Text>
                 </View>
@@ -101,9 +106,13 @@ export default function DrillDetailScreen({ route, navigation }: Props) {
         <TouchableOpacity
           style={s.addBtn}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate('AddToTrainingChoice', { drill })}
+          // Belirli bir programa hareket eklemek icin gelindiyse hangi programa
+          // eklenecegi zaten belli; plan secme adimlari atlanir.
+          onPress={() => (targetPlanId
+            ? navigation.navigate('PlanDrillSettings', { drill, planId: targetPlanId })
+            : navigation.navigate('AddToTrainingChoice', { drill }))}
         >
-          <Text style={s.addBtnTxt}>Antrenmanına ekle</Text>
+          <Text style={s.addBtnTxt}>{t('library.addToTraining')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -1,6 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { tr } from '../i18n/tr';
+import { en } from '../i18n/en';
+import type { Lang, TranslationKey } from '../i18n/types';
 
 export type NotificationType = 'reminder' | 'completed' | 'goal' | 'motivation';
 
@@ -24,6 +27,24 @@ export const notificationIcons: Record<NotificationType, string> = {
   goal: '🎯',
   motivation: '💬',
 };
+
+const LANG_KEY = 'voleypro_language';
+
+async function readLang(): Promise<Lang> {
+  const saved = await AsyncStorage.getItem(LANG_KEY).catch(() => null);
+  return saved === 'en' ? 'en' : 'tr';
+}
+
+// Notifications are built outside React, so the language is read straight from
+// the same storage key LanguageProvider persists to rather than from context.
+async function notifText(key: TranslationKey, vars?: Record<string, string | number>): Promise<string> {
+  const lang = await readLang();
+  const template = (lang === 'en' ? en : tr)[key] ?? tr[key];
+  if (!vars) return template;
+  return template.replace(/\{(\w+)\}/g, (m, name) =>
+    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : m,
+  );
+}
 
 let initialized = false;
 
@@ -130,9 +151,10 @@ export async function scheduleSessionReminders(
   const [hh, mm] = sessionTime.split(':').map(Number);
   const start = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0);
 
+  const isEn = (await readLang()) === 'en';
   const offsets = [
-    { minutesBefore: 60, label: '1 saat' },
-    { minutesBefore: 30, label: '30 dakika' },
+    { minutesBefore: 60, label: isEn ? '1 hour' : '1 saat' },
+    { minutesBefore: 30, label: isEn ? '30 minutes' : '30 dakika' },
   ];
 
   const ids: string[] = [];
@@ -141,8 +163,8 @@ export async function scheduleSessionReminders(
     if (fireAt.getTime() <= Date.now()) continue;
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Antrenman Hatırlatması',
-        body: `"${planName}" antrenmanın ${label} sonra başlıyor.`,
+        title: await notifText('notifications.reminderTitle'),
+        body: await notifText('notifications.reminderBody', { plan: planName, when: label }),
         data: { type: 'reminder', important: false },
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
@@ -176,8 +198,8 @@ export async function maybeNotifyWeeklyGoal(weeklyDone: number, weeklyTarget?: n
   await AsyncStorage.setItem(GOAL_NOTIF_KEY, key);
   await sendImmediateNotification(
     'goal',
-    'Hedefe Ulaştın',
-    `Bu haftaki antrenman hedefini (${weeklyTarget}) tamamladın! Harika iş.`,
+    await notifText('notifications.goalReachedTitle'),
+    await notifText('notifications.goalReachedBody', { target: weeklyTarget }),
     true,
   );
 }

@@ -7,7 +7,9 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { allModules, Module } from '../../data/modules';
 import { useModuleFavorites } from '../../hooks/useModuleFavorites';
+import { useI18n, useContent, moduleCategoryLabel, levelLabel, LOCALE } from '../../i18n';
 
+// Canonical level values — matched against modules.ts, translated for display.
 const LEVELS = ['Tümü', 'Başlangıç', 'Orta', 'İleri'];
 
 function getCategoryColors(colors: Colors): Record<string, string> {
@@ -41,19 +43,21 @@ function ModuleRow({ item, isFav, onToggleFav, onPress, colors, s, categoryColor
   item: Module; isFav: boolean; onToggleFav: () => void; onPress: () => void;
   colors: Colors; s: Styles; categoryColors: CategoryColors;
 }) {
+  const { lang } = useI18n();
+  const { moduleTitle } = useContent();
   const catColor = categoryColors[item.category] ?? colors.muted;
   return (
     <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.8}>
       <View style={s.rowLeft}>
         <View style={s.rowBadges}>
           <View style={[s.catBadge, { backgroundColor: catColor + '22', borderColor: catColor + '55' }]}>
-            <Text style={[s.catBadgeTxt, { color: catColor }]}>{item.category}</Text>
+            <Text style={[s.catBadgeTxt, { color: catColor }]}>{moduleCategoryLabel(item.category, lang)}</Text>
           </View>
           <View style={s.lvlBadge}>
-            <Text style={s.lvlBadgeTxt}>{item.level}</Text>
+            <Text style={s.lvlBadgeTxt}>{levelLabel(item.level, lang)}</Text>
           </View>
         </View>
-        <Text style={s.rowName}>{item.title.toUpperCase()}</Text>
+        <Text style={s.rowName}>{moduleTitle(item).toLocaleUpperCase(LOCALE[lang])}</Text>
       </View>
       <TouchableOpacity
         style={s.bookmarkBtn}
@@ -72,12 +76,14 @@ function ModuleRow({ item, isFav, onToggleFav, onPress, colors, s, categoryColor
 function SavedRow({ item, onRemove, onPress, colors, s, categoryColors }: {
   item: Module; onRemove: () => void; onPress: () => void; colors: Colors; s: Styles; categoryColors: CategoryColors;
 }) {
+  const { lang } = useI18n();
+  const { moduleTitle } = useContent();
   const catColor = categoryColors[item.category] ?? colors.muted;
   return (
     <TouchableOpacity style={s.savedRow} onPress={onPress} activeOpacity={0.8}>
       <View style={[s.savedDot, { backgroundColor: catColor }]} />
-      <Text style={s.savedName} numberOfLines={1}>{item.title}</Text>
-      <Text style={s.savedLevel}>{item.level}</Text>
+      <Text style={s.savedName} numberOfLines={1}>{moduleTitle(item)}</Text>
+      <Text style={s.savedLevel}>{levelLabel(item.level, lang)}</Text>
       <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
         <Text style={{ color: colors.border, fontSize: 16 }}>✕</Text>
       </TouchableOpacity>
@@ -88,14 +94,16 @@ function SavedRow({ item, onRemove, onPress, colors, s, categoryColors }: {
 function ModuleDetail({ item, onClose, colors, d }: {
   item: Module; onClose: () => void; colors: Colors; d: DetailStyles;
 }) {
+  const { t, lang } = useI18n();
+  const { moduleTitle, moduleDesc, moduleDuration, moduleExercises, moduleTips } = useContent();
   return (
     <Modal animationType="slide" transparent onRequestClose={onClose}>
       <View style={d.overlay}>
         <View style={d.sheet}>
           <View style={d.header}>
             <View style={d.headerLeft}>
-              <Text style={d.headerCat}>{item.category}</Text>
-              <Text style={d.headerTitle}>{item.title.toUpperCase()}</Text>
+              <Text style={d.headerCat}>{moduleCategoryLabel(item.category, lang)}</Text>
+              <Text style={d.headerTitle}>{moduleTitle(item).toLocaleUpperCase(LOCALE[lang])}</Text>
             </View>
             <TouchableOpacity style={d.closeBtn} onPress={onClose}>
               <Text style={d.closeBtnTxt}>✕</Text>
@@ -104,17 +112,17 @@ function ModuleDetail({ item, onClose, colors, d }: {
           <ScrollView style={{ flex: 1 }} contentContainerStyle={d.body} showsVerticalScrollIndicator={false}>
             <View style={d.metaRow}>
               <View style={d.metaBadge}>
-                <Text style={d.metaBadgeTxt}>{item.level}</Text>
+                <Text style={d.metaBadgeTxt}>{levelLabel(item.level, lang)}</Text>
               </View>
               {item.duration && (
                 <View style={[d.metaBadge, { backgroundColor: colors.blue + '20', borderColor: colors.blue + '40' }]}>
-                  <Text style={[d.metaBadgeTxt, { color: colors.blue }]}>{item.duration}</Text>
+                  <Text style={[d.metaBadgeTxt, { color: colors.blue }]}>{moduleDuration(item)}</Text>
                 </View>
               )}
             </View>
-            <Text style={d.desc}>{item.desc}</Text>
-            <Text style={d.sectionTitle}>🏋️ Egzersizler</Text>
-            {item.exercises.map((ex, i) => (
+            <Text style={d.desc}>{moduleDesc(item)}</Text>
+            <Text style={d.sectionTitle}>{t('gelisim.exercisesTitle')}</Text>
+            {moduleExercises(item).map((ex, i) => (
               <View key={i} style={d.exRow}>
                 <View style={d.exNum}>
                   <Text style={d.exNumTxt}>{i + 1}</Text>
@@ -122,8 +130,8 @@ function ModuleDetail({ item, onClose, colors, d }: {
                 <Text style={d.exTxt}>{ex}</Text>
               </View>
             ))}
-            <Text style={d.sectionTitle}>💡 İpuçları</Text>
-            {item.tips.map((tip, i) => (
+            <Text style={d.sectionTitle}>{t('gelisim.tips')}</Text>
+            {moduleTips(item).map((tip, i) => (
               <View key={i} style={d.tipRow}>
                 <Text style={d.tipDot}>•</Text>
                 <Text style={d.tipTxt}>{tip}</Text>
@@ -138,6 +146,7 @@ function ModuleDetail({ item, onClose, colors, d }: {
 
 export default function VoIleybolOkuluScreen() {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const d = useMemo(() => makeDetailStyles(colors), [colors]);
   const categoryColors = useMemo(() => getCategoryColors(colors), [colors]);
@@ -160,7 +169,7 @@ export default function VoIleybolOkuluScreen() {
       {/* Level filter */}
       <View style={s.filterRow}>
         {LEVELS.map(l => (
-          <LevelChip key={l} label={l} active={level === l} onPress={() => setLevel(l)} />
+          <LevelChip key={l} label={l === 'Tümü' ? t('common.all') : levelLabel(l, lang)} active={level === l} onPress={() => setLevel(l)} />
         ))}
       </View>
 
@@ -174,11 +183,11 @@ export default function VoIleybolOkuluScreen() {
             <View style={s.savedHeader}>
               <View style={s.savedHeaderLeft}>
                 <Text style={s.savedHeaderIcon}>🔖</Text>
-                <Text style={s.savedHeaderTitle}>KAYDEDİLEN TEKNİKLER</Text>
+                <Text style={s.savedHeaderTitle}>{t('school.savedHeader')}</Text>
               </View>
               <View style={s.addBtnWrap}>
                 <TouchableOpacity style={s.addBtn} activeOpacity={0.8} onPress={() => {}}>
-                  <Text style={s.addBtnTxt}>+ Modül Ekle</Text>
+                  <Text style={s.addBtnTxt}>{t('school.addModule')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -186,9 +195,7 @@ export default function VoIleybolOkuluScreen() {
             {savedItems.length === 0 ? (
               <View style={s.savedEmpty}>
                 <Text style={s.savedEmptyIcon}>🔖</Text>
-                <Text style={s.savedEmptyTxt}>
-                  Henüz kaydedilen modül yok. Favori modüllerinizi ekleyin!
-                </Text>
+                <Text style={s.savedEmptyTxt}>{t('school.noSaved')}</Text>
               </View>
             ) : (
               savedItems.map(item => (
@@ -202,7 +209,7 @@ export default function VoIleybolOkuluScreen() {
               ))
             )}
             <View style={s.divider} />
-            <Text style={s.allTitle}>TÜM MODÜLLER · {filtered.length}</Text>
+            <Text style={s.allTitle}>{t('school.allModules', { n: filtered.length })}</Text>
           </View>
         }
         renderItem={({ item }) => (

@@ -44,6 +44,7 @@ import Soguma from '../../assets/icons/51-soguma.svg';
 import AnaAntrenman from '../../assets/icons/52-ana-antrenman.svg';
 import Cikis from '../../assets/icons/53-cikis.svg';
 import Destek from '../../assets/icons/54-destek.svg';
+import Arama from '../../assets/icons/55-arama.svg';
 
 const registry = {
   menu: Menu,
@@ -89,6 +90,7 @@ const registry = {
   'ana-antrenman': AnaAntrenman,
   cikis: Cikis,
   destek: Destek,
+  arama: Arama,
 };
 
 export type IconName = keyof typeof registry;

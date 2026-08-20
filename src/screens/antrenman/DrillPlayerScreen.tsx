@@ -12,23 +12,48 @@ import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import {
   buildPhaseBreakdown, drillsInPhase, resolveDrillMinutes, resolveDrillName,
 } from '../../utils/trainingPlan';
+import { useI18n, useContent } from '../../i18n';
+import type { Lang } from '../../i18n';
 import { videoUrlFor } from '../../utils/drillVideos';
 import { parseDrillDesc } from '../../utils/drillText';
-import { PlanDrill } from '../../data/types';
+import { Drill, PlanDrill } from '../../data/types';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
+import { ensureWorkoutTimer, formatElapsed, workoutElapsedSeconds } from '../../utils/workoutTimer';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'DrillPlayer'>;
 type Styles = ReturnType<typeof makeStyles>;
 
-function drillInfo(pd: PlanDrill) {
+// "Antrenmanı Başlat"a basıldığı andan itibaren geçen süre. Süre plan bazında
+// tutulduğu için hareketler arası geçişlerde sıfırlanmaz.
+function WorkoutTimer({ planId, s }: { planId: string; s: Styles }) {
+  const [seconds, setSeconds] = useState(() => workoutElapsedSeconds(planId));
+  useEffect(() => {
+    const id = setInterval(() => setSeconds(workoutElapsedSeconds(planId)), 1000);
+    return () => clearInterval(id);
+  }, [planId]);
+  return (
+    <View style={s.timerBox}>
+      <Icon name="sure" size={16} />
+      <Text style={s.timerTxt}>{formatElapsed(seconds)}</Text>
+    </View>
+  );
+}
+
+function drillInfo(
+  pd: PlanDrill,
+  lang: Lang,
+  drillDesc: (d: Drill) => string,
+  drillTags: (d: Drill) => string[],
+) {
   const catalog = allDrills.find((d) => d.id === pd.drill_id);
-  const name = resolveDrillName(pd);
+  const name = resolveDrillName(pd, lang);
   const minutes = resolveDrillMinutes(pd);
   const skill = pd.custom_skill ?? catalog?.skill ?? '—';
-  const { amac, aciklama } = catalog ? parseDrillDesc(catalog.desc) : { amac: null, aciklama: null };
+  const { amac, aciklama } = catalog ? parseDrillDesc(drillDesc(catalog)) : { amac: null, aciklama: null };
+  const tags = catalog ? drillTags(catalog) : [];
 
-  return { name, minutes, skill, amac, aciklama, catalog };
+  return { name, minutes, skill, amac, aciklama, catalog, tags };
 }
 
 function DrillVideo({ url, s }: { url: string; s: Styles }) {
@@ -45,31 +70,35 @@ function DrillVideo({ url, s }: { url: string; s: Styles }) {
 
 export default function DrillPlayerScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillDesc, drillTags } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId, phase, index } = route.params;
   const { data: plans = [] } = useTrainingPlans();
   const toggle = useToggleDrillComplete();
   const plan = plans.find((p) => p.id === planId);
 
-  const [mode, setMode] = useState<'ready' | 'playing' | 'transition'>('ready');
-  const [tab, setTab] = useState<'Açıklama' | 'Detaylar'>('Açıklama');
+  // Antrenman bir onceki ekranda baslatildigi icin burada ayrica "Başlat"
+  // adimi yok; hareket ekrani dogrudan calisir durumda acilir.
+  const [mode, setMode] = useState<'playing' | 'transition'>('playing');
 
   const drills = useMemo(() => (plan ? drillsInPhase(plan, phase) : []), [plan, phase]);
   const pd = drills[index];
-  const info = pd ? drillInfo(pd) : null;
+  const info = pd ? drillInfo(pd, lang, drillDesc, drillTags) : null;
   const videoUrl = pd ? videoUrlFor(pd.drill_id) : null;
 
   useEffect(() => {
     if (!pd) return;
-    setMode('ready');
-    setTab('Açıklama');
+    setMode('playing');
+    // Listeden dogrudan bir harekete girildiyse sayac henuz baslamamis olabilir.
+    ensureWorkoutTimer(planId);
   }, [pd?.id]);
 
   if (!plan || !pd || !info) {
     return <View style={s.center}><ActivityIndicator color={colors.accent} size="large" /></View>;
   }
 
-  const breakdown = buildPhaseBreakdown(plan, colors);
+  const breakdown = buildPhaseBreakdown(plan, colors, lang);
   const phaseIdx = breakdown.findIndex((p) => p.phase === phase);
   const phaseNum = phaseIdx + 1;
   const isLastInPhase = index === drills.length - 1;
@@ -78,10 +107,10 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
   let nextInfo: { name: string; minutes: number } | null = null;
   if (!isLastInPhase) {
     const nextPd = drills[index + 1];
-    nextInfo = { name: resolveDrillName(nextPd), minutes: resolveDrillMinutes(nextPd) };
+    nextInfo = { name: resolveDrillName(nextPd, lang), minutes: resolveDrillMinutes(nextPd) };
   } else if (nextPhase && plan) {
     const nextDrills = drillsInPhase(plan, nextPhase.phase);
-    if (nextDrills[0]) nextInfo = { name: resolveDrillName(nextDrills[0]), minutes: resolveDrillMinutes(nextDrills[0]) };
+    if (nextDrills[0]) nextInfo = { name: resolveDrillName(nextDrills[0], lang), minutes: resolveDrillMinutes(nextDrills[0]) };
   }
 
   function finishCurrent() {
@@ -110,26 +139,26 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Icon name="geri" size={18} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>Sonraki Hareket</Text>
+          <Text style={s.headerTitle}>{t('player.nextMovement')}</Text>
           <Text style={s.headerCount}>{phaseNum}/{drills.length}</Text>
         </View>
 
         <View style={s.transitionBody}>
           <View style={s.checkCircle}><Text style={s.checkTxt}>✓</Text></View>
-          <Text style={s.transitionTitle}>Harika!</Text>
-          <Text style={s.transitionDesc}>{info.name} tamamlandı.</Text>
+          <Text style={s.transitionTitle}>{t('player.great')}</Text>
+          <Text style={s.transitionDesc}>{t('player.finished', { name: info.name })}</Text>
 
           {nextInfo && (
             <View style={s.nextCard}>
-              <Text style={s.nextLabel}>Sıradaki Hareket</Text>
+              <Text style={s.nextLabel}>{t('player.nextMovement')}</Text>
               <View style={s.nextRow}>
                 <View style={s.nextIconBox}><Icon name="antrenmanlar" size={18} /></View>
                 <View>
                   <Text style={s.nextName}>{nextInfo.name}</Text>
-                  <Text style={s.nextMeta}>{nextInfo.minutes} dakika</Text>
+                  <Text style={s.nextMeta}>{t('common.minutes', { n: nextInfo.minutes })}</Text>
                 </View>
               </View>
-              <Text style={s.readyHint}>Hazır olduğunuzda başlatın.</Text>
+              <Text style={s.readyHint}>{t('player.readyHint')}</Text>
             </View>
           )}
         </View>
@@ -139,15 +168,15 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
           activeOpacity={0.8}
           onPress={() => navigation.navigate('PhaseSequence', { planId, phase, showAll: true })}
         >
-          <Text style={s.viewAllBtnTxt}>Tüm Hareketleri Görüntüle</Text>
+          <Text style={s.viewAllBtnTxt}>{t('player.viewAll')}</Text>
         </TouchableOpacity>
 
         <View style={s.footerRow}>
           <TouchableOpacity style={s.secondaryBtn} activeOpacity={0.8} onPress={() => navigation.goBack()}>
-            <Text style={s.secondaryBtnTxt}>‹ Önceki Hareket</Text>
+            <Text style={s.secondaryBtnTxt}>{t('player.previousMovement')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[s.primaryBtn, { flex: 1 }]} activeOpacity={0.85} onPress={goNext}>
-            <Text style={s.primaryBtnTxt}>{nextInfo ? 'Sonraki Hareket ›' : 'Başlat'}</Text>
+            <Text style={s.primaryBtnTxt}>{nextInfo ? t('player.nextMovementBtn') : t('player.start')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -170,7 +199,7 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
           {!videoUrl && (
             <>
               <View style={s.heroBadge}>
-                <Text style={s.heroBadgeTxt}>{info.minutes} dakika</Text>
+                <Text style={s.heroBadgeTxt}>{t('common.minutes', { n: info.minutes })}</Text>
               </View>
               <View style={s.heroIconCircle}>
                 <PhaseIcon phase={phase} size={26} />
@@ -178,84 +207,51 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
             </>
           )}
           <Text style={s.heroName}>{info.name}</Text>
-          {info.amac && <Text style={s.heroDesc}>{info.amac}</Text>}
         </View>
       </View>
 
-      <View style={s.tabRow}>
-        <TouchableOpacity style={[s.tab, tab === 'Açıklama' && s.tabActive]} onPress={() => setTab('Açıklama')}>
-          <Text style={[s.tabTxt, tab === 'Açıklama' && s.tabTxtActive]}>Açıklama</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[s.tab, tab === 'Detaylar' && s.tabActive]} onPress={() => setTab('Detaylar')}>
-          <Text style={[s.tabTxt, tab === 'Detaylar' && s.tabTxtActive]}>Detaylar</Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        {tab === 'Açıklama' ? (
-          <>
-            {info.amac && (
-              <View style={s.section}>
-                <Text style={s.sectionTitle}>Drill Amacı</Text>
-                <Text style={s.sectionBody}>{info.amac}</Text>
-              </View>
-            )}
-            {info.aciklama && (
-              <View style={s.section}>
-                <Text style={s.sectionTitle}>Drill Açıklaması</Text>
-                <Text style={s.sectionBody}>{info.aciklama}</Text>
-              </View>
-            )}
-            {pd.note && (
-              <View style={s.section}>
-                <Text style={s.sectionTitle}>Not</Text>
-                <Text style={s.sectionBody}>{pd.note}</Text>
-              </View>
-            )}
-            {info.catalog && info.catalog.tags.length > 0 && (
-              <View style={s.section}>
-                <Text style={s.sectionTitle}>Anahtar Kelimeler</Text>
-                <View style={s.tagsRow}>
-                  {info.catalog.tags.map((tag) => (
-                    <View key={tag} style={s.tagChip}>
-                      <Text style={s.tagChipTxt}>#{tag}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-          </>
-        ) : (
+        {info.amac && (
           <View style={s.section}>
-            <Text style={s.detailLine}>Beceri: {info.skill}</Text>
-            <Text style={s.detailLine}>Süre: {info.minutes} dakika</Text>
-            {info.catalog && <Text style={s.detailLine}>Seviye: {info.catalog.level}</Text>}
-            {info.catalog && <Text style={s.detailLine}>Oyuncu: {info.catalog.players}</Text>}
+            <Text style={s.sectionTitle}>{t('library.drillGoal')}</Text>
+            <Text style={s.sectionBody}>{info.amac}</Text>
+          </View>
+        )}
+        {info.aciklama && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>{t('library.drillDescription')}</Text>
+            <Text style={s.sectionBody}>{info.aciklama}</Text>
+          </View>
+        )}
+        {pd.note && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>{t('player.note')}</Text>
+            <Text style={s.sectionBody}>{pd.note}</Text>
+          </View>
+        )}
+        {info.tags.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>{t('player.keywords')}</Text>
+            <View style={s.tagsRow}>
+              {info.tags.map((tag) => (
+                <View key={tag} style={s.tagChip}>
+                  <Text style={s.tagChipTxt}>#{tag}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
       </ScrollView>
 
-      <TouchableOpacity
-        style={s.viewAllBtn}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('PhaseSequence', { planId, phase, showAll: true })}
-      >
-        <Text style={s.viewAllBtnTxt}>Tüm Hareketleri Görüntüle</Text>
-      </TouchableOpacity>
+      <WorkoutTimer planId={planId} s={s} />
 
       <View style={s.footerRow}>
-        <TouchableOpacity style={s.secondaryBtn} activeOpacity={0.8} onPress={() => navigation.goBack()}>
-          <Text style={s.secondaryBtnTxt}>‹ Önceki</Text>
+        <TouchableOpacity style={[s.secondaryBtn, { flex: 1 }]} activeOpacity={0.8} onPress={() => navigation.goBack()}>
+          <Text style={s.secondaryBtnTxt}>{t('player.previous')}</Text>
         </TouchableOpacity>
-        {mode === 'ready' ? (
-          <TouchableOpacity style={[s.primaryBtn, { flex: 1 }]} activeOpacity={0.85} onPress={() => setMode('playing')}>
-            <Text style={s.primaryBtnTxt}>Harika, Başlat</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={[s.primaryBtn, { flex: 1 }]} activeOpacity={0.85} onPress={finishCurrent}>
-            <Text style={s.primaryBtnTxt}>Sonraki</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={[s.primaryBtn, { flex: 1 }]} activeOpacity={0.85} onPress={finishCurrent}>
+          <Text style={s.primaryBtnTxt}>{t('phase.next')} ›</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -290,14 +286,7 @@ function makeStyles(colors: Colors) {
     alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
   heroIconTxt: { fontSize: 26 },
-  heroName: { color: colors.foreground, fontSize: 17, fontWeight: '800', marginBottom: 6, textAlign: 'center' },
-  heroDesc: { color: colors.muted, fontSize: 13, textAlign: 'center', lineHeight: 19 },
-
-  tabRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 12 },
-  tab: { flex: 1, borderRadius: 10, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, paddingVertical: 10, alignItems: 'center' },
-  tabActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  tabTxt: { color: colors.muted, fontSize: 13, fontWeight: '700' },
-  tabTxtActive: { color: '#fff' },
+  heroName: { color: colors.foreground, fontSize: 17, fontWeight: '800', textAlign: 'center' },
 
   scroll: { paddingHorizontal: 16, paddingBottom: 10 },
   section: {
@@ -306,7 +295,6 @@ function makeStyles(colors: Colors) {
   },
   sectionTitle: { color: colors.accent, fontSize: 13, fontWeight: '700', marginBottom: 6 },
   sectionBody: { color: colors.foreground, fontSize: 14, lineHeight: 21 },
-  detailLine: { color: colors.foreground, fontSize: 14, marginBottom: 6 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tagChip: { paddingHorizontal: 10, paddingVertical: 4, backgroundColor: colors.cardAlt, borderRadius: 12 },
   tagChipTxt: { color: colors.muted, fontSize: 12 },
@@ -317,6 +305,14 @@ function makeStyles(colors: Colors) {
     paddingVertical: 12, alignItems: 'center',
   },
   viewAllBtnTxt: { color: colors.foreground, fontSize: 14, fontWeight: '700' },
+
+  timerBox: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginHorizontal: 16, marginBottom: 4,
+    borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card,
+    paddingVertical: 12,
+  },
+  timerTxt: { color: colors.accent, fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
 
   footerRow: { flexDirection: 'row', gap: 10, padding: 16, paddingTop: 0, borderTopWidth: 1, borderTopColor: colors.border },
   secondaryBtn: { borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, paddingVertical: 14, paddingHorizontal: 20, alignItems: 'center' },

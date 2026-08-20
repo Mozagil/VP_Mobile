@@ -5,21 +5,17 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans, useAddDrillsToPlan } from '../../hooks/useTrainingPlans';
 import { Drill } from '../../data/types';
 import { coverFor, difficultyLabel } from '../../utils/drillCovers';
+import { useI18n, useContent, skillLabel, phaseLabel } from '../../i18n';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import Icon from '../../components/ui/Icon';
+import PhaseIcon from '../../components/ui/PhaseIcon';
 
 type LibraryStackParamList = {
   PlanDrillSettings: { drill: Drill; planId: string };
 };
 
 type Props = NativeStackScreenProps<LibraryStackParamList, 'PlanDrillSettings'>;
-
-const PHASE_OPTIONS = [
-  { phase: 'Ana Antrenman', label: 'Ana kısımda', desc: 'Antrenmanın ana bölümüne ekle' },
-  { phase: 'Isınma', label: 'Isınma bölümünde', desc: 'Antrenmanın ısınma bölümüne ekle' },
-  { phase: 'Soğuma', label: 'Bitiriş bölümünde (Soğuma)', desc: 'Antrenmanın bitiş bölümüne ekle' },
-];
 
 function parseDefaultDuration(duration: string): number {
   const m = duration.match(/\d+/);
@@ -28,13 +24,17 @@ function parseDefaultDuration(duration: string): number {
 
 export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { drill, planId } = route.params;
   const { data: plans = [] } = useTrainingPlans();
   const addDrills = useAddDrillsToPlan();
   const plan = plans.find((p) => p.id === planId);
 
-  const [phase, setPhase] = useState('Ana Antrenman');
+  // Hareket her zaman kendi bolumune (Isınma / Ana Antrenman / Soğuma) eklenir,
+  // bu yuzden ayrica bolum secilmez.
+  const phase = drill.phase;
   const [duration, setDuration] = useState(parseDefaultDuration(drill.duration));
   const [note, setNote] = useState('');
 
@@ -46,12 +46,12 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
 
   React.useEffect(() => {
     setOrder(drillsInPhase.length + 1);
-  }, [phase]);
+  }, [drillsInPhase.length]);
 
   const maxOrder = drillsInPhase.length + 1;
 
   if (!plan) {
-    return <View style={s.center}><Text style={{ color: colors.muted }}>Program bulunamadı</Text></View>;
+    return <View style={s.center}><Text style={{ color: colors.muted }}>{t('training.programNotFound')}</Text></View>;
   }
 
   const add = () => {
@@ -76,10 +76,10 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
         onSuccess: () => {
           navigation.getParent()?.navigate('AntrenmanStack' as any, {
             screen: 'TrainingSuccess',
-            params: { planId: plan.id, planName: plan.name, drillName: drill.name },
+            params: { planId: plan.id, planName: plan.name, drillName: drillName(drill) },
           });
         },
-        onError: () => Alert.alert('Hata', 'Antrenmana eklenirken sorun oluştu.'),
+        onError: () => Alert.alert(t('common.error'), t('addToTraining.addError')),
       },
     );
   };
@@ -90,7 +90,7 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Detayları Ayarla</Text>
+        <Text style={s.headerTitle}>{t('addToTraining.settingsTitle')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -98,38 +98,23 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
         <View style={s.previewCard}>
           <Image source={coverFor(drill.skill, drill.phase, drill.id)} style={s.previewImg} resizeMode="cover" />
           <View style={{ flex: 1 }}>
-            <Text style={s.previewName} numberOfLines={1}>{drill.name}</Text>
-            <Text style={s.previewMeta}>{drill.skill} • {drill.players} Kişi</Text>
+            <Text style={s.previewName} numberOfLines={1}>{drillName(drill)}</Text>
+            <Text style={s.previewMeta}>{skillLabel(drill.skill, lang)} • {t('common.playerCount', { n: drill.players })}</Text>
             <View style={s.previewMetaRow}>
               <Icon name="sure" size={12} />
-              <Text style={s.previewMeta}>{drill.duration} • {difficultyLabel(drill.level)}</Text>
+              <Text style={s.previewMeta}>{drill.duration} • {difficultyLabel(drill.level, lang)}</Text>
             </View>
           </View>
         </View>
 
-        <Text style={s.fieldLabel}>Ne zaman?</Text>
-        {PHASE_OPTIONS.map((opt) => {
-          const active = phase === opt.phase;
-          return (
-            <TouchableOpacity
-              key={opt.phase}
-              style={[s.optionRow, active && s.optionRowActive]}
-              activeOpacity={0.8}
-              onPress={() => setPhase(opt.phase)}
-            >
-              <View style={[s.radio, active && s.radioActive]}>
-                {active && <View style={s.radioDot} />}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.optionTitle}>{opt.label}</Text>
-                <Text style={s.optionDesc}>{opt.desc}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+        <Text style={s.fieldLabel}>{t('addToTraining.when')}</Text>
+        <View style={s.phaseRow}>
+          <PhaseIcon phase={phase} size={16} />
+          <Text style={s.phaseTxt}>{phaseLabel(phase, lang)}</Text>
+        </View>
 
-        <Text style={s.fieldLabel}>Sıra</Text>
-        <Text style={s.hint}>Bu çalışmanın antrenmandaki sırasını seç.</Text>
+        <Text style={s.fieldLabel}>{t('addToTraining.orderLabel')}</Text>
+        <Text style={s.hint}>{t('addToTraining.orderHint')}</Text>
         <View style={s.stepperRow}>
           <TouchableOpacity
             style={s.stepperBtn}
@@ -148,7 +133,7 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <Text style={s.fieldLabel}>Süre (opsiyonel)</Text>
+        <Text style={s.fieldLabel}>{t('addToTraining.durationLabel')}</Text>
         <View style={s.stepperRow}>
           <TouchableOpacity
             style={s.stepperBtn}
@@ -157,7 +142,7 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
           >
             <Text style={s.stepperBtnTxt}>−</Text>
           </TouchableOpacity>
-          <Text style={s.stepperValue}>{duration} dakika</Text>
+          <Text style={s.stepperValue}>{t('common.minutes', { n: duration })}</Text>
           <TouchableOpacity
             style={s.stepperBtn}
             onPress={() => setDuration((v) => v + 5)}
@@ -167,10 +152,10 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <Text style={s.fieldLabel}>Not (opsiyonel)</Text>
+        <Text style={s.fieldLabel}>{t('addToTraining.noteLabel')}</Text>
         <TextInput
           style={s.noteInput}
-          placeholder="Bu çalışma ile ilgili not ekle..."
+          placeholder={t('addToTraining.notePlaceholder')}
           placeholderTextColor={colors.muted}
           value={note}
           onChangeText={setNote}
@@ -185,7 +170,7 @@ export default function PlanDrillSettingsScreen({ route, navigation }: Props) {
           onPress={add}
           disabled={addDrills.isPending}
         >
-          <Text style={s.primaryBtnTxt}>{addDrills.isPending ? 'Ekleniyor…' : 'Ekle'}</Text>
+          <Text style={s.primaryBtnTxt}>{addDrills.isPending ? t('common.adding') : t('addToTraining.add')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -216,17 +201,12 @@ function makeStyles(colors: Colors) {
   fieldLabel: { color: colors.foreground, fontSize: 14, fontWeight: '700', marginTop: 18, marginBottom: 8 },
   hint: { color: colors.muted, fontSize: 12, marginBottom: 10, marginTop: -4 },
 
-  optionRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 8,
+  phaseRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: colors.card, borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: colors.border,
   },
-  optionRowActive: { borderColor: colors.accent },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  radioActive: { borderColor: colors.accent },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
-  optionTitle: { color: colors.foreground, fontSize: 14, fontWeight: '700', marginBottom: 2 },
-  optionDesc: { color: colors.muted, fontSize: 12 },
+  phaseTxt: { color: colors.foreground, fontSize: 14, fontWeight: '700' },
 
   stepperRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

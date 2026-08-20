@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'rea
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import Calendar from './Calendar';
+import { useI18n } from '../../i18n';
 
 type Props = {
   selectedDate: string | null;
@@ -44,6 +45,7 @@ function parseTime(hhmm: string): { h: string; m: string } {
 
 export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeChange, durationMinutes }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const markedDates = useMemo(() => new Set(selectedDate ? [selectedDate] : []), [selectedDate]);
   const endTime = addMinutes(time, durationMinutes);
@@ -66,10 +68,10 @@ export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeC
 
   return (
     <View>
-      <Text style={s.fieldLabel}>Tarih Seç</Text>
+      <Text style={s.fieldLabel}>{t('schedule.pickDate')}</Text>
       <Calendar markedDates={markedDates} onDayPress={onSelectDate} disablePast selectedDate={selectedDate} />
 
-      <Text style={s.fieldLabel}>Saat</Text>
+      <Text style={s.fieldLabel}>{t('schedule.hour')}</Text>
       <TouchableOpacity style={s.timeBtn} activeOpacity={0.8} onPress={openPicker}>
         <Text style={s.timeBtnTxt}>{time || getRoundedCurrentTime()}</Text>
         <Text style={s.timeBtnArrow}>▾</Text>
@@ -77,7 +79,9 @@ export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeC
 
       {selectedDate && (
         <Text style={s.hint}>
-          Bu antrenman yaklaşık {durationMinutes} dakika sürecek{endTime ? ` (${time} – ${endTime})` : ''}.
+          {endTime
+            ? t('schedule.durationHintRange', { n: durationMinutes, start: time, end: endTime })
+            : t('schedule.durationHint', { n: durationMinutes })}
         </Text>
       )}
 
@@ -85,7 +89,7 @@ export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeC
         <View style={s.overlay}>
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
-              <Text style={s.sheetTitle}>Saat Seç</Text>
+              <Text style={s.sheetTitle}>{t('schedule.pickTime')}</Text>
               <TouchableOpacity onPress={() => setShowPicker(false)} style={s.closeBtn}>
                 <Text style={s.closeTxt}>✕</Text>
               </TouchableOpacity>
@@ -93,7 +97,7 @@ export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeC
 
             <View style={s.columnsRow}>
               <View style={s.column}>
-                <Text style={s.columnLabel}>Saat</Text>
+                <Text style={s.columnLabel}>{t('schedule.hour')}</Text>
                 <ScrollView style={s.columnScroll} showsVerticalScrollIndicator={false}>
                   {HOURS.map((h) => (
                     <TouchableOpacity
@@ -110,7 +114,7 @@ export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeC
               <Text style={s.colon}>:</Text>
 
               <View style={s.column}>
-                <Text style={s.columnLabel}>Dakika</Text>
+                <Text style={s.columnLabel}>{t('schedule.minute')}</Text>
                 <ScrollView style={s.columnScroll} showsVerticalScrollIndicator={false}>
                   {MINUTES.map((m) => (
                     <TouchableOpacity
@@ -126,7 +130,7 @@ export default function ScheduleStep({ selectedDate, onSelectDate, time, onTimeC
             </View>
 
             <TouchableOpacity style={s.confirmBtn} activeOpacity={0.85} onPress={confirm}>
-              <Text style={s.confirmBtnTxt}>Tamam ({draftHour}:{draftMinute})</Text>
+              <Text style={s.confirmBtnTxt}>{t('schedule.confirm', { time: draftHour + ':' + draftMinute })}</Text>
             </TouchableOpacity>
           </View>
         </View>

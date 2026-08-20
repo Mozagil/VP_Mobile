@@ -11,39 +11,47 @@ import StepProgressBar from '../../components/StepProgressBar';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { getWebmailUrl } from '../../utils/mailProvider';
+import { useI18n } from '../../i18n';
 
+// `value` is what gets stored on the profile and must stay stable across
+// languages; only the catalog key next to it decides what the user reads.
 const LEVELS = [
-  { value: 'başlangıç', label: 'Başlangıç', desc: 'Yeni başlıyorum' },
-  { value: 'orta', label: 'Orta', desc: '1-3 yıl deneyim' },
-  { value: 'ileri', label: 'İleri', desc: '3+ yıl deneyim' },
-  { value: 'profesyonel', label: 'Profesyonel', desc: 'Lisanslı/federasyon' },
-];
+  { value: 'başlangıç', labelKey: 'level.beginner', descKey: 'level.beginner.desc' },
+  { value: 'orta', labelKey: 'level.intermediate', descKey: 'level.intermediate.desc' },
+  { value: 'ileri', labelKey: 'level.advanced', descKey: 'level.advanced.desc' },
+  { value: 'profesyonel', labelKey: 'level.pro', descKey: 'level.pro.desc' },
+] as const;
 
 const POSITIONS = [
-  { value: 'pasor', label: 'Pasör' },
-  { value: 'smacor', label: 'Smaçör' },
-  { value: 'orta', label: 'Orta Oyuncu' },
-  { value: 'libero', label: 'Libero' },
-  { value: 'pasor_caprazi', label: 'Pasör Çaprazı' },
-  { value: 'kararsiz', label: 'Kararsızım' },
-];
+  { value: 'pasor', labelKey: 'position.setter' },
+  { value: 'smacor', labelKey: 'position.outsideHitter' },
+  { value: 'orta', labelKey: 'position.middleBlocker' },
+  { value: 'libero', labelKey: 'position.libero' },
+  { value: 'pasor_caprazi', labelKey: 'position.opposite' },
+  { value: 'kararsiz', labelKey: 'position.undecided' },
+] as const;
 
 const GOALS = [
-  'Servis geliştirme', 'Manşet kontrolü', 'Smaç gücü', 'Blok tekniği',
-  'Takım oyunu', 'Fiziksel kondisyon', 'Mental güç', 'Savunma',
-  'Pasörlük', 'Liderlik', 'Maç zekası', 'Çeviklik',
-];
+  { value: 'Servis geliştirme', labelKey: 'goal.serve' },
+  { value: 'Manşet kontrolü', labelKey: 'goal.forearmPass' },
+  { value: 'Smaç gücü', labelKey: 'goal.spikePower' },
+  { value: 'Blok tekniği', labelKey: 'goal.blockTechnique' },
+  { value: 'Takım oyunu', labelKey: 'goal.teamPlay' },
+  { value: 'Fiziksel kondisyon', labelKey: 'goal.conditioning' },
+  { value: 'Mental güç', labelKey: 'goal.mental' },
+  { value: 'Savunma', labelKey: 'goal.defense' },
+  { value: 'Pasörlük', labelKey: 'goal.setting' },
+  { value: 'Liderlik', labelKey: 'goal.leadership' },
+  { value: 'Maç zekası', labelKey: 'goal.gameIq' },
+  { value: 'Çeviklik', labelKey: 'goal.agility' },
+] as const;
 
-const FREQUENCIES = [
-  { value: 2, label: '2 gün/hafta' },
-  { value: 3, label: '3 gün/hafta' },
-  { value: 4, label: '4 gün/hafta' },
-  { value: 5, label: '5+ gün/hafta' },
-];
+const FREQUENCIES = [2, 3, 4, 5] as const;
 
 export default function RegisterScreen() {
   const { signUp, finalizeSignUp } = useAuth();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -67,7 +75,7 @@ export default function RegisterScreen() {
 
   const submit = async () => {
     if (!email || !password) {
-      Alert.alert('Hata', 'E-posta ve şifre zorunludur.');
+      Alert.alert(t('common.error'), t('auth.register.credentialsRequired'));
       return;
     }
     setLoading(true);
@@ -80,8 +88,8 @@ export default function RegisterScreen() {
       const noResponse = !(e as any)?.response;
       const msg = Array.isArray(raw)
         ? raw.map((d: any) => d.msg ?? d).join('\n')
-        : (raw ?? (noResponse ? 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.' : 'Kayıt başarısız.'));
-      Alert.alert('Hata', String(msg));
+        : (raw ?? (noResponse ? t('auth.register.noResponse') : t('auth.register.failed')));
+      Alert.alert(t('common.error'), String(msg));
     } finally {
       setLoading(false);
     }
@@ -111,25 +119,25 @@ export default function RegisterScreen() {
 
           {step === 0 && (
             <View>
-              <Text style={styles.heading}>Hesap Bilgileri</Text>
-              <Input label="Ad" placeholder="Adınız" value={firstName} onChangeText={setFirstName} />
-              <Input label="Soyad" placeholder="Soyadınız" value={lastName} onChangeText={setLastName} />
-              <Input label="E-posta" placeholder="email@örnek.com" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-              <Input label="Şifre" placeholder="En az 6 karakter" secureTextEntry value={password} onChangeText={setPassword} />
+              <Text style={styles.heading}>{t('auth.register.accountInfo')}</Text>
+              <Input label={t('auth.register.firstName')} placeholder={t('auth.register.firstNamePlaceholder')} value={firstName} onChangeText={setFirstName} />
+              <Input label={t('auth.register.lastName')} placeholder={t('auth.register.lastNamePlaceholder')} value={lastName} onChangeText={setLastName} />
+              <Input label={t('auth.email')} placeholder={t('auth.emailPlaceholder')} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+              <Input label={t('auth.password')} placeholder={t('auth.register.passwordPlaceholder')} secureTextEntry value={password} onChangeText={setPassword} />
             </View>
           )}
 
           {step === 1 && (
             <View>
-              <Text style={styles.heading}>Seviyeniz</Text>
+              <Text style={styles.heading}>{t('auth.register.yourLevel')}</Text>
               {LEVELS.map((l) => (
                 <TouchableOpacity
                   key={l.value}
                   style={[styles.option, level === l.value && styles.optionSelected]}
                   onPress={() => setLevel(l.value)}
                 >
-                  <Text style={[styles.optionTitle, level === l.value && styles.optionTitleSelected]}>{l.label}</Text>
-                  <Text style={styles.optionDesc}>{l.desc}</Text>
+                  <Text style={[styles.optionTitle, level === l.value && styles.optionTitleSelected]}>{t(l.labelKey)}</Text>
+                  <Text style={styles.optionDesc}>{t(l.descKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -137,7 +145,7 @@ export default function RegisterScreen() {
 
           {step === 2 && (
             <View>
-              <Text style={styles.heading}>Mevkiniz</Text>
+              <Text style={styles.heading}>{t('auth.register.yourPosition')}</Text>
               <View style={styles.grid}>
                 {POSITIONS.map((p) => (
                   <TouchableOpacity
@@ -145,7 +153,7 @@ export default function RegisterScreen() {
                     style={[styles.chip, position === p.value && styles.chipSelected]}
                     onPress={() => setPosition(p.value)}
                   >
-                    <Text style={[styles.chipText, position === p.value && styles.chipTextSelected]}>{p.label}</Text>
+                    <Text style={[styles.chipText, position === p.value && styles.chipTextSelected]}>{t(p.labelKey)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -154,16 +162,16 @@ export default function RegisterScreen() {
 
           {step === 3 && (
             <View>
-              <Text style={styles.heading}>Hedefleriniz</Text>
-              <Text style={styles.sub}>Birden fazla seçebilirsiniz</Text>
+              <Text style={styles.heading}>{t('auth.register.yourGoals')}</Text>
+              <Text style={styles.sub}>{t('auth.register.multiSelectHint')}</Text>
               <View style={styles.grid}>
                 {GOALS.map((g) => (
                   <TouchableOpacity
-                    key={g}
-                    style={[styles.chip, goals.includes(g) && styles.chipSelected]}
-                    onPress={() => toggleGoal(g)}
+                    key={g.value}
+                    style={[styles.chip, goals.includes(g.value) && styles.chipSelected]}
+                    onPress={() => toggleGoal(g.value)}
                   >
-                    <Text style={[styles.chipText, goals.includes(g) && styles.chipTextSelected]}>{g}</Text>
+                    <Text style={[styles.chipText, goals.includes(g.value) && styles.chipTextSelected]}>{t(g.labelKey)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -172,14 +180,16 @@ export default function RegisterScreen() {
 
           {step === 4 && (
             <View>
-              <Text style={styles.heading}>Antrenman Sıklığı</Text>
+              <Text style={styles.heading}>{t('auth.register.frequency')}</Text>
               {FREQUENCIES.map((f) => (
                 <TouchableOpacity
-                  key={f.value}
-                  style={[styles.option, frequency === f.value && styles.optionSelected]}
-                  onPress={() => setFrequency(f.value)}
+                  key={f}
+                  style={[styles.option, frequency === f && styles.optionSelected]}
+                  onPress={() => setFrequency(f)}
                 >
-                  <Text style={[styles.optionTitle, frequency === f.value && styles.optionTitleSelected]}>{f.label}</Text>
+                  <Text style={[styles.optionTitle, frequency === f && styles.optionTitleSelected]}>
+                    {f >= 5 ? t('frequency.perWeekPlus', { n: f }) : t('frequency.perWeek', { n: f })}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -187,16 +197,16 @@ export default function RegisterScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          {step > 0 && <Button title="Geri" onPress={back} variant="outline" style={{ flex: 1, marginRight: 8 }} />}
+          {step > 0 && <Button title={t('auth.register.back')} onPress={back} variant="outline" style={{ flex: 1, marginRight: 8 }} />}
           {step < 4 ? (
             <Button
-              title="Devam"
+              title={t('auth.register.next')}
               onPress={next}
               style={{ flex: 1 }}
               disabled={step === 0 ? (!email || !password) : step === 1 ? !level : step === 2 ? !position : false}
             />
           ) : (
-            <Button title="Kayıt Ol" onPress={submit} loading={loading} style={{ flex: 1 }} />
+            <Button title={t('auth.register.title')} onPress={submit} loading={loading} style={{ flex: 1 }} />
           )}
         </View>
       </KeyboardAvoidingView>
@@ -207,12 +217,12 @@ export default function RegisterScreen() {
             <View style={styles.modalIconCircle}>
               <Text style={styles.modalIconText}>✉️</Text>
             </View>
-            <Text style={styles.modalTitle}>E-posta Gönderildi</Text>
+            <Text style={styles.modalTitle}>{t('auth.register.verifyTitle')}</Text>
             <Text style={styles.modalDesc}>
-              {email} adresine bir doğrulama bağlantısı gönderdik. Hesabınızı tam olarak kullanabilmek için gelen kutunuzu kontrol edip mailinizi doğrulayın.
+              {t('auth.register.verifyBody', { email })}
             </Text>
-            <Button title="E-postamı Aç" onPress={openWebmail} style={{ width: '100%', marginTop: 8 }} />
-            <Button title="Tamam" onPress={confirmEmailSentModal} variant="outline" style={{ width: '100%', marginTop: 8 }} />
+            <Button title={t('auth.register.openMail')} onPress={openWebmail} style={{ width: '100%', marginTop: 8 }} />
+            <Button title={t('common.ok')} onPress={confirmEmailSentModal} variant="outline" style={{ width: '100%', marginTop: 8 }} />
           </View>
         </View>
       </Modal>

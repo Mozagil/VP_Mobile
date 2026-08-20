@@ -6,12 +6,14 @@ import { useAuth } from '../../auth/AuthContext';
 import Icon from '../../components/ui/Icon';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 
 type Props = { navigation: NativeStackNavigationProp<any> };
 
 export default function LogoutScreen({ navigation }: Props) {
   const { signOut } = useAuth() as any;
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
   return (
@@ -20,7 +22,7 @@ export default function LogoutScreen({ navigation }: Props) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Icon name="geri" size={20} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Çıkış Yap</Text>
+        <Text style={s.headerTitle}>{t('account.logoutTitle')}</Text>
         <View style={{ width: 20 }} />
       </View>
 
@@ -29,18 +31,16 @@ export default function LogoutScreen({ navigation }: Props) {
           <Icon name="cikis" size={44} />
         </View>
 
-        <Text style={s.title}>Çıkış yapmak istediğine emin misin?</Text>
-        <Text style={s.subtitle}>
-          Tekrar giriş yapmak için e-posta adresin{'\n'}ve şifren yeterli olacak.
-        </Text>
+        <Text style={s.title}>{t('account.logoutConfirm')}</Text>
+        <Text style={s.subtitle}>{t('account.logoutHint')}</Text>
       </View>
 
       <View style={s.footer}>
         <TouchableOpacity style={s.primaryBtn} activeOpacity={0.85} onPress={() => signOut?.()}>
-          <Text style={s.primaryBtnTxt}>Çıkış Yap</Text>
+          <Text style={s.primaryBtnTxt}>{t('account.logoutTitle')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.cancelBtn} activeOpacity={0.7} onPress={() => navigation.goBack()}>
-          <Text style={s.cancelTxt}>İptal</Text>
+          <Text style={s.cancelTxt}>{t('common.cancel')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

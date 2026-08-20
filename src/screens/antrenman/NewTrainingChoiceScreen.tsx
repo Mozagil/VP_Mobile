@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import Icon from '../../components/ui/Icon';
 
@@ -11,6 +12,7 @@ type Props = { navigation: NativeStackNavigationProp<AntrenmanStackParamList, 'N
 
 export default function NewTrainingChoiceScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -22,12 +24,12 @@ export default function NewTrainingChoiceScreen({ navigation }: Props) {
         >
           <Text style={s.closeTxt}>✕</Text>
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Yeni Antrenman</Text>
+        <Text style={s.headerTitle}>{t('newTraining.title')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <View style={s.body}>
-        <Text style={s.question}>Nasıl bir antrenman oluşturmak istersin?</Text>
+        <Text style={s.question}>{t('newTraining.question')}</Text>
 
         <TouchableOpacity
           style={s.option}
@@ -38,8 +40,8 @@ export default function NewTrainingChoiceScreen({ navigation }: Props) {
             <Icon name="antrenmanlar" size={22} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.optionTitle}>Kendi Antrenmanını Oluştur</Text>
-            <Text style={s.optionDesc}>Hareketleri kendin seç, kendi antrenmanını oluştur.</Text>
+            <Text style={s.optionTitle}>{t('newTraining.ownTitle')}</Text>
+            <Text style={s.optionDesc}>{t('newTraining.ownDesc')}</Text>
           </View>
           <Text style={s.arrow}>›</Text>
         </TouchableOpacity>
@@ -47,14 +49,21 @@ export default function NewTrainingChoiceScreen({ navigation }: Props) {
         <TouchableOpacity
           style={s.option}
           activeOpacity={0.78}
-          onPress={() => navigation.getParent()?.navigate('ÖzelliklerStack' as any, { screen: 'AIWizard' } as any)}
+          onPress={() => {
+            // iOS'ta bu ekran native modal olarak sunuldugu icin, modal kapatilmadan
+            // alttaki tab degistirilirse ekran degismis gibi gorunmuyor. Once modal
+            // kapatilip sonra AI sihirbazina geciliyor.
+            const parent = navigation.getParent();
+            navigation.goBack();
+            parent?.navigate('ÖzelliklerStack' as any, { screen: 'AIWizard' } as any);
+          }}
         >
           <View style={[s.iconBox, { backgroundColor: colors.blue + '20' }]}>
             <Icon name="ai-koc" size={22} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.optionTitle}>AI ile Antrenman Oluştur</Text>
-            <Text style={s.optionDesc}>Hedeflerine uygun, sana özel antrenman oluşturalım.</Text>
+            <Text style={s.optionTitle}>{t('newTraining.aiTitle')}</Text>
+            <Text style={s.optionDesc}>{t('newTraining.aiDesc')}</Text>
           </View>
           <Text style={s.arrow}>›</Text>
         </TouchableOpacity>

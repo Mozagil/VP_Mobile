@@ -7,16 +7,15 @@ import { Colors } from '../../theme/palettes';
 import { CATEGORIES, KEYWORD_FILTERS } from '../../data/sozlukTerms';
 import { SozlukStackParamList, SortBy } from '../../navigation/SozlukStack';
 import Icon from '../../components/ui/Icon';
+import { useI18n, sozlukCategoryLabel, sozlukKeywordLabel } from '../../i18n';
 
 type Props = NativeStackScreenProps<SozlukStackParamList, 'SozlukFilter'>;
 
-const SORT_OPTIONS: { key: SortBy; label: string }[] = [
-  { key: 'az', label: "A'dan Z'ye" },
-  { key: 'za', label: "Z'den A'ya" },
-];
+const SORT_KEYS: SortBy[] = ['az', 'za'];
 
 export default function SozlukFilterScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { current, onApply } = route.params;
   const [category, setCategory] = useState(current.category);
@@ -44,14 +43,14 @@ export default function SozlukFilterScreen({ route, navigation }: Props) {
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Filtrele</Text>
+        <Text style={s.headerTitle}>{t('sozluk.filterTitle')}</Text>
         <TouchableOpacity onPress={clear} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={s.clearTxt}>Temizle</Text>
+          <Text style={s.clearTxt}>{t('sozluk.filter.clear')}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
-        <Text style={s.fieldLabel}>KATEGORİ</Text>
+        <Text style={s.fieldLabel}>{t('sozluk.filter.category')}</Text>
         <View style={s.chipsRow}>
           {CATEGORIES.map((c) => {
             const active = category === c;
@@ -62,13 +61,13 @@ export default function SozlukFilterScreen({ route, navigation }: Props) {
                 activeOpacity={0.8}
                 onPress={() => setCategory(c)}
               >
-                <Text style={[s.chipTxt, active && s.chipTxtActive]}>{c}</Text>
+                <Text style={[s.chipTxt, active && s.chipTxtActive]}>{sozlukCategoryLabel(c, lang)}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <Text style={s.fieldLabel}>ANAHTAR KELİMELER</Text>
+        <Text style={s.fieldLabel}>{t('sozluk.filter.keywords')}</Text>
         <View style={s.chipsRow}>
           {KEYWORD_FILTERS.map((k) => {
             const active = keywords.includes(k);
@@ -79,26 +78,28 @@ export default function SozlukFilterScreen({ route, navigation }: Props) {
                 activeOpacity={0.8}
                 onPress={() => toggleKeyword(k)}
               >
-                <Text style={[s.chipTxt, active && s.chipTxtActive]}>{k}</Text>
+                <Text style={[s.chipTxt, active && s.chipTxtActive]}>{sozlukKeywordLabel(k, lang)}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <Text style={s.fieldLabel}>SIRALAMA</Text>
-        {SORT_OPTIONS.map((opt) => {
-          const active = sortBy === opt.key;
+        <Text style={s.fieldLabel}>{t('sozluk.filter.sort')}</Text>
+        {SORT_KEYS.map((key) => {
+          const active = sortBy === key;
           return (
             <TouchableOpacity
-              key={opt.key}
+              key={key}
               style={s.radioRow}
               activeOpacity={0.8}
-              onPress={() => setSortBy(opt.key)}
+              onPress={() => setSortBy(key)}
             >
               <View style={[s.radio, active && s.radioActive]}>
                 {active && <View style={s.radioDot} />}
               </View>
-              <Text style={s.radioLabel}>{opt.label}</Text>
+              <Text style={s.radioLabel}>
+                {key === 'az' ? t('sozluk.filter.sortAz') : t('sozluk.filter.sortZa')}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -106,7 +107,7 @@ export default function SozlukFilterScreen({ route, navigation }: Props) {
 
       <View style={s.footer}>
         <TouchableOpacity style={s.applyBtn} activeOpacity={0.85} onPress={apply}>
-          <Text style={s.applyBtnTxt}>Uygula</Text>
+          <Text style={s.applyBtnTxt}>{t('sozluk.filter.apply')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

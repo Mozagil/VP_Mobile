@@ -7,20 +7,22 @@ import { apiClient } from '../../api/client';
 import Icon from '../../components/ui/Icon';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 
 type Props = { navigation: NativeStackNavigationProp<any> };
 
 const DELETED_ITEMS = [
-  'Profil bilgileriniz',
-  'Antrenman geçmişiniz',
-  'İstatistik ve gelişim verileriniz',
-  'Hedefleriniz',
-  'Tüm kişisel ayarlarınız',
-];
+  'account.deleteItem.profile',
+  'account.deleteItem.history',
+  'account.deleteItem.stats',
+  'account.deleteItem.goals',
+  'account.deleteItem.settings',
+] as const;
 
 export default function DeleteAccountScreen({ navigation }: Props) {
   const { signOut } = useAuth() as any;
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const [deleting, setDeleting] = useState(false);
 
@@ -30,7 +32,7 @@ export default function DeleteAccountScreen({ navigation }: Props) {
       await apiClient.delete('/auth/me');
       await signOut?.();
     } catch {
-      Alert.alert('Hata', 'Hesap silinirken bir sorun oluştu.');
+      Alert.alert(t('common.error'), t('account.deleteError'));
       setDeleting(false);
     }
   };
@@ -41,7 +43,7 @@ export default function DeleteAccountScreen({ navigation }: Props) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} disabled={deleting}>
           <Icon name="geri" size={20} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Hesabı Sil</Text>
+        <Text style={s.headerTitle}>{t('account.deleteTitle')}</Text>
         <View style={{ width: 20 }} />
       </View>
 
@@ -50,17 +52,15 @@ export default function DeleteAccountScreen({ navigation }: Props) {
           <Icon name="sil" size={40} />
         </View>
 
-        <Text style={s.title}>Hesabını silmek istediğine emin misin?</Text>
-        <Text style={s.subtitle}>
-          Hesabını silersen tüm verilerin kalıcı olarak{'\n'}silinecek. Bu işlem geri alınamaz.
-        </Text>
+        <Text style={s.title}>{t('account.deleteConfirm')}</Text>
+        <Text style={s.subtitle}>{t('account.deleteWarning')}</Text>
 
         <View style={s.card}>
-          <Text style={s.cardTitle}>Silinecek veriler:</Text>
+          <Text style={s.cardTitle}>{t('account.deletedDataTitle')}</Text>
           {DELETED_ITEMS.map((item) => (
             <View key={item} style={s.bulletRow}>
               <View style={s.bulletDot} />
-              <Text style={s.bulletTxt}>{item}</Text>
+              <Text style={s.bulletTxt}>{t(item)}</Text>
             </View>
           ))}
         </View>
@@ -73,10 +73,10 @@ export default function DeleteAccountScreen({ navigation }: Props) {
           disabled={deleting}
           onPress={handleDelete}
         >
-          {deleting ? <ActivityIndicator color="#ffffff" /> : <Text style={s.primaryBtnTxt}>Hesabımı Sil</Text>}
+          {deleting ? <ActivityIndicator color="#ffffff" /> : <Text style={s.primaryBtnTxt}>{t('account.deleteButton')}</Text>}
         </TouchableOpacity>
         <TouchableOpacity style={s.cancelBtn} activeOpacity={0.7} disabled={deleting} onPress={() => navigation.goBack()}>
-          <Text style={s.cancelTxt}>İptal</Text>
+          <Text style={s.cancelTxt}>{t('common.cancel')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

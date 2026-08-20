@@ -6,6 +6,7 @@ import { Colors } from '../../theme/palettes';
 import { useCreatePlan } from '../../hooks/useTrainingPlans';
 import { useCreateScheduledSession } from '../../hooks/useScheduledSessions';
 import Slider from '../../components/ui/Slider';
+import { useI18n, useContent, levelLabel } from '../../i18n';
 import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/ScheduleStep';
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
@@ -28,9 +29,13 @@ function shuffle<T>(arr: T[]): T[] {
 
 // Picks n real catalog drills for one phase, preferring drills whose skill
 // matches the selected goal/focus, without ever inventing a drill that isn't
-// in our video library.
-function pickRealDrills(pool: Drill[], n: number, skills: string[], usedIds: Set<number>): Drill[] {
-  const available = pool.filter((d) => !usedIds.has(d.id));
+// in our video library. When a level is given, only drills of that level are
+// used — unless the level pool is too small to fill the section, in which case
+// the whole pool is used again so a plan is never left short.
+function pickRealDrills(pool: Drill[], n: number, skills: string[], usedIds: Set<number>, level?: string): Drill[] {
+  const all = pool.filter((d) => !usedIds.has(d.id));
+  const levelPool = level ? all.filter((d) => d.level === level) : [];
+  const available = levelPool.length >= n ? levelPool : all;
   const preferred = skills.length > 0 ? available.filter((d) => skills.includes(d.skill)) : [];
   const rest = available.filter((d) => !preferred.includes(d));
   const ordered = [...shuffle(preferred), ...shuffle(rest)];
@@ -41,7 +46,7 @@ function pickRealDrills(pool: Drill[], n: number, skills: string[], usedIds: Set
 
 type PlanSection = { phase: string; minutes: number; drills: Drill[] };
 
-function buildPlan(totalMinutes: number, goalSkills: string[]): PlanSection[] {
+function buildPlan(totalMinutes: number, goalSkills: string[], level: string): PlanSection[] {
   let wu: number, te: number, ga: number, co: number;
   if (totalMinutes <= 45) { wu = 8; te = 17; ga = 15; co = 5; }
   else if (totalMinutes <= 60) { wu = 10; te = 20; ga = 20; co = 5; }
@@ -57,20 +62,33 @@ function buildPlan(totalMinutes: number, goalSkills: string[]): PlanSection[] {
 
   return [
     { phase: 'Isınma', minutes: wu, drills: pickRealDrills(warmupPool, wu <= 8 ? 2 : 3, [], usedIds) },
-    { phase: 'Ana Antrenman', minutes: te + ga, drills: pickRealDrills(mainPool, mainCount, goalSkills, usedIds) },
+    // Isınma/Soğuma havuzunun tamami "Başlangıç" oldugu icin seviye yalnizca
+    // ana antrenman driller'ine uygulanir.
+    { phase: 'Ana Antrenman', minutes: te + ga, drills: pickRealDrills(mainPool, mainCount, goalSkills, usedIds, level) },
     { phase: 'Soğuma', minutes: co, drills: pickRealDrills(cooldownPool, 2, [], usedIds) },
   ].filter((sec) => sec.drills.length > 0);
 }
 
+// `skills` and `type` are canonical values used to pick drills and to tag the
+// created plan; only titleKey/descKey decide what the user reads.
 const GOALS = [
-  { key: 'teknik', title: 'Teknik Gelişim', desc: 'Pas, smaç, servis, blok gibi teknik becerilerini geliştirmek.', skills: ['Pas', 'Manşet', 'Servis', 'Atak', 'Blok'], type: 'Teknik' },
-  { key: 'kondisyon', title: 'Kondisyon Gelişimi', desc: 'Dayanıklılık, güç ve çeviklik kazanmak.', skills: ['Kondisyon'], type: 'Kondisyon' },
-  { key: 'mac', title: 'Maça Hazırlık', desc: 'Maç performansını artırmak için özel çalışma.', skills: ['Taktik'], type: 'Maç Simülasyonu' },
-  { key: 'genel', title: 'Genel Gelişim', desc: 'Tüm becerileri dengeli şekilde geliştirmek.', skills: [] as string[], type: 'Karışık' },
+  { key: 'teknik', titleKey: 'ai.goal.technique', descKey: 'ai.goal.technique.desc', skills: ['Pas', 'Manşet', 'Servis', 'Atak', 'Blok'], type: 'Teknik' },
+  { key: 'kondisyon', titleKey: 'ai.goal.conditioning', descKey: 'ai.goal.conditioning.desc', skills: ['Kondisyon'], type: 'Kondisyon' },
+  { key: 'mac', titleKey: 'ai.goal.match', descKey: 'ai.goal.match.desc', skills: ['Taktik'], type: 'Maç Simülasyonu' },
+  { key: 'genel', titleKey: 'ai.goal.general', descKey: 'ai.goal.general.desc', skills: [] as string[], type: 'Karışık' },
 ] as const;
 
 const LEVELS = ['Başlangıç', 'Orta', 'İleri'];
-const FOCUS_OPTIONS = ['Pas', 'Servis', 'Smaç', 'Blok', 'Defans', 'Kondisyon'];
+
+// Canonical focus values kept as-is so FOCUS_TO_SKILL and drill matching work.
+const FOCUS_OPTIONS = [
+  { value: 'Pas', labelKey: 'ai.focus.pass' },
+  { value: 'Servis', labelKey: 'ai.focus.serve' },
+  { value: 'Smaç', labelKey: 'ai.focus.spike' },
+  { value: 'Blok', labelKey: 'ai.focus.block' },
+  { value: 'Defans', labelKey: 'ai.focus.defense' },
+  { value: 'Kondisyon', labelKey: 'ai.focus.conditioning' },
+] as const;
 const FOCUS_TO_SKILL: Record<string, string> = { Smaç: 'Atak', Defans: 'Savunma' };
 
 type Styles = ReturnType<typeof makeStyles>;
@@ -94,6 +112,8 @@ type Props = { navigation: any };
 
 export default function AIWizardScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const createPlan = useCreatePlan();
   const createSession = useCreateScheduledSession();
@@ -118,7 +138,7 @@ export default function AIWizardScreen({ navigation }: Props) {
       const goal = GOALS.find((g) => g.key === goalKey)!;
       const focusSkills = focus.map((f) => FOCUS_TO_SKILL[f] ?? f);
       const skills = Array.from(new Set([...goal.skills, ...focusSkills]));
-      const sections = buildPlan(duration, skills);
+      const sections = buildPlan(duration, skills, level);
 
       const drills = sections.flatMap((sec, si) =>
         sec.drills.map((d, i) => ({
@@ -129,10 +149,10 @@ export default function AIWizardScreen({ navigation }: Props) {
         })),
       );
 
-      const planName = customName.trim() || `AI - ${goal.title}`;
+      const planName = customName.trim() || `AI - ${t(goal.titleKey)}`;
       const plan = await createPlan.mutateAsync({
         name: planName,
-        goal: goal.desc,
+        goal: t(goal.descKey),
         plan_type: goal.type,
         level: level.toLowerCase(),
         target_duration: duration,
@@ -150,11 +170,11 @@ export default function AIWizardScreen({ navigation }: Props) {
         params: {
           planId,
           planName,
-          drillName: sections[0]?.drills[0]?.name ?? planName,
+          drillName: sections[0]?.drills[0] ? drillName(sections[0].drills[0]) : planName,
         },
       });
     } catch {
-      Alert.alert('Hata', 'Antrenman oluşturulurken bir sorun oluştu.');
+      Alert.alert(t('common.error'), t('ai.createError'));
     } finally {
       setSaving(false);
     }
@@ -166,7 +186,7 @@ export default function AIWizardScreen({ navigation }: Props) {
         <TouchableOpacity style={s.backBtn} onPress={goBackStep} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>{step === 0 ? 'AI ile Antreman Oluştur' : step === 1 ? 'Seviye ve Süre' : 'Zaman ve Gün'}</Text>
+        <Text style={s.headerTitle}>{step === 0 ? t('ai.step0') : step === 1 ? t('ai.step1') : t('ai.step2')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -175,16 +195,16 @@ export default function AIWizardScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
         {step === 0 && (
           <>
-            <Text style={s.fieldLabel}>Antrenmanına bir ad ver (opsiyonel)</Text>
+            <Text style={s.fieldLabel}>{t('ai.nameLabel')}</Text>
             <TextInput
               style={s.input}
-              placeholder="Ör: Pazartesi Teknik Antrenman"
+              placeholder={t('ai.namePlaceholder')}
               placeholderTextColor={colors.muted}
               value={customName}
               onChangeText={setCustomName}
             />
 
-            <Text style={s.question}>Hedefini seç</Text>
+            <Text style={s.question}>{t('ai.goalQuestion')}</Text>
             {GOALS.map((g) => {
               const active = goalKey === g.key;
               return (
@@ -198,8 +218,8 @@ export default function AIWizardScreen({ navigation }: Props) {
                     {active && <View style={s.radioDot} />}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={s.goalTitle}>{g.title}</Text>
-                    <Text style={s.goalDesc}>{g.desc}</Text>
+                    <Text style={s.goalTitle}>{t(g.titleKey)}</Text>
+                    <Text style={s.goalDesc}>{t(g.descKey)}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -209,7 +229,7 @@ export default function AIWizardScreen({ navigation }: Props) {
 
         {step === 1 && (
           <>
-            <Text style={s.fieldLabel}>Seviye</Text>
+            <Text style={s.fieldLabel}>{t('ai.levelLabel')}</Text>
             <View style={s.chipsRow}>
               {LEVELS.map((l) => {
                 const active = level === l;
@@ -220,28 +240,28 @@ export default function AIWizardScreen({ navigation }: Props) {
                     onPress={() => setLevel(l)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{l}</Text>
+                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{levelLabel(l, lang)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            <Text style={s.fieldLabel}>Tahmini Süre</Text>
-            <Slider min={30} max={120} step={5} value={duration} onChange={setDuration} formatValue={(v) => `${v} dk`} />
-            <Text style={s.durationValue}>{duration} dk</Text>
+            <Text style={s.fieldLabel}>{t('ai.durationLabel')}</Text>
+            <Slider min={30} max={120} step={5} value={duration} onChange={setDuration} formatValue={(v) => t('ai.duration', { n: v })} />
+            <Text style={s.durationValue}>{t('ai.duration', { n: duration })}</Text>
 
-            <Text style={s.fieldLabel}>Odaklanılacak alanlar (Opsiyonel)</Text>
+            <Text style={s.fieldLabel}>{t('ai.focusLabel')}</Text>
             <View style={s.chipsRow}>
-              {FOCUS_OPTIONS.map((f) => {
-                const active = focus.includes(f);
+              {FOCUS_OPTIONS.map((opt) => {
+                const active = focus.includes(opt.value);
                 return (
                   <TouchableOpacity
-                    key={f}
+                    key={opt.value}
                     style={[s.chip, active && s.chipActive]}
-                    onPress={() => toggleFocus(f)}
+                    onPress={() => toggleFocus(opt.value)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{f}</Text>
+                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{t(opt.labelKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -268,7 +288,7 @@ export default function AIWizardScreen({ navigation }: Props) {
           disabled={step === 2 && saving}
         >
           <Text style={s.primaryBtnTxt}>
-            {step === 2 ? (saving ? 'Oluşturuluyor…' : 'Kaydet') : 'Devam Et'}
+            {step === 2 ? (saving ? t('common.creating') : t('common.save')) : t('common.continue')}
           </Text>
         </TouchableOpacity>
       </View>

@@ -3,6 +3,7 @@ import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { TrainingPlan } from '../data/types';
 import { useTheme } from '../theme/ThemeContext';
 import { Colors } from '../theme/palettes';
+import { useI18n } from '../i18n';
 
 type Props = {
   plan: TrainingPlan;
@@ -11,6 +12,7 @@ type Props = {
 
 export default function PlanCard({ plan, onPress }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const total = plan.drills.length;
   const done = plan.drills.filter((d) => d.completed).length;
@@ -23,7 +25,7 @@ export default function PlanCard({ plan, onPress }: Props) {
           <Text style={styles.name} numberOfLines={1}>{plan.name}</Text>
           {plan.status === 'active' && (
             <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>Aktif</Text>
+              <Text style={styles.activeBadgeText}>{t('plans.activeBadge')}</Text>
             </View>
           )}
         </View>
@@ -40,13 +42,13 @@ export default function PlanCard({ plan, onPress }: Props) {
           <View style={[styles.barFill, { width: `${pct}%` }]} />
         </View>
         <View style={styles.statsRow}>
-          <Text style={styles.statsText}>{done}/{total} drill tamamlandı</Text>
+          <Text style={styles.statsText}>{t('plans.drillsDone', { done, total })}</Text>
           <Text style={styles.pct}>%{pct}</Text>
         </View>
         {(plan.duration_weeks || plan.sessions_per_week) && (
           <View style={styles.metaRow}>
-            {plan.duration_weeks && <Text style={styles.meta}>📅 {plan.duration_weeks} hafta</Text>}
-            {plan.sessions_per_week && <Text style={styles.meta}>⚡ {plan.sessions_per_week}x/hafta</Text>}
+            {plan.duration_weeks && <Text style={styles.meta}>📅 {t('plans.weeks', { n: plan.duration_weeks })}</Text>}
+            {plan.sessions_per_week && <Text style={styles.meta}>⚡ {t('plans.perWeek', { n: plan.sessions_per_week })}</Text>}
           </View>
         )}
       </View>

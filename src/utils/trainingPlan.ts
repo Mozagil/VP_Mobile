@@ -1,6 +1,11 @@
 import { TrainingPlan, ScheduledSession } from '../data/types';
 import { allDrills } from '../data/drills';
 import { Colors } from '../theme/palettes';
+import { DRILL_EN } from '../data/drillsEn';
+// Imported from the leaf modules rather than i18n/index so this pure helper
+// module stays free of the React context barrel.
+import { phaseLabel, WEEKDAYS_SHORT, LOCALE } from '../i18n/domain';
+import type { Lang } from '../i18n/types';
 
 // Shared helpers for turning raw plan/session data into what the
 // Dashboard + "Sıradaki Antrenman" detail screen render.
@@ -21,11 +26,11 @@ export function dateKeyOf(dateStr: string): string {
 
 // `iconName` points at an SVG in the shared icon set; `icon` is the emoji fallback
 // used only for phases that have no matching SVG yet. Render via <PhaseIcon />.
-export function getPhaseDisplay(colors: Colors): Record<string, { label: string; icon: string; iconName?: string; color: string }> {
+export function getPhaseDisplay(colors: Colors, lang: Lang = 'tr'): Record<string, { label: string; icon: string; iconName?: string; color: string }> {
   return {
-    'Isınma':        { label: 'Isınma',         icon: '🔥', iconName: 'kalori',         color: colors.phaseIsınma },
-    'Ana Antrenman': { label: 'Ana Antrenman',  icon: '🎯', iconName: 'ana-antrenman',  color: colors.phaseAna },
-    'Soğuma':        { label: 'Soğuma',         icon: '❄️', iconName: 'soguma',         color: colors.phaseSoğuma },
+    'Isınma':        { label: phaseLabel('Isınma', lang),        icon: '🔥', iconName: 'kalori',         color: colors.phaseIsınma },
+    'Ana Antrenman': { label: phaseLabel('Ana Antrenman', lang), icon: '🎯', iconName: 'ana-antrenman',  color: colors.phaseAna },
+    'Soğuma':        { label: phaseLabel('Soğuma', lang),        icon: '❄️', iconName: 'soguma',         color: colors.phaseSoğuma },
   };
 }
 
@@ -51,14 +56,19 @@ export function resolveDrillMinutes(pd: { drill_id: number; custom_duration?: nu
   return totalMinutes > 0 ? Math.max(1, Math.round(totalMinutes)) : 5;
 }
 
-export function resolveDrillName(pd: { drill_id: number; custom_name?: string | null }): string {
+export function resolveDrillName(pd: { drill_id: number; custom_name?: string | null }, lang: Lang = 'tr'): string {
+  // A custom name was typed by the user, so it is never translated.
   if (pd.custom_name) return pd.custom_name;
+  if (lang === 'en') {
+    const translated = DRILL_EN[pd.drill_id]?.name;
+    if (translated) return translated;
+  }
   const drill = allDrills.find((d) => d.id === pd.drill_id);
-  return drill?.name ?? `Hareket #${pd.drill_id}`;
+  return drill?.name ?? (lang === 'en' ? `Drill #${pd.drill_id}` : `Hareket #${pd.drill_id}`);
 }
 
-export function buildPhaseBreakdown(plan: TrainingPlan, colors: Colors) {
-  const phaseDisplay = getPhaseDisplay(colors);
+export function buildPhaseBreakdown(plan: TrainingPlan, colors: Colors, lang: Lang = 'tr') {
+  const phaseDisplay = getPhaseDisplay(colors, lang);
   return PHASES.map((phase) => {
     const rows = plan.drills.filter((d) => normalizePhase(d.phase) === phase);
     const minutes = rows.reduce((sum, pd) => sum + resolveDrillMinutes(pd), 0);
@@ -182,8 +192,8 @@ export function buildSkillBreakdown(plans: TrainingPlan[], limit = 4): SkillBrea
 
 export type PhaseCompletion = { phase: string; label: string; icon: string; pct: number; count: number };
 
-export function buildPhaseCompletionBreakdown(plans: TrainingPlan[], colors: Colors): PhaseCompletion[] {
-  const phaseDisplay = getPhaseDisplay(colors);
+export function buildPhaseCompletionBreakdown(plans: TrainingPlan[], colors: Colors, lang: Lang = 'tr'): PhaseCompletion[] {
+  const phaseDisplay = getPhaseDisplay(colors, lang);
   const byPhase = new Map<string, { done: number; total: number }>();
   plans.forEach((plan) => {
     plan.drills.forEach((pd) => {
@@ -212,6 +222,10 @@ export function buildPhaseCompletionBreakdown(plans: TrainingPlan[], colors: Col
 
 export const WEEKDAY_LABELS = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
+export function weekdayLabels(lang: Lang = 'tr'): string[] {
+  return lang === 'en' ? WEEKDAYS_SHORT.en : WEEKDAY_LABELS;
+}
+
 export function getMonday(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -227,10 +241,10 @@ function sameDay(a: Date, b: Date): boolean {
 
 export type WeekDay = { key: string; label: string; date: Date; status: 'done' | 'scheduled' | 'none'; isToday: boolean };
 
-export function buildWeekDays(sessions: ScheduledSession[]): WeekDay[] {
+export function buildWeekDays(sessions: ScheduledSession[], lang: Lang = 'tr'): WeekDay[] {
   const monday = getMonday(new Date());
   const today = new Date();
-  return WEEKDAY_LABELS.map((label, i) => {
+  return weekdayLabels(lang).map((label, i) => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + i);
     const daySessions = sessions.filter((s) => sameDay(parseLocalDate(s.session_date), date));
@@ -270,30 +284,30 @@ export function findNextUpcomingSession(sessions: ScheduledSession[], plans: Tra
     .sort((a, b) => parseLocalDate(a.session_date).getTime() - parseLocalDate(b.session_date).getTime())[0];
 }
 
-export function formatRelativeDate(dateStr?: string | null): string | null {
+export function formatRelativeDate(dateStr?: string | null, lang: Lang = 'tr'): string | null {
   if (!dateStr) return null;
   const date = parseLocalDate(dateStr);
   if (Number.isNaN(date.getTime())) return null;
   const today = new Date();
-  if (sameDay(date, today)) return 'Bugün';
+  if (sameDay(date, today)) return lang === 'en' ? 'Today' : 'Bugün';
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  if (sameDay(date, tomorrow)) return 'Yarın';
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+  if (sameDay(date, tomorrow)) return lang === 'en' ? 'Tomorrow' : 'Yarın';
+  return date.toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'long' });
 }
 
-export function formatSessionBadge(dateStr?: string | null, timeStr?: string | null): string | null {
-  const dateLabel = formatRelativeDate(dateStr);
+export function formatSessionBadge(dateStr?: string | null, timeStr?: string | null, lang: Lang = 'tr'): string | null {
+  const dateLabel = formatRelativeDate(dateStr, lang);
   if (!dateLabel) return null;
   return timeStr ? `${dateLabel} • ${timeStr}` : dateLabel;
 }
 
-export const locationLabels: Record<string, string> = {
-  salon: 'Salon',
-  dis_saha: 'Dışarıda',
+export const locationLabels: Record<Lang, Record<string, string>> = {
+  tr: { salon: 'Salon', dis_saha: 'Dışarıda' },
+  en: { salon: 'Indoor', dis_saha: 'Outdoor' },
 };
 
-export function locationLabel(location?: string | null): string | null {
+export function locationLabel(location?: string | null, lang: Lang = 'tr'): string | null {
   if (!location) return null;
-  return locationLabels[location] ?? location;
+  return locationLabels[lang][location] ?? location;
 }

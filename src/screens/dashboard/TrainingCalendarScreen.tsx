@@ -8,6 +8,7 @@ import Calendar from '../../components/ui/Calendar';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { buildPhaseBreakdown, dateKeyOf, getPhaseDisplay, isSessionMissed, parseLocalDate } from '../../utils/trainingPlan';
+import { useI18n, LOCALE } from '../../i18n';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
 
@@ -16,6 +17,7 @@ type Props = { navigation: NativeStackNavigationProp<PanelStackParamList, 'Train
 
 export default function TrainingCalendarScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { data: sessions = [] } = useScheduledSessions();
   const { data: plans = [] } = useTrainingPlans();
@@ -40,7 +42,7 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
       const key = dateKeyOf(sess.session_date);
       const plan = plans.find((p) => p.id === sess.plan_id);
       if (!plan) return;
-      const colorsForPlan = buildPhaseBreakdown(plan, colors).map((p) => p.color);
+      const colorsForPlan = buildPhaseBreakdown(plan, colors, lang).map((p) => p.color);
       (map[key] ??= []).push(...colorsForPlan);
     });
     return map;
@@ -68,7 +70,7 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
         <Calendar markedDates={markedDates} dots={dayDots} onDayPress={setSelectedDay} />
 
         <View style={s.legend}>
-          {Object.entries(getPhaseDisplay(colors)).map(([phase, disp]) => (
+          {Object.entries(getPhaseDisplay(colors, lang)).map(([phase, disp]) => (
             <View key={phase} style={s.legendItem}>
               <View style={[s.legendDot, { backgroundColor: disp.color }]} />
               <Text style={s.legendTxt}>{disp.label}</Text>
@@ -76,13 +78,13 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
           ))}
           <View style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: colors.blue }]} />
-            <Text style={s.legendTxt}>Bugün</Text>
+            <Text style={s.legendTxt}>{t('calendar.legendToday')}</Text>
           </View>
         </View>
 
-        <Text style={s.sectionTitle}>Yaklaşan Antrenmanlar</Text>
+        <Text style={s.sectionTitle}>{t('training.upcomingSection')}</Text>
         {upcoming.length === 0 ? (
-          <Text style={s.empty}>Planlanmış antrenman yok.</Text>
+          <Text style={s.empty}>{t('training.noScheduled')}</Text>
         ) : (
           upcoming.map((session) => {
             const plan = plans.find((p) => p.id === session.plan_id);
@@ -96,14 +98,14 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
                 onPress={() => plan && goToStartTraining(plan.id)}
               >
                 <Text style={[s.rowDate, missed && s.rowDateMissed]}>
-                  {parseLocalDate(session.session_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+                  {parseLocalDate(session.session_date).toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'long' })}
                   {session.session_time ? ` • ${session.session_time}` : ''}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'flex-end' }}>
                   {session.completed && <Icon name="tamamlandi" size={14} />}
                   {missed && <Icon name="tamamlanmadi" size={14} />}
                   <Text style={[s.rowName, (session.completed || missed) && s.rowNameDone]} numberOfLines={1}>
-                    {plan?.name ?? 'Antrenman'}
+                    {plan?.name ?? t('training.genericName')}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -117,7 +119,7 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
           <View style={s.modalSheet}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>
-                {selectedDay ? parseLocalDate(selectedDay).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                {selectedDay ? parseLocalDate(selectedDay).toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
               </Text>
               <TouchableOpacity onPress={() => setSelectedDay(null)} style={s.modalCloseBtn}>
                 <Text style={s.modalCloseTxt}>✕</Text>
@@ -125,13 +127,13 @@ export default function TrainingCalendarScreen({ navigation }: Props) {
             </View>
 
             {sessionsForDay.length === 0 ? (
-              <Text style={s.empty}>Bu günde antrenman yok.</Text>
+              <Text style={s.empty}>{t('training.noneOnDay')}</Text>
             ) : (
               <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
                 {sessionsForDay.map((sess) => {
                   const plan = plans.find((p) => p.id === sess.plan_id);
                   if (!plan) return null;
-                  const breakdown = buildPhaseBreakdown(plan, colors);
+                  const breakdown = buildPhaseBreakdown(plan, colors, lang);
                   return (
                     <TouchableOpacity
                       key={sess.id}

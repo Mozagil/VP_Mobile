@@ -17,11 +17,18 @@ import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/Schedul
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
+import { useI18n, useContent, phaseLabel, skillLabel } from '../../i18n';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'CreatePlan'>;
 
-const PLAN_TYPES = ['Teknik', 'Kondisyon', 'Kombinasyon', 'Diğer'];
+// Canonical plan_type values sent to the API, with their display keys.
+const PLAN_TYPES = [
+  { value: 'Teknik', labelKey: 'createPlan.type.technique' },
+  { value: 'Kondisyon', labelKey: 'createPlan.type.conditioning' },
+  { value: 'Kombinasyon', labelKey: 'createPlan.type.combination' },
+  { value: 'Diğer', labelKey: 'createPlan.type.other' },
+] as const;
 const PHASE_FILTERS = ['Tümü', 'Isınma', 'Ana Antrenman', 'Soğuma', 'Favoriler'];
 const PHASE_ORDER = ['Isınma', 'Ana Antrenman', 'Soğuma'];
 
@@ -46,6 +53,8 @@ type SelectedDrill = { drill: Drill; phase: string };
 
 export default function CreatePlanScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const createPlan = useCreatePlan();
   const createSession = useCreateScheduledSession();
@@ -68,15 +77,16 @@ export default function CreatePlanScreen({ navigation }: Props) {
 
   const filteredDrills = useMemo(() => {
     return allDrills.filter((d) => {
+      const q = drillSearch.toLowerCase();
       const matchSearch =
         drillSearch.length === 0 ||
-        d.name.toLowerCase().includes(drillSearch.toLowerCase()) ||
-        d.skill.toLowerCase().includes(drillSearch.toLowerCase());
+        drillName(d).toLowerCase().includes(q) ||
+        skillLabel(d.skill, lang).toLowerCase().includes(q);
       const matchPhase = phaseFilter === 'Tümü' || phaseFilter === 'Favoriler' || d.phase === phaseFilter;
       const matchFavorite = phaseFilter !== 'Favoriler' || isFavorite(d.id);
       return matchSearch && matchPhase && matchFavorite;
     });
-  }, [drillSearch, phaseFilter, isFavorite]);
+  }, [drillSearch, phaseFilter, isFavorite, lang]);
 
   const isSelected = (id: number) => selected.some((sd) => sd.drill.id === id);
 
@@ -110,18 +120,24 @@ export default function CreatePlanScreen({ navigation }: Props) {
     setSelected((prev) => prev.filter((sd) => sd.drill.id !== drillId));
   };
 
+  // 'Tümü' and 'Favoriler' are UI-only filter values, the rest are real phases.
+  const phaseFilterLabel = (value: string) =>
+    value === 'Tümü' ? t('common.all')
+      : value === 'Favoriler' ? t('createPlan.phase.favorites')
+      : phaseLabel(value, lang);
+
   const openRowMenu = (sd: SelectedDrill) => {
-    Alert.alert(sd.drill.name, undefined, [
-      { text: 'Yukarı Taşı', onPress: () => moveDrill(sd.drill.id, -1) },
-      { text: 'Aşağı Taşı', onPress: () => moveDrill(sd.drill.id, 1) },
-      { text: 'Kaldır', style: 'destructive', onPress: () => removeDrill(sd.drill.id) },
-      { text: 'İptal', style: 'cancel' },
+    Alert.alert(drillName(sd.drill), undefined, [
+      { text: t('createPlan.moveUp'), onPress: () => moveDrill(sd.drill.id, -1) },
+      { text: t('createPlan.moveDown'), onPress: () => moveDrill(sd.drill.id, 1) },
+      { text: t('common.remove'), style: 'destructive', onPress: () => removeDrill(sd.drill.id) },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 
   const save = async () => {
     if (!name.trim()) {
-      Alert.alert('Hata', 'Antrenman adı zorunludur.');
+      Alert.alert(t('common.error'), t('createPlan.nameRequired'));
       return;
     }
     try {
@@ -145,7 +161,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
         drillName: selected[0]?.drill.name ?? name.trim(),
       });
     } catch {
-      Alert.alert('Hata', 'Antrenman oluşturulamadı.');
+      Alert.alert(t('common.error'), t('createPlan.createFailed'));
     }
   };
 
@@ -160,10 +176,10 @@ export default function CreatePlanScreen({ navigation }: Props) {
           <Icon name="geri" size={18} />
         </TouchableOpacity>
         <Text style={s.headerTitle} numberOfLines={1}>
-          {step === 0 ? 'Yeni Antreman (Kendin Oluştur)'
-            : step === 1 ? 'Hareketleri Seç'
-            : step === 2 ? 'Antremanı Oluştur'
-            : 'Zaman ve Gün'}
+          {step === 0 ? t('createPlan.step0')
+            : step === 1 ? t('createPlan.step1')
+            : step === 2 ? t('createPlan.step2')
+            : t('createPlan.step3')}
         </Text>
         <View style={{ width: 36 }} />
       </View>
@@ -173,53 +189,53 @@ export default function CreatePlanScreen({ navigation }: Props) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {step === 0 && (
           <View style={s.body}>
-            <Text style={s.fieldLabel}>Antrenmanına bir ad ver</Text>
+            <Text style={s.fieldLabel}>{t('createPlan.nameLabel')}</Text>
             <TextInput
               style={s.input}
-              placeholder="Yeni Antreman"
+              placeholder={t('createPlan.namePlaceholder')}
               placeholderTextColor={colors.muted}
               value={name}
               onChangeText={setName}
             />
 
-            <Text style={s.fieldLabel}>Antrenman türü</Text>
+            <Text style={s.fieldLabel}>{t('createPlan.typeLabel')}</Text>
             <View style={s.chipsRow}>
-              {PLAN_TYPES.map((t) => {
-                const active = planType === t;
+              {PLAN_TYPES.map((opt) => {
+                const active = planType === opt.value;
                 return (
                   <TouchableOpacity
-                    key={t}
+                    key={opt.value}
                     style={[s.chip, active && s.chipActive]}
-                    onPress={() => setPlanType(t)}
+                    onPress={() => setPlanType(opt.value)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{t}</Text>
+                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{t(opt.labelKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            <Text style={s.fieldLabel}>Tahmini süre</Text>
+            <Text style={s.fieldLabel}>{t('createPlan.durationLabel')}</Text>
             <Slider
               min={30} max={120} step={5}
               value={targetDuration}
               onChange={setTargetDuration}
-              formatValue={(v) => `${v} dk`}
+              formatValue={(v) => t('createPlan.duration', { n: v })}
             />
-            <Text style={s.durationValue}>{targetDuration} dk</Text>
+            <Text style={s.durationValue}>{t('createPlan.duration', { n: targetDuration })}</Text>
 
             <TouchableOpacity
               style={s.primaryBtn}
               onPress={() => {
                 if (!name.trim()) {
-                  Alert.alert('Hata', 'Devam etmeden önce antrenmana bir ad ver.');
+                  Alert.alert(t('common.error'), t('createPlan.nameRequiredStep'));
                   return;
                 }
                 setStep(1);
               }}
               activeOpacity={0.85}
             >
-              <Text style={s.primaryBtnTxt}>Devam Et</Text>
+              <Text style={s.primaryBtnTxt}>{t('common.continue')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -230,7 +246,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
               <View style={s.searchBox}>
                 <TextInput
                   style={s.searchInput}
-                  placeholder="Hareket ara..."
+                  placeholder={t('createPlan.drillSearchPlaceholder')}
                   placeholderTextColor={colors.muted}
                   value={drillSearch}
                   onChangeText={setDrillSearch}
@@ -248,7 +264,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                     onPress={() => setPhaseFilter(p)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{p}</Text>
+                    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{phaseFilterLabel(p)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -269,8 +285,8 @@ export default function CreatePlanScreen({ navigation }: Props) {
                       <PhaseIcon phase={item.phase} size={18} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.drillName} numberOfLines={1}>{item.name}</Text>
-                      <Text style={s.drillMeta}>{item.phase} • {item.duration}</Text>
+                      <Text style={s.drillName} numberOfLines={1}>{drillName(item)}</Text>
+                      <Text style={s.drillMeta}>{phaseLabel(item.phase, lang)} • {item.duration}</Text>
                     </View>
                     <TouchableOpacity
                       style={[s.addBtn, picked && s.addBtnActive]}
@@ -291,7 +307,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                 disabled={selected.length === 0}
                 activeOpacity={0.85}
               >
-                <Text style={s.primaryBtnTxt}>Devam Et ({selected.length})</Text>
+                <Text style={s.primaryBtnTxt}>{t('createPlan.continueCount', { n: selected.length })}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -300,7 +316,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
         {step === 2 && (
           <View style={{ flex: 1 }}>
             <Text style={s.reviewHint}>
-              Hareketlerin sıralamasını düzenle, eğer istersen süreleri değiştirin.
+              {t('createPlan.reorderHint')}
             </Text>
             <FlatList
               data={grouped}
@@ -310,7 +326,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
               showsVerticalScrollIndicator={false}
               renderItem={({ item: group }) => (
                 <View style={{ marginBottom: 16 }}>
-                  <Text style={s.groupTitle}>{group.phase.toUpperCase()}</Text>
+                  <Text style={s.groupTitle}>{phaseLabel(group.phase, lang).toLocaleUpperCase(lang === 'tr' ? 'tr-TR' : 'en-US')}</Text>
                   {group.items.map((sd, i) => (
                     <View key={sd.drill.id} style={s.reviewRow}>
                       {group.items.length > 1 ? (
@@ -323,7 +339,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                         </View>
                       )}
                       <View style={{ flex: 1 }}>
-                        <Text style={s.drillName} numberOfLines={1}>{sd.drill.name}</Text>
+                        <Text style={s.drillName} numberOfLines={1}>{drillName(sd.drill)}</Text>
                         <Text style={s.drillMeta}>{sd.drill.duration}</Text>
                       </View>
                       <TouchableOpacity
@@ -345,7 +361,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                 onPress={() => setStep(3)}
                 activeOpacity={0.85}
               >
-                <Text style={s.primaryBtnTxt}>Devam Et</Text>
+                <Text style={s.primaryBtnTxt}>{t('common.continue')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -369,7 +385,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                 disabled={createPlan.isPending}
                 activeOpacity={0.85}
               >
-                <Text style={s.primaryBtnTxt}>{createPlan.isPending ? 'Kaydediliyor…' : 'Kaydet'}</Text>
+                <Text style={s.primaryBtnTxt}>{createPlan.isPending ? t('common.saving') : t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>

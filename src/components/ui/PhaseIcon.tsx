@@ -3,6 +3,7 @@ import { Text, TextStyle } from 'react-native';
 import Icon, { IconName } from './Icon';
 import { getPhaseDisplay, normalizePhase } from '../../utils/trainingPlan';
 import { useTheme } from '../../theme/ThemeContext';
+import { useI18n } from '../../i18n';
 
 // Renders a phase's icon as an SVG when the phase has one mapped, falling back to
 // its emoji otherwise. Keeps every phase-icon render site in the app consistent.
@@ -10,7 +11,8 @@ type Props = { phase: string; size?: number; emojiStyle?: TextStyle };
 
 export default function PhaseIcon({ phase, size = 16, emojiStyle }: Props) {
   const { colors } = useTheme();
-  const display = getPhaseDisplay(colors)[normalizePhase(phase)];
+  const { lang } = useI18n();
+  const display = getPhaseDisplay(colors, lang)[normalizePhase(phase)];
   if (display?.iconName) {
     return <Icon name={display.iconName as IconName} size={size} />;
   }

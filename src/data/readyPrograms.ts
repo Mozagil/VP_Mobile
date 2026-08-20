@@ -4,16 +4,44 @@ import { Drill } from './types';
 export type ReadyProgram = {
   key: string;
   title: string;
+  /** Canonical (Turkish) skill key — translated for display via programSkillLabel. */
   skill: string;
   desc: string;
+  titleEn: string;
+  descEn: string;
 };
 
 export const READY_PROGRAMS: ReadyProgram[] = [
-  { key: 'servis', title: 'Servis Antrenmanı', skill: 'Servis', desc: 'Servis tekniğini ve isabetini geliştirmeye odaklanan 45 dakikalık program.' },
-  { key: 'atak', title: 'Atak Antrenmanı', skill: 'Atak', desc: 'Hücum ve smaç tekniğini geliştirmeye odaklanan 45 dakikalık program.' },
-  { key: 'defans', title: 'Defans Antrenmanı', skill: 'Savunma', desc: 'Savunma reaksiyonu ve pozisyon almayı geliştiren 45 dakikalık program.' },
-  { key: 'parmak-pas', title: 'Parmak Pas Antrenmanı', skill: 'Pas', desc: 'Parmak pas kontrolü ve isabetini geliştiren 45 dakikalık program.' },
-  { key: 'manset', title: 'Manşet Antrenmanı', skill: 'Manşet', desc: 'Manşet pas kontrolü ve servis karşılamayı geliştiren 45 dakikalık program.' },
+  {
+    key: 'servis', title: 'Servis Antrenmanı', skill: 'Servis',
+    desc: 'Servis tekniğini ve isabetini geliştirmeye odaklanan 45 dakikalık program.',
+    titleEn: 'Serving Session',
+    descEn: 'A 45-minute program focused on developing serving technique and accuracy.',
+  },
+  {
+    key: 'atak', title: 'Atak Antrenmanı', skill: 'Atak',
+    desc: 'Hücum ve smaç tekniğini geliştirmeye odaklanan 45 dakikalık program.',
+    titleEn: 'Attacking Session',
+    descEn: 'A 45-minute program focused on developing attacking and spiking technique.',
+  },
+  {
+    key: 'defans', title: 'Defans Antrenmanı', skill: 'Savunma',
+    desc: 'Savunma reaksiyonu ve pozisyon almayı geliştiren 45 dakikalık program.',
+    titleEn: 'Defense Session',
+    descEn: 'A 45-minute program that develops defensive reactions and positioning.',
+  },
+  {
+    key: 'parmak-pas', title: 'Parmak Pas Antrenmanı', skill: 'Pas',
+    desc: 'Parmak pas kontrolü ve isabetini geliştiren 45 dakikalık program.',
+    titleEn: 'Overhead Passing Session',
+    descEn: 'A 45-minute program that develops overhead pass control and accuracy.',
+  },
+  {
+    key: 'manset', title: 'Manşet Antrenmanı', skill: 'Manşet',
+    desc: 'Manşet pas kontrolü ve servis karşılamayı geliştiren 45 dakikalık program.',
+    titleEn: 'Forearm Passing Session',
+    descEn: 'A 45-minute program that develops forearm pass control and serve receive.',
+  },
 ];
 
 export type ProgramSection = { phase: string; drills: Drill[] };

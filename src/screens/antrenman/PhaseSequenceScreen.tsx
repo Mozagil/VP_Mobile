@@ -9,13 +9,16 @@ import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import {
   buildPhaseBreakdown, drillsInPhase, getPhaseDisplay, resolveDrillMinutes, resolveDrillName,
 } from '../../utils/trainingPlan';
+import { useI18n } from '../../i18n';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
+import { startWorkoutTimer } from '../../utils/workoutTimer';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'PhaseSequence'>;
 
 export default function PhaseSequenceScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId, phase, showAll } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
@@ -25,10 +28,10 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
     return <View style={s.center}><ActivityIndicator color={colors.accent} size="large" /></View>;
   }
   if (!plan) {
-    return <View style={s.center}><Text style={{ color: colors.muted }}>Antrenman bulunamadı</Text></View>;
+    return <View style={s.center}><Text style={{ color: colors.muted }}>{t('training.notFound')}</Text></View>;
   }
 
-  const breakdown = buildPhaseBreakdown(plan, colors);
+  const breakdown = buildPhaseBreakdown(plan, colors, lang);
 
   if (showAll) {
     const totalDrills = breakdown.reduce((sum, p) => sum + p.count, 0);
@@ -45,11 +48,11 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Icon name="geri" size={18} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>Tüm Hareketler</Text>
+          <Text style={s.headerTitle}>{t('phase.allMovements')}</Text>
           <Text style={s.headerCount}>{doneDrills}/{totalDrills}</Text>
         </View>
 
-        <Text style={s.hint}>Başlamak istediğin hareketi seç.</Text>
+        <Text style={s.hint}>{t('phase.pickHint')}</Text>
 
         <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
           {breakdown.map((p) => {
@@ -60,7 +63,7 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
                   <View style={[s.groupDot, { backgroundColor: p.color }]} />
                   <PhaseIcon phase={p.phase} size={13} />
                   <Text style={s.groupTitle}>{p.label}</Text>
-                  <Text style={s.groupMeta}>{drills.length} hareket • {p.minutes} dk</Text>
+                  <Text style={s.groupMeta}>{t('start.drillCountDuration', { n: drills.length, min: p.minutes })}</Text>
                 </View>
                 {drills.map((pd, i) => (
                   <TouchableOpacity
@@ -72,8 +75,8 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
                     <View style={[s.numberBadge, pd.completed && s.numberBadgeDone]}>
                       <Text style={s.numberBadgeTxt}>{pd.completed ? '✓' : i + 1}</Text>
                     </View>
-                    <Text style={[s.rowName, pd.completed && s.rowNameDone]} numberOfLines={1}>{resolveDrillName(pd)}</Text>
-                    <Text style={s.rowDuration}>{resolveDrillMinutes(pd)} dk</Text>
+                    <Text style={[s.rowName, pd.completed && s.rowNameDone]} numberOfLines={1}>{resolveDrillName(pd, lang)}</Text>
+                    <Text style={s.rowDuration}>{t('common.minShort', { n: resolveDrillMinutes(pd) })}</Text>
                     <Text style={s.rowArrow}>›</Text>
                   </TouchableOpacity>
                 ))}
@@ -92,7 +95,7 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
   const totalMinutes = drills.reduce((sum, pd) => sum + resolveDrillMinutes(pd), 0);
   const doneCount = drills.filter((pd) => pd.completed).length;
   const pct = drills.length > 0 ? Math.round((doneCount / drills.length) * 100) : 0;
-  const display = getPhaseDisplay(colors)[phase] ?? { label: phase, icon: '🏐', color: colors.accent };
+  const display = getPhaseDisplay(colors, lang)[phase] ?? { label: phase, icon: '🏐', color: colors.accent };
   const prevPhase = phaseIdx > 0 ? breakdown[phaseIdx - 1] : null;
   const nextPhase = phaseIdx >= 0 && phaseIdx < breakdown.length - 1 ? breakdown[phaseIdx + 1] : null;
 
@@ -110,9 +113,9 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
         <View style={[s.progressBarFill, { width: `${pct}%`, backgroundColor: display.color }]} />
       </View>
 
-      <Text style={s.subtitle}>{totalMinutes} dakika · {drills.length} hareket</Text>
+      <Text style={s.subtitle}>{t('phase.summary', { min: totalMinutes, n: drills.length })}</Text>
 
-      <Text style={s.hint}>Başlamak istediğin hareketi seç.</Text>
+      <Text style={s.hint}>{t('phase.pickHint')}</Text>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {drills.map((pd, i) => (
@@ -125,8 +128,8 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
             <View style={[s.numberBadge, pd.completed && s.numberBadgeDone]}>
               <Text style={s.numberBadgeTxt}>{pd.completed ? '✓' : i + 1}</Text>
             </View>
-            <Text style={[s.rowName, pd.completed && s.rowNameDone]} numberOfLines={1}>{resolveDrillName(pd)}</Text>
-            <Text style={s.rowDuration}>{resolveDrillMinutes(pd)} dk</Text>
+            <Text style={[s.rowName, pd.completed && s.rowNameDone]} numberOfLines={1}>{resolveDrillName(pd, lang)}</Text>
+            <Text style={s.rowDuration}>{t('common.minShort', { n: resolveDrillMinutes(pd) })}</Text>
             <Text style={s.rowArrow}>›</Text>
           </TouchableOpacity>
         ))}
@@ -138,30 +141,32 @@ export default function PhaseSequenceScreen({ route, navigation }: Props) {
           activeOpacity={0.85}
           onPress={() => {
             const startIndex = drills.findIndex((pd) => !pd.completed);
+            // Sayac buradan baslar; hareket ekranindaki sayac bu ani baz alir.
+            startWorkoutTimer(planId);
             navigation.navigate('DrillPlayer', { planId, phase, index: startIndex >= 0 ? startIndex : 0 });
           }}
         >
-          <Text style={s.primaryBtnTxt}>Antrenmanı Başlat</Text>
+          <Text style={s.startBtnTxt}>{t('start.startButton')}</Text>
         </TouchableOpacity>
       )}
 
       {(prevPhase || nextPhase) && (
         <View style={s.footerRow}>
           <TouchableOpacity
-            style={[s.secondaryBtn, !prevPhase && s.navBtnDisabled]}
+            style={[s.secondaryBtn, { flex: 1 }, !prevPhase && s.navBtnDisabled]}
             activeOpacity={0.8}
             disabled={!prevPhase}
             onPress={() => prevPhase && navigation.navigate('PhaseSequence', { planId, phase: prevPhase.phase })}
           >
-            <Text style={s.secondaryBtnTxt} numberOfLines={1}>‹ {prevPhase ? prevPhase.label : 'Önceki'}</Text>
+            <Text style={s.secondaryBtnTxt} numberOfLines={1}>‹ {t('phase.previous')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[s.primaryBtn, { flex: 1 }, !nextPhase && s.navBtnDisabled]}
-            activeOpacity={0.85}
+            style={[s.secondaryBtn, { flex: 1 }, !nextPhase && s.navBtnDisabled]}
+            activeOpacity={0.8}
             disabled={!nextPhase}
             onPress={() => nextPhase && navigation.navigate('PhaseSequence', { planId, phase: nextPhase.phase })}
           >
-            <Text style={s.primaryBtnTxt} numberOfLines={1}>{nextPhase ? `${nextPhase.label} ›` : 'Son Bölüm'}</Text>
+            <Text style={s.secondaryBtnTxt} numberOfLines={1}>{t('phase.next')} ›</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -216,11 +221,10 @@ function makeStyles(colors: Colors) {
     backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center',
     marginHorizontal: 16, marginTop: 8,
   },
+  startBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
   footerRow: { flexDirection: 'row', gap: 10, padding: 16, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border },
   secondaryBtn: { borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   secondaryBtnTxt: { color: colors.foreground, fontSize: 14, fontWeight: '700' },
-  primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  primaryBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
   navBtnDisabled: { opacity: 0.4 },
   });
 }

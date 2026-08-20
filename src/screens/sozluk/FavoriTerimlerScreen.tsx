@@ -8,19 +8,22 @@ import { SOZLUK_TERMS, categoryColor } from '../../data/sozlukTerms';
 import { useSozlukFavorites } from '../../hooks/useSozlukFavorites';
 import { SozlukStackParamList } from '../../navigation/SozlukStack';
 import Icon from '../../components/ui/Icon';
+import { useI18n, LOCALE, sozlukCategoryLabel } from '../../i18n';
 
 type Props = NativeStackScreenProps<SozlukStackParamList, 'FavoriTerimler'>;
 
 export default function FavoriTerimlerScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang, pick } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { favorites, isFavorite, toggleFavorite } = useSozlukFavorites();
 
   const favoriteTerms = useMemo(() => {
+    const locale = LOCALE[lang];
     return SOZLUK_TERMS
-      .filter((t) => favorites.includes(t.id))
-      .sort((a, b) => a.term.localeCompare(b.term, 'tr'));
-  }, [favorites]);
+      .filter((item) => favorites.includes(item.id))
+      .sort((a, b) => pick(a.term, a.termEn).localeCompare(pick(b.term, b.termEn), locale));
+  }, [favorites, lang]);
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -28,22 +31,22 @@ export default function FavoriTerimlerScreen({ navigation }: Props) {
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Favori Terimler</Text>
+        <Text style={s.headerTitle}>{t('sozluk.favTitle')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
-      <Text style={s.count}>Toplam {favoriteTerms.length} favori terim</Text>
+      <Text style={s.count}>{t('sozluk.favCount', { n: favoriteTerms.length })}</Text>
 
       {favoriteTerms.length === 0 ? (
         <View style={s.emptyCard}>
           <Icon name="favori" size={36} opacity={1} style={{ marginBottom: 12 }} />
-          <Text style={s.emptyTitle}>Henüz favori terimin yok</Text>
-          <Text style={s.emptyDesc}>Sözlükte bir terime girip yıldıza dokunarak favorilere ekleyebilirsin.</Text>
+          <Text style={s.emptyTitle}>{t('sozluk.favEmptyTitle')}</Text>
+          <Text style={s.emptyDesc}>{t('sozluk.favEmptyDesc')}</Text>
         </View>
       ) : (
         <FlatList
           data={favoriteTerms}
-          keyExtractor={(item) => item.term}
+          keyExtractor={(item) => String(item.id)}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
@@ -55,8 +58,8 @@ export default function FavoriTerimlerScreen({ navigation }: Props) {
                 onPress={() => navigation.navigate('TermDetail', { term: item })}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={s.termName}>{item.term}</Text>
-                  <Text style={[s.termCategory, { color: accent }]}>{item.category}</Text>
+                  <Text style={s.termName}>{pick(item.term, item.termEn)}</Text>
+                  <Text style={[s.termCategory, { color: accent }]}>{sozlukCategoryLabel(item.category, lang)}</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => toggleFavorite(item.id)}

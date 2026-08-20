@@ -12,6 +12,7 @@ import PhaseIcon from '../../components/ui/PhaseIcon';
 import {
   buildPhaseBreakdown, findNextSession, formatSessionBadge, locationLabel, planSkills, planTotalMinutes,
 } from '../../utils/trainingPlan';
+import { useI18n, skillLabel } from '../../i18n';
 
 type PanelStackParamList = {
   PanelMain: undefined;
@@ -23,6 +24,7 @@ type Props = NativeStackScreenProps<PanelStackParamList, 'NextTrainingDetail'>;
 
 export default function NextTrainingDetailScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
@@ -34,27 +36,27 @@ export default function NextTrainingDetailScreen({ route, navigation }: Props) {
   const plan = plans.find((p) => p.id === planId);
 
   if (isLoading) {
-    return <View style={s.center}><Text style={{ color: colors.muted }}>Yükleniyor…</Text></View>;
+    return <View style={s.center}><Text style={{ color: colors.muted }}>{t('common.loading')}</Text></View>;
   }
   if (!plan) {
-    return <View style={s.center}><Text style={{ color: colors.muted }}>Plan bulunamadı</Text></View>;
+    return <View style={s.center}><Text style={{ color: colors.muted }}>{t('dashboard.planNotFound')}</Text></View>;
   }
 
   const nextSession = findNextSession(sessions, plan.id);
-  const dateLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time)
-    ?? formatSessionBadge(plan.start_date)
-    ?? 'Planlanmadı';
-  const phaseBreakdown = buildPhaseBreakdown(plan, colors);
+  const dateLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time, lang)
+    ?? formatSessionBadge(plan.start_date, null, lang)
+    ?? t('common.notScheduled');
+  const phaseBreakdown = buildPhaseBreakdown(plan, colors, lang);
   const totalMinutes = planTotalMinutes(plan, colors);
   const skills = planSkills(plan);
-  const loc = locationLabel(plan.location);
+  const loc = locationLabel(plan.location, lang);
 
   const handleReady = () => {
     updateStatus.mutate(
       { id: plan.id, status: 'active' },
       {
-        onSuccess: () => Alert.alert('Hazırsın! 🏐', 'Antrenman aktif edildi, iyi antrenmanlar!'),
-        onError: () => Alert.alert('Hata', 'Antrenman aktif edilirken sorun oluştu.'),
+        onSuccess: () => Alert.alert(t('dashboard.readyTitle'), t('dashboard.readyBody')),
+        onError: () => Alert.alert(t('common.error'), t('dashboard.activateError')),
       },
     );
   };
@@ -67,8 +69,8 @@ export default function NextTrainingDetailScreen({ route, navigation }: Props) {
         session_time: sessionTime.trim() || undefined,
       },
       {
-        onSuccess: () => Alert.alert('✅', 'Takvime eklendi.'),
-        onError: () => Alert.alert('Hata', 'Takvime eklenirken sorun oluştu.'),
+        onSuccess: () => Alert.alert('✅', t('dashboard.addedToCalendar')),
+        onError: () => Alert.alert(t('common.error'), t('dashboard.calendarError')),
       },
     );
   };
@@ -82,32 +84,32 @@ export default function NextTrainingDetailScreen({ route, navigation }: Props) {
           <Text style={s.dateLabel}>{dateLabel}</Text>
         </View>
         <Text style={s.meta}>
-          {totalMinutes > 0 ? `${totalMinutes} dakika` : 'Süre belirtilmedi'}
+          {totalMinutes > 0 ? t('common.minutes', { n: totalMinutes }) : t('common.durationUnset')}
           {loc ? `  ·  ${loc}` : ''}
           {plan.team ? `  ·  ${plan.team}` : ''}
         </Text>
         {plan.goal ? <Text style={s.goal}>{plan.goal}</Text> : null}
 
-        <Text style={s.sectionTitle}>Antrenman İçeriği</Text>
+        <Text style={s.sectionTitle}>{t('dashboard.trainingContent')}</Text>
         <View style={s.card}>
           {phaseBreakdown.length > 0 ? (
             phaseBreakdown.map((p, i) => (
               <View key={p.phase} style={[s.phaseRow, i > 0 && s.phaseRowBorder]}>
                 <PhaseIcon phase={p.phase} size={14} />
                 <Text style={s.phaseLabel}>{p.label}</Text>
-                <Text style={s.phaseMinutes}>{p.minutes} dk</Text>
+                <Text style={s.phaseMinutes}>{t('common.minShort', { n: p.minutes })}</Text>
               </View>
             ))
           ) : (
-            <Text style={s.noDrills}>Bu planda henüz dril yok.</Text>
+            <Text style={s.noDrills}>{t('dashboard.noDrillsInPlan')}</Text>
           )}
         </View>
 
         {skills.length > 0 && (
           <>
-            <Text style={s.sectionTitle}>Hedeflenen Beceriler</Text>
+            <Text style={s.sectionTitle}>{t('dashboard.targetSkills')}</Text>
             <View style={s.chipsRow}>
-              {skills.map((sk) => <Badge key={sk} label={sk} color={colors.purple} />)}
+              {skills.map((sk) => <Badge key={sk} label={skillLabel(sk, lang)} color={colors.purple} />)}
             </View>
           </>
         )}
@@ -115,9 +117,9 @@ export default function NextTrainingDetailScreen({ route, navigation }: Props) {
       </ScrollView>
 
       <View style={s.footer}>
-        <Button title="+ Antrenmana Hazırım" onPress={handleReady} loading={updateStatus.isPending} />
+        <Button title={t('dashboard.readyForTraining')} onPress={handleReady} loading={updateStatus.isPending} />
         <View style={s.timeRow}>
-          <Text style={s.timeLabel}>Saat</Text>
+          <Text style={s.timeLabel}>{t('schedule.hour')}</Text>
           <TextInput
             style={s.timeInput}
             value={sessionTime}
@@ -128,14 +130,14 @@ export default function NextTrainingDetailScreen({ route, navigation }: Props) {
           />
         </View>
         <Button
-          title="Takvime Ekle"
+          title={t('dashboard.addToCalendar')}
           onPress={handleAddToCalendar}
           variant="outline"
           loading={createSession.isPending}
           style={{ marginTop: 10 }}
         />
         <Button
-          title="📅 Takvim"
+          title={'📅 ' + t('training.tab.calendar')}
           onPress={() => navigation.navigate('TrainingCalendar')}
           variant="ghost"
           style={{ marginTop: 8 }}

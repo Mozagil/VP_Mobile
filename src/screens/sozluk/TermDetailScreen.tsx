@@ -8,16 +8,23 @@ import { categoryColor } from '../../data/sozlukTerms';
 import { useSozlukFavorites } from '../../hooks/useSozlukFavorites';
 import Icon from '../../components/ui/Icon';
 import { SozlukStackParamList } from '../../navigation/SozlukStack';
+import { useI18n, sozlukCategoryLabel, sozlukKeywordLabel } from '../../i18n';
 
 type Props = NativeStackScreenProps<SozlukStackParamList, 'TermDetail'>;
 
 export default function TermDetailScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang, pick } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { term } = route.params;
   const { isFavorite, toggleFavorite } = useSozlukFavorites();
   const fav = isFavorite(term.id);
   const accent = categoryColor[term.category] ?? colors.accent;
+
+  const name = pick(term.term, term.termEn);
+  const desc = pick(term.desc, term.descEn);
+  const detail = pick(term.detail, term.detailEn);
+  const example = pick(term.example, term.exampleEn);
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -25,7 +32,7 @@ export default function TermDetailScreen({ route, navigation }: Props) {
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle} numberOfLines={1}>{term.term}</Text>
+        <Text style={s.headerTitle} numberOfLines={1}>{name}</Text>
         <TouchableOpacity
           style={s.iconBtn}
           onPress={() => toggleFavorite(term.id)}
@@ -36,31 +43,31 @@ export default function TermDetailScreen({ route, navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
-        <Text style={s.termTitle}>{term.term}</Text>
+        <Text style={s.termTitle}>{name}</Text>
         <View style={[s.catBadge, { backgroundColor: accent + '20', borderColor: accent + '50' }]}>
-          <Text style={[s.catBadgeTxt, { color: accent }]}>{term.category}</Text>
+          <Text style={[s.catBadgeTxt, { color: accent }]}>{sozlukCategoryLabel(term.category, lang)}</Text>
         </View>
 
-        <Text style={s.sectionLabel}>Açıklama</Text>
-        <Text style={s.desc}>{term.desc}</Text>
-        {term.detail && <Text style={[s.desc, { marginTop: 8 }]}>{term.detail}</Text>}
+        <Text style={s.sectionLabel}>{t('sozluk.description')}</Text>
+        <Text style={s.desc}>{desc}</Text>
+        {detail && <Text style={[s.desc, { marginTop: 8 }]}>{detail}</Text>}
 
-        {term.example && (
+        {example && (
           <>
-            <Text style={s.sectionLabel}>Maç İçinde Kullanım Örneği</Text>
+            <Text style={s.sectionLabel}>{t('sozluk.usageExample')}</Text>
             <View style={[s.exampleBox, { borderColor: accent + '40', backgroundColor: accent + '10' }]}>
-              <Text style={s.exampleText}>"{term.example}"</Text>
+              <Text style={s.exampleText}>"{example}"</Text>
             </View>
           </>
         )}
 
         {term.keywords.length > 0 && (
           <>
-            <Text style={s.sectionLabel}>Anahtar Kelimeler</Text>
+            <Text style={s.sectionLabel}>{t('sozluk.keywordsLabel')}</Text>
             <View style={s.tagsRow}>
               {term.keywords.map((k) => (
                 <View key={k} style={s.tag}>
-                  <Text style={s.tagTxt}>{k}</Text>
+                  <Text style={s.tagTxt}>{sozlukKeywordLabel(k, lang)}</Text>
                 </View>
               ))}
             </View>
@@ -70,14 +77,14 @@ export default function TermDetailScreen({ route, navigation }: Props) {
 
       <View style={s.footer}>
         <TouchableOpacity style={s.secondaryBtn} activeOpacity={0.8} onPress={() => navigation.goBack()}>
-          <Text style={s.secondaryBtnTxt}>Sözlüğe Dön</Text>
+          <Text style={s.secondaryBtnTxt}>{t('sozluk.backToGlossary')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[s.primaryBtn, fav && s.primaryBtnActive]}
           activeOpacity={0.85}
           onPress={() => toggleFavorite(term.id)}
         >
-          <Text style={s.primaryBtnTxt}>{fav ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}</Text>
+          <Text style={s.primaryBtnTxt}>{fav ? t('sozluk.removeFavorite') : t('sozluk.addFavorite')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

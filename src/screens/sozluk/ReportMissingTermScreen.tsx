@@ -9,11 +9,13 @@ import { apiClient } from '../../api/client';
 import Icon from '../../components/ui/Icon';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import { useI18n } from '../../i18n';
 
 type Props = NativeStackScreenProps<SozlukStackParamList, 'ReportMissingTerm'>;
 
 export default function ReportMissingTermScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const [term, setTerm] = useState('');
   const [description, setDescription] = useState('');
@@ -21,17 +23,17 @@ export default function ReportMissingTermScreen({ navigation }: Props) {
 
   const submit = async () => {
     if (!term.trim() || !description.trim()) {
-      Alert.alert('Hata', 'Lütfen terim ve açıklama alanlarını doldurun.');
+      Alert.alert(t('common.error'), t('sozluk.report.validation'));
       return;
     }
     setSending(true);
     try {
       await apiClient.post('/dictionary/report-missing-term', { term: term.trim(), description: description.trim() });
-      Alert.alert('Teşekkürler', 'Eksik terim bildiriminiz alındı.', [
-        { text: 'Tamam', onPress: () => navigation.goBack() },
+      Alert.alert(t('common.thanks'), t('sozluk.report.thanks'), [
+        { text: t('common.ok'), onPress: () => navigation.goBack() },
       ]);
     } catch {
-      Alert.alert('Hata', 'Bildirim gönderilirken bir sorun oluştu, lütfen tekrar deneyin.');
+      Alert.alert(t('common.error'), t('sozluk.report.error'));
     } finally {
       setSending(false);
     }
@@ -43,19 +45,17 @@ export default function ReportMissingTermScreen({ navigation }: Props) {
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Eksik Terim Bildir</Text>
+        <Text style={s.headerTitle}>{t('sozluk.reportTitle')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
-        <Text style={s.sub}>
-          Sözlükte bulamadığın bir voleybol terimi mi var? Bize bildir, ekleyelim.
-        </Text>
+        <Text style={s.sub}>{t('sozluk.report.intro')}</Text>
 
-        <Input label="Eksik terim" placeholder="Örn: Pancake" value={term} onChangeText={setTerm} />
+        <Input label={t('sozluk.report.termLabel')} placeholder={t('sozluk.report.termPlaceholder')} value={term} onChangeText={setTerm} />
         <Input
-          label="Açıklaması"
-          placeholder="Terimin ne anlama geldiğini kısaca açıklar mısın?"
+          label={t('sozluk.report.descLabel')}
+          placeholder={t('sozluk.report.descPlaceholder')}
           value={description}
           onChangeText={setDescription}
           multiline
@@ -65,7 +65,7 @@ export default function ReportMissingTermScreen({ navigation }: Props) {
       </ScrollView>
 
       <View style={s.footer}>
-        <Button title="Gönder" onPress={submit} loading={sending} />
+        <Button title={t('common.send')} onPress={submit} loading={sending} />
       </View>
     </SafeAreaView>
   );

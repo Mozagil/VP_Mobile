@@ -10,13 +10,14 @@ import { SOZLUK_TERMS, CATEGORIES, categoryColor, SozlukTerm } from '../../data/
 import { useSozlukFavorites } from '../../hooks/useSozlukFavorites';
 import { SozlukStackParamList, SozlukFilterState } from '../../navigation/SozlukStack';
 import Icon from '../../components/ui/Icon';
+import { useI18n, ALPHABETS, LOCALE, sozlukCategoryLabel } from '../../i18n';
 
 type Props = NativeStackScreenProps<SozlukStackParamList, 'SozlukList'>;
 
-const ALPHABET = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
-
 export default function SozlukScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang, pick } = useI18n();
+  const ALPHABET = ALPHABETS[lang];
   const s = useMemo(() => makeStyles(colors), [colors]);
   const [search, setSearch] = useState('');
   const [quickCategory, setQuickCategory] = useState('Tümü');
@@ -27,33 +28,43 @@ export default function SozlukScreen({ navigation }: Props) {
 
   const effectiveCategory = filter.category !== 'Tümü' ? filter.category : quickCategory;
 
+  // Search, sorting and the A-Z rail all run on the term as the reader sees it,
+  // so the list stays alphabetical in whichever language is active.
+  const label = (item: SozlukTerm) => pick(item.term, item.termEn);
+  const summary = (item: SozlukTerm) => pick(item.desc, item.descEn);
+  const locale = LOCALE[lang];
+
   const filtered = useMemo(() => {
-    let items = SOZLUK_TERMS.filter((t) => {
+    const q = search.toLowerCase();
+    let items = SOZLUK_TERMS.filter((item) => {
       const matchSearch =
         search.length === 0 ||
-        t.term.toLowerCase().includes(search.toLowerCase()) ||
-        t.desc.toLowerCase().includes(search.toLowerCase());
-      const matchCat = effectiveCategory === 'Tümü' || t.category === effectiveCategory;
-      const matchKeywords = filter.keywords.length === 0 || filter.keywords.some((k) => t.keywords.includes(k));
+        label(item).toLowerCase().includes(q) ||
+        summary(item).toLowerCase().includes(q);
+      const matchCat = effectiveCategory === 'Tümü' || item.category === effectiveCategory;
+      const matchKeywords =
+        filter.keywords.length === 0 || filter.keywords.some((k) => item.keywords.includes(k));
       return matchSearch && matchCat && matchKeywords;
     });
     items = items.sort((a, b) =>
-      filter.sortBy === 'za' ? b.term.localeCompare(a.term, 'tr') : a.term.localeCompare(b.term, 'tr'),
+      filter.sortBy === 'za'
+        ? label(b).localeCompare(label(a), locale)
+        : label(a).localeCompare(label(b), locale),
     );
     return items;
-  }, [search, effectiveCategory, filter]);
+  }, [search, effectiveCategory, filter, lang]);
 
   const sections = useMemo(() => {
     const byLetter = new Map<string, SozlukTerm[]>();
-    filtered.forEach((t) => {
-      const letter = t.term.substring(0, 1).toUpperCase();
-      (byLetter.get(letter) ?? byLetter.set(letter, []).get(letter)!).push(t);
+    filtered.forEach((item) => {
+      const letter = label(item).substring(0, 1).toLocaleUpperCase(locale);
+      (byLetter.get(letter) ?? byLetter.set(letter, []).get(letter)!).push(item);
     });
     const order = filter.sortBy === 'za' ? [...ALPHABET].reverse() : ALPHABET;
     return order
       .filter((l) => byLetter.has(l))
       .map((l) => ({ title: l, data: byLetter.get(l)! }));
-  }, [filtered, filter.sortBy]);
+  }, [filtered, filter.sortBy, lang]);
 
   const availableLetters = useMemo(() => new Set(sections.map((s) => s.title)), [sections]);
 
@@ -80,7 +91,7 @@ export default function SozlukScreen({ navigation }: Props) {
         >
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Voleybol Sözlüğü</Text>
+        <Text style={s.headerTitle}>{t('sozluk.title')}</Text>
         <View style={s.headerIcons}>
           <TouchableOpacity
             style={s.iconBtn}
@@ -98,7 +109,7 @@ export default function SozlukScreen({ navigation }: Props) {
       <View style={s.searchRow}>
         <TextInput
           style={s.search}
-          placeholder="Terim ara..."
+          placeholder={t('sozluk.searchPlaceholder')}
           placeholderTextColor={colors.muted}
           value={search}
           onChangeText={setSearch}
@@ -115,16 +126,16 @@ export default function SozlukScreen({ navigation }: Props) {
               activeOpacity={0.8}
               onPress={() => { setQuickCategory(c); setFilter((f) => ({ ...f, category: 'Tümü' })); }}
             >
-              <Text style={[s.chipTxt, active && s.chipTxtActive]}>{c}</Text>
+              <Text style={[s.chipTxt, active && s.chipTxtActive]}>{sozlukCategoryLabel(c, lang)}</Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
       <View style={s.countRow}>
-        <Text style={s.count}>Toplam {filtered.length} terim</Text>
+        <Text style={s.count}>{t('sozluk.totalTerms', { n: filtered.length })}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('ReportMissingTerm')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={s.reportLink}>Eksik terim bildir</Text>
+          <Text style={s.reportLink}>{t('sozluk.reportMissing')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -134,7 +145,7 @@ export default function SozlukScreen({ navigation }: Props) {
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
         >
-          {sections.length === 0 && <Text style={s.empty}>Aramanla eşleşen terim bulunamadı.</Text>}
+          {sections.length === 0 && <Text style={s.empty}>{t('sozluk.noResults')}</Text>}
           {sections.map((section) => (
             <React.Fragment key={section.title}>
               <Text
@@ -148,14 +159,14 @@ export default function SozlukScreen({ navigation }: Props) {
                 const fav = isFavorite(item.id);
                 return (
                   <TouchableOpacity
-                    key={item.term}
+                    key={item.id}
                     style={s.row}
                     activeOpacity={0.78}
                     onPress={() => navigation.navigate('TermDetail', { term: item })}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={s.termName}>{item.term}</Text>
-                      <Text style={[s.termCategory, { color: accent }]}>{item.category}</Text>
+                      <Text style={s.termName}>{label(item)}</Text>
+                      <Text style={[s.termCategory, { color: accent }]}>{sozlukCategoryLabel(item.category, lang)}</Text>
                     </View>
                     <TouchableOpacity onPress={() => toggleFavorite(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                       <Icon name="favori" size={17} opacity={fav ? 1 : 0.3} />

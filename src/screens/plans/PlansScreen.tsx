@@ -9,6 +9,7 @@ import { useTrainingPlans, useDeletePlan } from '../../hooks/useTrainingPlans';
 import { TrainingPlan } from '../../data/types';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 import Icon from '../../components/ui/Icon';
 
 type PlansStackParamList = {
@@ -93,17 +94,18 @@ function PlanRow({
 
 export default function PlansScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { data: plans = [], isLoading } = useTrainingPlans();
   const deletePlan = useDeletePlan();
 
   const handleDelete = (plan: TrainingPlan) => {
     Alert.alert(
-      '🗑️ Planı Sil',
-      `"${plan.name}" planını silmek istiyor musunuz? Bu işlem geri alınamaz.`,
+      t('plans.deleteTitle'),
+      t('plans.deleteBody', { name: plan.name }),
       [
-        { text: 'İptal', style: 'cancel' },
-        { text: 'Sil', style: 'destructive', onPress: () => deletePlan.mutate(plan.id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => deletePlan.mutate(plan.id) },
       ],
     );
   };
@@ -121,11 +123,11 @@ export default function PlansScreen({ navigation }: Props) {
       {plans.length === 0 ? (
         <View style={s.empty}>
           <Icon name="antrenmanlar" size={60} style={{ marginBottom: 12 }} />
-          <Text style={s.emptyTitle}>Henüz plan yok</Text>
-          <Text style={s.emptyDesc}>Yeni bir antrenman planı oluşturun</Text>
+          <Text style={s.emptyTitle}>{t('plans.emptyTitle')}</Text>
+          <Text style={s.emptyDesc}>{t('plans.emptyDesc')}</Text>
           <View style={s.emptyBtnWrap}>
             <TouchableOpacity style={s.emptyBtn} onPress={() => navigation.navigate('CreatePlan')} activeOpacity={0.8}>
-              <Text style={s.emptyBtnTxt}>+ Yeni Plan Oluştur</Text>
+              <Text style={s.emptyBtnTxt}>{t('plans.createButton')}</Text>
             </TouchableOpacity>
           </View>
         </View>

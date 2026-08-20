@@ -14,6 +14,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
+import { useI18n, useContent, skillLabel, phaseLabel } from '../../i18n';
 import { normalizePhase } from '../../utils/trainingPlan';
 
 type PlansStackParamList = {
@@ -64,6 +65,8 @@ function AddDrillsModal({
   colors: Colors;
   m: ModalStyles;
 }) {
+  const { t, lang } = useI18n();
+  const { drillName } = useContent();
   const [search, setSearch]   = useState('');
   const [phase, setPhase]     = useState('Tümü');
   const [selected, setSelected] = useState<number[]>([]);
@@ -72,11 +75,11 @@ function AddDrillsModal({
     return allDrills.filter(d => {
       const notInPlan = !planDrillIds.includes(d.id);
       const matchSearch = search.length === 0
-        || d.name.toLowerCase().includes(search.toLowerCase());
+        || drillName(d).toLowerCase().includes(search.toLowerCase());
       const matchPhase = phase === 'Tümü' || d.phase === phase;
       return notInPlan && matchSearch && matchPhase;
     });
-  }, [search, phase, planDrillIds]);
+  }, [search, phase, planDrillIds, lang]);
 
   const toggle = (id: number) =>
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -95,7 +98,7 @@ function AddDrillsModal({
         <View style={m.sheet}>
           {/* Header */}
           <View style={m.header}>
-            <Text style={m.title}>➕ Drill Ekle</Text>
+            <Text style={m.title}>{t('plans.addDrill')}</Text>
             <TouchableOpacity onPress={onClose} style={m.closeBtn}>
               <Text style={m.closeTxt}>✕</Text>
             </TouchableOpacity>
@@ -105,7 +108,7 @@ function AddDrillsModal({
           <View style={m.searchRow}>
             <TextInput
               style={m.searchInput}
-              placeholder="Drill ara..."
+              placeholder={t('plans.searchPlaceholder')}
               placeholderTextColor={colors.muted}
               value={search}
               onChangeText={setSearch}
@@ -115,7 +118,7 @@ function AddDrillsModal({
           {/* Phase filter chips */}
           <View style={m.chips}>
             {PHASE_FILTER.map(p => (
-              <Chip key={p} label={p} active={phase === p} onPress={() => setPhase(p)} />
+              <Chip key={p} label={p === 'Tümü' ? t('common.all') : phaseLabel(p, lang)} active={phase === p} onPress={() => setPhase(p)} />
             ))}
           </View>
 
@@ -128,7 +131,7 @@ function AddDrillsModal({
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={m.empty}>
-                <Text style={m.emptyTxt}>Drill bulunamadı</Text>
+                <Text style={m.emptyTxt}>{t('plans.drillNotFound')}</Text>
               </View>
             }
             renderItem={({ item }) => {
@@ -143,8 +146,8 @@ function AddDrillsModal({
                     {sel && <Text style={m.checkmark}>✓</Text>}
                   </View>
                   <View style={m.drillInfo}>
-                    <Text style={m.drillName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={m.drillMeta}>{item.phase}  ·  {item.skill}  ·  {item.duration}</Text>
+                    <Text style={m.drillName} numberOfLines={1}>{drillName(item)}</Text>
+                    <Text style={m.drillMeta}>{phaseLabel(item.phase, lang)}  ·  {skillLabel(item.skill, lang)}  ·  {item.duration}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -153,7 +156,7 @@ function AddDrillsModal({
 
           {/* Footer */}
           <View style={m.footer}>
-            <Text style={m.selectedCount}>{selected.length} drill seçildi</Text>
+            <Text style={m.selectedCount}>{t('plans.selectedCount', { n: selected.length })}</Text>
             <View style={[m.addBtnWrap, selected.length === 0 && { opacity: 0.4 }]}>
               <TouchableOpacity
                 style={m.addBtn}
@@ -161,7 +164,7 @@ function AddDrillsModal({
                 disabled={selected.length === 0}
                 activeOpacity={0.85}
               >
-                <Text style={m.addBtnTxt}>Ekle →</Text>
+                <Text style={m.addBtnTxt}>{t('plans.addButton')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -174,6 +177,8 @@ function AddDrillsModal({
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function PlanDetailScreen({ route }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName: catalogDrillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const m = useMemo(() => makeModalStyles(colors), [colors]);
   const phaseConfig = useMemo(() => getPhaseConfig(colors), [colors]);
@@ -187,7 +192,7 @@ export default function PlanDetailScreen({ route }: Props) {
   const plan = plans.find(p => p.id === planId);
 
   if (isLoading) return <View style={s.center}><ActivityIndicator color={colors.accent} size="large" /></View>;
-  if (!plan)    return <View style={s.center}><Text style={{ color: colors.muted }}>Plan bulunamadı</Text></View>;
+  if (!plan)    return <View style={s.center}><Text style={{ color: colors.muted }}>{t('dashboard.planNotFound')}</Text></View>;
 
   const total   = plan.drills.length;
   const done    = plan.drills.filter(d => d.completed).length;
@@ -197,17 +202,17 @@ export default function PlanDetailScreen({ route }: Props) {
   const planDrillIds = plan.drills.map(d => d.drill_id).filter(id => id > 0);
 
   const markAllComplete = () => {
-    if (allDone) { Alert.alert('Bilgi', 'Tüm drill\'ler zaten tamamlandı.'); return; }
-    Alert.alert('Tümünü Tamamla', 'Tüm drill\'leri tamamlandı olarak işaretlemek istiyor musun?', [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'Evet', onPress: () => plan.drills.forEach(pd => { if (!pd.completed) toggle.mutate({ drillRowId: pd.id, completed: true }); }) },
+    if (allDone) { Alert.alert(t('common.info'), t('plans.alreadyAllDone')); return; }
+    Alert.alert(t('plans.completeAllTitle'), t('plans.completeAllBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('plans.yes'), onPress: () => plan.drills.forEach(pd => { if (!pd.completed) toggle.mutate({ drillRowId: pd.id, completed: true }); }) },
     ]);
   };
 
-  const handleRemoveDrill = (drillRowId: string, drillName: string) => {
-    Alert.alert('Drilli Kaldır', `"${drillName}" planından kaldırılsın mı?`, [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'Kaldır', style: 'destructive', onPress: () => removeDrill.mutate(drillRowId) },
+  const handleRemoveDrill = (drillRowId: string, rowDrillName: string) => {
+    Alert.alert(t('plans.removeDrillTitle'), t('plans.removeDrillBody', { name: rowDrillName }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.remove'), style: 'destructive', onPress: () => removeDrill.mutate(drillRowId) },
     ]);
   };
 
@@ -236,8 +241,8 @@ export default function PlanDetailScreen({ route }: Props) {
     addDrills.mutate(
       { planId, name: plan.name, team: plan.team, drills: [...existingDrills, ...newDrills] },
       {
-        onSuccess: () => { setShowAddModal(false); Alert.alert('✅', 'Drill\'ler plana eklendi.'); },
-        onError:   () => Alert.alert('Hata', 'Drill eklenirken sorun oluştu.'),
+        onSuccess: () => { setShowAddModal(false); Alert.alert('✅', t('plans.drillsAdded')); },
+        onError:   () => Alert.alert(t('common.error'), t('plans.addDrillError')),
       },
     );
   };
@@ -256,7 +261,7 @@ export default function PlanDetailScreen({ route }: Props) {
                 onPress={() => setShowAddModal(true)}
                 activeOpacity={0.8}
               >
-                <Text style={s.addDrillTxt}>➕ Drill Ekle</Text>
+                <Text style={s.addDrillTxt}>{t('plans.addDrill')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -270,7 +275,7 @@ export default function PlanDetailScreen({ route }: Props) {
 
           {/* Progress */}
           <View style={s.progressRow}>
-            <Text style={s.progressText}>{done}/{total} tamamlandı</Text>
+            <Text style={s.progressText}>{t('plans.progressDone', { done, total })}</Text>
             <Text style={s.progressPct}>%{pct}</Text>
           </View>
           <View style={s.barBg}>
@@ -284,7 +289,7 @@ export default function PlanDetailScreen({ route }: Props) {
               activeOpacity={0.8}
             >
               <Text style={s.markAllBtnText}>
-                {allDone ? '✅ Tümü Tamamlandı' : '☑️ Tümünü Tamamla'}
+                {allDone ? t('plans.allCompleted') : t('plans.completeAll')}
               </Text>
             </TouchableOpacity>
           )}
@@ -294,10 +299,10 @@ export default function PlanDetailScreen({ route }: Props) {
         {total === 0 ? (
           <View style={s.emptyDrills}>
             <Text style={s.emptyIcon}>🏐</Text>
-            <Text style={s.emptyText}>Bu planda henüz drill yok</Text>
+            <Text style={s.emptyText}>{t('plans.noDrillsInPlan')}</Text>
             <View style={s.addDrillWrap}>
               <TouchableOpacity style={s.addDrillBtn} onPress={() => setShowAddModal(true)} activeOpacity={0.8}>
-                <Text style={s.addDrillTxt}>➕ Drill Ekle</Text>
+                <Text style={s.addDrillTxt}>{t('plans.addDrill')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -311,7 +316,7 @@ export default function PlanDetailScreen({ route }: Props) {
               <View key={ph} style={s.phaseSection}>
                 <View style={[s.phaseHeader, { borderLeftColor: cfg.color }]}>
                   <PhaseIcon phase={ph} size={15} />
-                  <Text style={[s.phaseTitle, { color: cfg.color }]}>{ph}</Text>
+                  <Text style={[s.phaseTitle, { color: cfg.color }]}>{phaseLabel(ph, lang)}</Text>
                   <View style={[s.phaseBadge, { backgroundColor: cfg.color + '20' }]}>
                     <Text style={[s.phaseBadgeText, { color: cfg.color }]}>{phaseDrills.length}</Text>
                   </View>
@@ -319,7 +324,7 @@ export default function PlanDetailScreen({ route }: Props) {
 
                 {phaseDrills.map(pd => {
                   const drill = allDrills.find(d => d.id === pd.drill_id);
-                  const drillName = pd.custom_name ?? drill?.name ?? `Drill #${pd.drill_id}`;
+                  const rowName = pd.custom_name ?? (drill ? catalogDrillName(drill) : `Drill #${pd.drill_id}`);
 
                   return (
                     <View key={pd.id} style={[s.drillRow, pd.completed && s.drillRowDone]}>
@@ -335,20 +340,20 @@ export default function PlanDetailScreen({ route }: Props) {
                       {/* Drill info */}
                       <View style={s.drillInfo}>
                         <Text style={[s.drillName, pd.completed && s.drillNameDone]}>
-                          {drillName}
+                          {rowName}
                         </Text>
                         {drill && (
                           <View style={s.drillMetaRow}>
-                            <Text style={s.drillMeta}>{drill.skill}  ·  </Text>
+                            <Text style={s.drillMeta}>{skillLabel(drill.skill, lang)}  ·  </Text>
                             <Icon name="sure" size={11} />
-                            <Text style={s.drillMeta}> {drill.duration}  ·  {drill.players} Kişi</Text>
+                            <Text style={s.drillMeta}> {drill.duration}  ·  {t('common.playerCount', { n: drill.players })}</Text>
                           </View>
                         )}
                       </View>
 
                       {/* Delete drill button */}
                       <TouchableOpacity
-                        onPress={() => handleRemoveDrill(pd.id, drillName)}
+                        onPress={() => handleRemoveDrill(pd.id, rowName)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         style={s.removeDrillBtn}
                         activeOpacity={0.7}

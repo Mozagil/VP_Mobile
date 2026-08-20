@@ -4,12 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'TrainingSuccess'>;
 
 export default function TrainingSuccessScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId, planName, drillName } = route.params;
 
@@ -27,18 +29,16 @@ export default function TrainingSuccessScreen({ route, navigation }: Props) {
         <View style={s.checkCircle}>
           <Text style={s.checkTxt}>✓</Text>
         </View>
-        <Text style={s.title}>Antrenmana Eklendi!</Text>
-        <Text style={s.desc}>
-          "{drillName}" çalışması {planName} antrenmanına eklendi.
-        </Text>
+        <Text style={s.title}>{t('addToTraining.successTitle')}</Text>
+        <Text style={s.desc}>{t('addToTraining.successBody', { drill: drillName, plan: planName })}</Text>
       </View>
 
       <View style={s.footer}>
         <TouchableOpacity style={s.primaryBtn} activeOpacity={0.85} onPress={goToStart}>
-          <Text style={s.primaryBtnTxt}>Antrenmanı Görüntüle</Text>
+          <Text style={s.primaryBtnTxt}>{t('addToTraining.viewTraining')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.textBtn} activeOpacity={0.7} onPress={goDone}>
-          <Text style={s.textBtnTxt}>Tamam</Text>
+          <Text style={s.textBtnTxt}>{t('common.ok')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

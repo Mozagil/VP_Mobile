@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import { useTheme } from '../theme/ThemeContext';
+import { useI18n } from '../i18n';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -13,6 +14,7 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export default function AuthStack() {
   const { colors } = useTheme();
+  const { t } = useI18n();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -23,7 +25,7 @@ export default function AuthStack() {
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Kayıt Ol' }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: t('nav.register') }} />
     </Stack.Navigator>
   );
 }

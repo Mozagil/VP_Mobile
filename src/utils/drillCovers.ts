@@ -1,4 +1,6 @@
 import { coverPhotoUrlFor } from './drillCoverPhotos';
+import { difficultyLabel as domainDifficultyLabel } from '../i18n/domain';
+import type { Lang } from '../i18n/types';
 
 const COVERS: Record<string, any> = {
   Atak: require('../assets/covers/attack.jpg'),
@@ -33,6 +35,11 @@ export const levelToDifficulty: Record<string, string> = {
   'İleri': 'Zor',
 };
 
-export function difficultyLabel(level: string): string {
-  return levelToDifficulty[level] ?? level;
+/**
+ * Maps a canonical drill level to the difficulty wording used on cards.
+ * The Turkish value stays canonical; `lang` only affects what is rendered.
+ */
+export function difficultyLabel(level: string, lang: Lang = 'tr'): string {
+  const difficulty = levelToDifficulty[level] ?? level;
+  return domainDifficultyLabel(difficulty, lang);
 }

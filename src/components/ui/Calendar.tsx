@@ -2,12 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
-import { WEEKDAY_LABELS } from '../../utils/trainingPlan';
-
-const MONTH_LABELS = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
-];
+import { weekdayLabels } from '../../utils/trainingPlan';
+import { useI18n, MONTHS } from '../../i18n';
 
 function toKey(y: number, m: number, d: number): string {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -25,6 +21,7 @@ const MAX_DOTS = 6;
 
 export default function Calendar({ markedDates, dots, onDayPress, disablePast, selectedDate }: Props) {
   const { colors } = useTheme();
+  const { lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const today = new Date();
   const todayKey = toKey(today.getFullYear(), today.getMonth(), today.getDate());
@@ -51,14 +48,14 @@ export default function Calendar({ markedDates, dots, onDayPress, disablePast, s
         <TouchableOpacity onPress={goPrev} style={s.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={s.navTxt}>‹</Text>
         </TouchableOpacity>
-        <Text style={s.title}>{MONTH_LABELS[month]} {year}</Text>
+        <Text style={s.title}>{MONTHS[lang][month]} {year}</Text>
         <TouchableOpacity onPress={goNext} style={s.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={s.navTxt}>›</Text>
         </TouchableOpacity>
       </View>
 
       <View style={s.weekRow}>
-        {WEEKDAY_LABELS.map((label) => (
+        {weekdayLabels(lang).map((label) => (
           <Text key={label} style={s.weekLabel}>{label}</Text>
         ))}
       </View>

@@ -10,6 +10,7 @@ import Icon from '../../components/ui/Icon';
 import {
   findNextSession, formatSessionBadge, locationLabel, planTotalMinutes,
 } from '../../utils/trainingPlan';
+import { useI18n } from '../../i18n';
 
 type PanelStackParamList = {
   PanelMain: undefined;
@@ -21,6 +22,7 @@ type Props = NativeStackScreenProps<PanelStackParamList, 'AllTrainings'>;
 
 export default function AllTrainingsScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { data: plans = [], isLoading } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
@@ -29,20 +31,20 @@ export default function AllTrainingsScreen({ navigation }: Props) {
     <SafeAreaView style={s.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {isLoading ? (
-          <Text style={s.loading}>Yükleniyor…</Text>
+          <Text style={s.loading}>{t('common.loading')}</Text>
         ) : plans.length === 0 ? (
           <View style={s.emptyCard}>
             <Icon name="antrenmanlar" size={36} style={{ marginBottom: 12 }} />
-            <Text style={s.emptyTitle}>Henüz antrenman planınız yok</Text>
-            <Text style={s.emptyDesc}>Antrenman sekmesinden yeni bir plan oluşturun.</Text>
+            <Text style={s.emptyTitle}>{t('dashboard.noPlanTitle')}</Text>
+            <Text style={s.emptyDesc}>{t('dashboard.noPlanDesc')}</Text>
           </View>
         ) : (
           plans.map((plan) => {
             const nextSession = findNextSession(sessions, plan.id);
-            const badge = formatSessionBadge(nextSession?.session_date, nextSession?.session_time)
-              ?? formatSessionBadge(plan.start_date);
+            const badge = formatSessionBadge(nextSession?.session_date, nextSession?.session_time, lang)
+              ?? formatSessionBadge(plan.start_date, null, lang);
             const totalMinutes = planTotalMinutes(plan, colors);
-            const loc = locationLabel(plan.location);
+            const loc = locationLabel(plan.location, lang);
 
             return (
               <TouchableOpacity
@@ -61,7 +63,7 @@ export default function AllTrainingsScreen({ navigation }: Props) {
                   )}
                 </View>
                 <Text style={s.cardMeta}>
-                  {totalMinutes > 0 ? `${totalMinutes} dakika` : 'Süre belirtilmedi'}
+                  {totalMinutes > 0 ? t('common.minutes', { n: totalMinutes }) : t('common.durationUnset')}
                   {loc ? `  ·  ${loc}` : ''}
                   {plan.team ? `  ·  ${plan.team}` : ''}
                 </Text>

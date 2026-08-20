@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n, useContent, skillLabel, phaseLabel } from '../../i18n';
 import { READY_PROGRAMS, buildReadyProgram } from '../../data/readyPrograms';
 import { useCreatePlan } from '../../hooks/useTrainingPlans';
 import { useCreateScheduledSession } from '../../hooks/useScheduledSessions';
@@ -21,6 +22,8 @@ function todayKey(): string {
 
 export default function ReadyProgramDetailScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName, programTitle, programDesc } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { programKey } = route.params;
   const program = READY_PROGRAMS.find((p) => p.key === programKey)!;
@@ -65,11 +68,11 @@ export default function ReadyProgramDetailScreen({ navigation, route }: Props) {
         params: {
           planId,
           planName: program.title,
-          drillName: sections[0]?.drills[0]?.name ?? program.title,
+          drillName: sections[0]?.drills[0] ? drillName(sections[0].drills[0]) : programTitle(program),
         },
       } as any);
     } catch {
-      Alert.alert('Hata', 'Antrenman planına eklenirken bir sorun oluştu.');
+      Alert.alert(t('common.error'), t('library.addToPlanError'));
     } finally {
       setSaving(false);
     }
@@ -85,23 +88,23 @@ export default function ReadyProgramDetailScreen({ navigation, route }: Props) {
         >
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>{program.title}</Text>
+        <Text style={s.headerTitle}>{programTitle(program)}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
         {!scheduling ? (
           <>
-            <Text style={s.sub}>{program.desc}</Text>
-            <Text style={s.meta}>Toplam ~45 dk</Text>
+            <Text style={s.sub}>{programDesc(program)}</Text>
+            <Text style={s.meta}>{t('library.programTotal')}</Text>
 
             {sections.map((sec) => (
               <View key={sec.phase} style={s.sectionBlock}>
-                <Text style={s.sectionTitle}>{sec.phase}</Text>
+                <Text style={s.sectionTitle}>{phaseLabel(sec.phase, lang)}</Text>
                 {sec.drills.map((d) => (
                   <View key={d.id} style={s.drillRow}>
-                    <Text style={s.drillName}>{d.name}</Text>
-                    <Text style={s.drillSkill}>{d.skill}</Text>
+                    <Text style={s.drillName}>{drillName(d)}</Text>
+                    <Text style={s.drillSkill}>{skillLabel(d.skill, lang)}</Text>
                   </View>
                 ))}
               </View>
@@ -126,7 +129,7 @@ export default function ReadyProgramDetailScreen({ navigation, route }: Props) {
           onPress={scheduling ? addToPlan : () => setScheduling(true)}
         >
           <Text style={s.primaryBtnTxt}>
-            {scheduling ? (saving ? 'Ekleniyor…' : 'Planıma Ekle') : 'Planıma Ekle'}
+            {scheduling && saving ? t('common.adding') : t('library.addToPlan')}
           </Text>
         </TouchableOpacity>
       </View>

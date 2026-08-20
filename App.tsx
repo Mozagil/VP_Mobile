@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/auth/AuthContext';
 import { ThemeProvider } from './src/theme/ThemeContext';
+import { LanguageProvider } from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
 import { initNotifications } from './src/utils/notifications';
 
@@ -21,11 +22,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
-        </QueryClientProvider>
+        <LanguageProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </QueryClientProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

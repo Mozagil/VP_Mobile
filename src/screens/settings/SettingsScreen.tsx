@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../auth/AuthContext';
 import { apiClient } from '../../api/client';
 import Button from '../../components/ui/Button';
@@ -10,18 +9,10 @@ import Input from '../../components/ui/Input';
 import Icon from '../../components/ui/Icon';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
+import type { Lang } from '../../i18n';
 
 const APP_VERSION = '1.0.0';
-const PREFS_KEY = 'voleypro_app_preferences';
-
-type Prefs = {
-  animations: boolean;
-  haptics: boolean;
-  sound: boolean;
-  dataSaver: boolean;
-};
-
-const DEFAULT_PREFS: Prefs = { animations: true, haptics: true, sound: true, dataSaver: false };
 
 type Styles = ReturnType<typeof makeStyles>;
 
@@ -45,6 +36,35 @@ function Toggle({
   );
 }
 
+/** Two-option segmented control used for the language picker. */
+function SegmentedRow<T extends string>({
+  label, value, options, onChange, first, colors, s,
+}: {
+  label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void;
+  first?: boolean; colors: Colors; s: Styles;
+}) {
+  return (
+    <View style={[s.row, !first && s.rowBorder]}>
+      <Text style={s.rowLabel}>{label}</Text>
+      <View style={s.segment}>
+        {options.map((opt) => {
+          const active = opt.value === value;
+          return (
+            <TouchableOpacity
+              key={opt.value}
+              style={[s.segmentBtn, active && { backgroundColor: colors.accent }]}
+              activeOpacity={0.8}
+              onPress={() => onChange(opt.value)}
+            >
+              <Text style={[s.segmentTxt, active && s.segmentTxtActive]}>{opt.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function LinkRow({
   label, value, onPress, first, s,
 }: { label: string; value?: string; onPress: () => void; first?: boolean; s: Styles }) {
@@ -64,8 +84,8 @@ type Props = { navigation: NativeStackNavigationProp<any> };
 export default function SettingsScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { colors, mode, setMode } = useTheme();
+  const { t, lang, setLang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
-  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [showPwForm, setShowPwForm] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -74,47 +94,33 @@ export default function SettingsScreen({ navigation }: Props) {
 
   const changePassword = async () => {
     if (!currentPw || !newPw || !confirmPw) {
-      Alert.alert('Hata', 'Tüm alanları doldurun.');
+      Alert.alert(t('common.error'), t('settings.fillAllFields'));
       return;
     }
     if (newPw !== confirmPw) {
-      Alert.alert('Hata', 'Yeni şifreler eşleşmiyor.');
+      Alert.alert(t('common.error'), t('settings.passwordMismatch'));
       return;
     }
     if (newPw.length < 6) {
-      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır.');
+      Alert.alert(t('common.error'), t('settings.passwordTooShort'));
       return;
     }
     setPwLoading(true);
     try {
       await apiClient.patch('/auth/password', { current_password: currentPw, new_password: newPw });
-      Alert.alert('Başarılı', 'Şifreniz güncellendi.');
+      Alert.alert(t('common.success'), t('settings.passwordUpdated'));
       setCurrentPw(''); setNewPw(''); setConfirmPw(''); setShowPwForm(false);
     } catch {
-      Alert.alert('Hata', 'Mevcut şifre hatalı veya işlem başarısız.');
+      Alert.alert(t('common.error'), t('settings.passwordUpdateFailed'));
     } finally {
       setPwLoading(false);
     }
   };
 
-  useEffect(() => {
-    AsyncStorage.getItem(PREFS_KEY).then((raw) => {
-      if (raw) {
-        try { setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(raw) }); } catch {}
-      }
-    });
-  }, []);
-
-  const update = (patch: Partial<Prefs>) => {
-    const next = { ...prefs, ...patch };
-    setPrefs(next);
-    AsyncStorage.setItem(PREFS_KEY, JSON.stringify(next));
-  };
-
-  const comingSoon = () => Alert.alert('Yakında', 'Bu bölüm yakında eklenecek.');
+  const comingSoon = () => Alert.alert(t('common.comingSoonTitle'), t('common.comingSoonBody'));
 
   const inviteFriend = () => {
-    Share.share({ message: 'VoleyPro ile antrenmanlarını planla, gelişimini takip et! 🏐' });
+    Share.share({ message: t('settings.inviteMessage') });
   };
 
   return (
@@ -123,52 +129,48 @@ export default function SettingsScreen({ navigation }: Props) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Icon name="geri" size={20} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Ayarlar</Text>
+        <Text style={s.headerTitle}>{t('settings.title')}</Text>
         <View style={{ width: 20 }} />
       </View>
       <ScrollView contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
-        <Text style={s.sectionTitle}>Genel</Text>
+        <Text style={s.sectionTitle}>{t('settings.section.general')}</Text>
         <View style={s.card}>
-          <Toggle
-            label="Karanlık Mod"
-            value={mode === 'dark'}
-            onValueChange={(v) => setMode(v ? 'dark' : 'light')}
+          <SegmentedRow<Lang>
+            label={t('settings.language')}
+            value={lang}
+            options={[
+              { value: 'tr', label: t('settings.language.tr') },
+              { value: 'en', label: t('settings.language.en') },
+            ]}
+            onChange={setLang}
             first colors={colors} s={s}
           />
-          <Toggle label="Animasyonlar" value={prefs.animations} onValueChange={(v) => update({ animations: v })} colors={colors} s={s} />
-          <Toggle label="Haptik Geri Bildirim" value={prefs.haptics} onValueChange={(v) => update({ haptics: v })} colors={colors} s={s} />
-          <Toggle label="Uygulama Sesi" value={prefs.sound} onValueChange={(v) => update({ sound: v })} colors={colors} s={s} />
-          <Toggle label="Veri Tasarrufu Modu" value={prefs.dataSaver} onValueChange={(v) => update({ dataSaver: v })} colors={colors} s={s} />
+          <Toggle
+            label={t('settings.darkMode')}
+            value={mode === 'dark'}
+            onValueChange={(v) => setMode(v ? 'dark' : 'light')}
+            colors={colors} s={s}
+          />
+          <LinkRow label={t('settings.rateApp')} onPress={comingSoon} s={s} />
+          <LinkRow label={t('settings.inviteFriend')} onPress={inviteFriend} s={s} />
+          <LinkRow label={t('settings.version')} value={APP_VERSION} onPress={() => {}} s={s} />
         </View>
 
-        <Text style={s.sectionTitle}>İçerik</Text>
-        <View style={s.card}>
-          <LinkRow label="Video Oynatma Kalitesi" value="Yüksek" onPress={comingSoon} first s={s} />
-          <LinkRow label="Antrenman Hatırlatıcıları" onPress={comingSoon} s={s} />
-        </View>
-
-        <Text style={s.sectionTitle}>Diğer</Text>
-        <View style={s.card}>
-          <LinkRow label="Uygulamayı Değerlendir" onPress={comingSoon} first s={s} />
-          <LinkRow label="Arkadaşını Davet Et" onPress={inviteFriend} s={s} />
-          <LinkRow label="Sürüm" value={APP_VERSION} onPress={() => {}} s={s} />
-        </View>
-
-        <Text style={s.sectionTitle}>Hesap</Text>
+        <Text style={s.sectionTitle}>{t('settings.section.account')}</Text>
         <View style={s.card}>
           <View style={s.row}>
-            <Text style={s.rowLabel}>E-posta</Text>
+            <Text style={s.rowLabel}>{t('auth.email')}</Text>
             <Text style={s.rowValue}>{user?.email}</Text>
           </View>
-          <LinkRow label="Şifre Değiştir" onPress={() => setShowPwForm((v) => !v)} s={s} />
+          <LinkRow label={t('settings.changePassword')} onPress={() => setShowPwForm((v) => !v)} s={s} />
         </View>
 
         {showPwForm && (
           <View style={[s.card, { marginTop: 10, padding: 16 }]}>
-            <Input label="Mevcut Şifre" placeholder="••••••••" secureTextEntry value={currentPw} onChangeText={setCurrentPw} />
-            <Input label="Yeni Şifre" placeholder="En az 6 karakter" secureTextEntry value={newPw} onChangeText={setNewPw} />
-            <Input label="Yeni Şifre (Tekrar)" placeholder="••••••••" secureTextEntry value={confirmPw} onChangeText={setConfirmPw} />
-            <Button title="Şifreyi Güncelle" onPress={changePassword} loading={pwLoading} />
+            <Input label={t('settings.currentPassword')} placeholder="••••••••" secureTextEntry value={currentPw} onChangeText={setCurrentPw} />
+            <Input label={t('settings.newPassword')} placeholder={t('auth.register.passwordPlaceholder')} secureTextEntry value={newPw} onChangeText={setNewPw} />
+            <Input label={t('settings.confirmPassword')} placeholder="••••••••" secureTextEntry value={confirmPw} onChangeText={setConfirmPw} />
+            <Button title={t('settings.updatePassword')} onPress={changePassword} loading={pwLoading} />
           </View>
         )}
       </ScrollView>
@@ -199,5 +201,13 @@ function makeStyles(colors: Colors) {
     rowLabelDisabled: { color: colors.muted },
     rowValue: { color: colors.muted, fontSize: 13 },
     rowArrow: { color: colors.muted, fontSize: 18 },
+
+    segment: {
+      flexDirection: 'row', borderRadius: 8, overflow: 'hidden',
+      borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background,
+    },
+    segmentBtn: { paddingHorizontal: 12, paddingVertical: 6 },
+    segmentTxt: { color: colors.muted, fontSize: 12, fontWeight: '700' },
+    segmentTxtActive: { color: '#fff' },
   });
 }

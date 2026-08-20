@@ -5,24 +5,26 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from '../../components/ui/Icon';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 
 type Props = { navigation: NativeStackNavigationProp<any> };
 
 const ITEMS = [
-  { title: 'Sık Sorulan Sorular', subtitle: null },
-  { title: 'Bize Ulaşın', subtitle: 'Destek ekibimizle iletişime geçin' },
-  { title: 'Geri Bildirim Gönder', subtitle: 'Uygulamayı geliştirmemize yardımcı olun' },
-  { title: 'Sorun Bildir', subtitle: 'Karşılaştığınız bir problemi bildirin' },
-  { title: 'Eğitim Videoları', subtitle: 'Uygulama kullanım rehberleri' },
-  { title: 'Topluluk Kuralları', subtitle: 'Uygulama kullanım şartları' },
-];
+  { titleKey: 'help.faq', subtitleKey: null },
+  { titleKey: 'help.contact', subtitleKey: 'help.contact.sub' },
+  { titleKey: 'help.feedback', subtitleKey: 'help.feedback.sub' },
+  { titleKey: 'help.report', subtitleKey: 'help.report.sub' },
+  { titleKey: 'help.videos', subtitleKey: 'help.videos.sub' },
+  { titleKey: 'help.rules', subtitleKey: 'help.rules.sub' },
+] as const;
 
-const SUPPORT_EMAIL = 'destek@voleypro.app';
+const SUPPORT_EMAIL = 'info@voleypro.com';
 
 export default function HelpSupportScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
-  const comingSoon = () => Alert.alert('Yakında', 'Bu bölüm yakında eklenecek.');
+  const comingSoon = () => Alert.alert(t('common.comingSoonTitle'), t('common.comingSoonBody'));
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -30,7 +32,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Icon name="geri" size={20} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Yardım & Destek</Text>
+        <Text style={s.headerTitle}>{t('help.title')}</Text>
         <View style={{ width: 20 }} />
       </View>
 
@@ -38,14 +40,14 @@ export default function HelpSupportScreen({ navigation }: Props) {
         <View style={s.list}>
           {ITEMS.map((item, i) => (
             <TouchableOpacity
-              key={item.title}
+              key={item.titleKey}
               style={[s.row, i === ITEMS.length - 1 && { borderBottomWidth: 0 }]}
               activeOpacity={0.7}
               onPress={comingSoon}
             >
               <View style={{ flex: 1 }}>
-                <Text style={s.rowTitle}>{item.title}</Text>
-                {!!item.subtitle && <Text style={s.rowSubtitle}>{item.subtitle}</Text>}
+                <Text style={s.rowTitle}>{t(item.titleKey)}</Text>
+                {!!item.subtitleKey && <Text style={s.rowSubtitle}>{t(item.subtitleKey)}</Text>}
               </View>
               <Icon name="ileri" size={16} opacity={0.6} />
             </TouchableOpacity>
@@ -54,8 +56,8 @@ export default function HelpSupportScreen({ navigation }: Props) {
 
         <View style={s.supportCard}>
           <View style={{ flex: 1 }}>
-            <Text style={s.supportTitle}>Destek Ekibimiz</Text>
-            <Text style={s.supportLine}>7/24 hizmetinizdeyiz.</Text>
+            <Text style={s.supportTitle}>{t('help.supportTeam')}</Text>
+            <Text style={s.supportLine}>{t('help.support247')}</Text>
             <TouchableOpacity onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}>
               <Text style={s.supportEmail}>{SUPPORT_EMAIL}</Text>
             </TouchableOpacity>

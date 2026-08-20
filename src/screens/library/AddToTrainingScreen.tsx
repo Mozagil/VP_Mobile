@@ -8,6 +8,7 @@ import { Drill, TrainingPlan } from '../../data/types';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { planTotalMinutes, formatSessionBadge, parseLocalDate } from '../../utils/trainingPlan';
+import { useI18n, useContent } from '../../i18n';
 import Icon from '../../components/ui/Icon';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 
@@ -18,15 +19,17 @@ type LibraryStackParamList = {
 type Props = NativeStackScreenProps<LibraryStackParamList, 'AddToTraining'>;
 
 const TABS = [
-  { key: 'upcoming', label: 'Yaklaşan' },
-  { key: 'own', label: 'Kendi Antrenmanlarım' },
-  { key: 'new', label: 'Yeni Plan' },
+  { key: 'upcoming', labelKey: 'addToTraining.tab.upcoming' },
+  { key: 'own', labelKey: 'addToTraining.tab.own' },
+  { key: 'new', labelKey: 'addToTraining.tab.new' },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];
 
 export default function AddToTrainingScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { drill } = route.params;
   const [tab, setTab] = useState<TabKey>('upcoming');
@@ -73,15 +76,21 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
     navigation.navigate('PlanDrillSettings' as any, { drill, planId: selectedPlanId });
   };
 
+  const planStats = (minutes: number, drillCount: number) =>
+    t('addToTraining.planStats', {
+      duration: minutes > 0 ? t('common.minShort', { n: minutes }) : t('common.durationUnset'),
+      n: drillCount,
+    });
+
   const createAndAdd = async () => {
     try {
       const plan = await createPlan.mutateAsync({
-        name: newPlanName.trim() || drill.name,
+        name: newPlanName.trim() || drillName(drill),
         drills: [{ drill_id: drill.id, phase: drill.phase, sort_order: 0, completed: false }] as any,
       });
       goToSuccess(undefined, (plan as any)?.id);
     } catch {
-      Alert.alert('Hata', 'Yeni plan oluşturulurken sorun oluştu.');
+      Alert.alert(t('common.error'), t('addToTraining.createError'));
     }
   };
 
@@ -123,14 +132,14 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Antrenman Seç</Text>
+        <Text style={s.headerTitle}>{t('addToTraining.pickTitle')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <View style={s.searchRow}>
         <TextInput
           style={s.searchInput}
-          placeholder="Ara..."
+          placeholder={t('addToTraining.searchPlaceholder')}
           placeholderTextColor={colors.muted}
           value={search}
           onChangeText={setSearch}
@@ -138,16 +147,16 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
       </View>
 
       <View style={s.tabRow}>
-        {TABS.map((t) => {
-          const active = tab === t.key;
+        {TABS.map((tabItem) => {
+          const active = tab === tabItem.key;
           return (
             <TouchableOpacity
-              key={t.key}
+              key={tabItem.key}
               style={[s.tab, active && s.tabActive]}
-              onPress={() => setTab(t.key)}
+              onPress={() => setTab(tabItem.key)}
               activeOpacity={0.8}
             >
-              <Text style={[s.tabTxt, active && s.tabTxtActive]} numberOfLines={1}>{t.label}</Text>
+              <Text style={[s.tabTxt, active && s.tabTxtActive]} numberOfLines={1}>{t(tabItem.labelKey)}</Text>
             </TouchableOpacity>
           );
         })}
@@ -156,28 +165,28 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {tab === 'upcoming' && (
           <>
-            <Text style={s.sectionTitle}>Yaklaşan Antrenmanlarım</Text>
+            <Text style={s.sectionTitle}>{t('addToTraining.upcomingSection')}</Text>
             {upcomingSessions.length === 0 ? (
-              <Text style={s.empty}>Yaklaşan antrenman yok.</Text>
+              <Text style={s.empty}>{t('addToTraining.upcomingEmpty')}</Text>
             ) : (
               upcomingSessions.map((sess) => {
                 const plan = planFor(sess.plan_id);
                 if (!plan) return null;
-                const dateLine = formatSessionBadge(sess.session_date, sess.session_time);
+                const dateLine = formatSessionBadge(sess.session_date, sess.session_time, lang);
                 const minutes = planTotalMinutes(plan, colors);
-                return renderPlanRow(plan, dateLine, `${minutes > 0 ? `${minutes} dk` : 'Süre belirtilmedi'} • ${plan.drills.length} kişi`);
+                return renderPlanRow(plan, dateLine, planStats(minutes, plan.drills.length));
               })
             )}
 
             {pastSessions.length > 0 && (
               <>
-                <Text style={[s.sectionTitle, { marginTop: 20 }]}>Daha Önceki Antrenmanlar</Text>
+                <Text style={[s.sectionTitle, { marginTop: 20 }]}>{t('addToTraining.pastSection')}</Text>
                 {pastSessions.map((sess) => {
                   const plan = planFor(sess.plan_id);
                   if (!plan) return null;
-                  const dateLine = formatSessionBadge(sess.session_date, sess.session_time);
+                  const dateLine = formatSessionBadge(sess.session_date, sess.session_time, lang);
                   const minutes = planTotalMinutes(plan, colors);
-                  return renderPlanRow(plan, dateLine, `${minutes > 0 ? `${minutes} dk` : 'Süre belirtilmedi'} • ${plan.drills.length} kişi`);
+                  return renderPlanRow(plan, dateLine, planStats(minutes, plan.drills.length));
                 })}
               </>
             )}
@@ -186,13 +195,13 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
 
         {tab === 'own' && (
           <>
-            <Text style={s.sectionTitle}>Antrenmanlarım</Text>
+            <Text style={s.sectionTitle}>{t('addToTraining.ownSection')}</Text>
             {filteredOwnPlans.length === 0 ? (
-              <Text style={s.empty}>Program bulunamadı.</Text>
+              <Text style={s.empty}>{t('addToTraining.ownEmpty')}</Text>
             ) : (
               filteredOwnPlans.map((plan) => {
                 const minutes = planTotalMinutes(plan, colors);
-                return renderPlanRow(plan, null, `${minutes > 0 ? `${minutes} dk` : 'Süre belirtilmedi'} • ${plan.drills.length} kişi`);
+                return renderPlanRow(plan, null, planStats(minutes, plan.drills.length));
               })
             )}
           </>
@@ -200,10 +209,10 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
 
         {tab === 'new' && (
           <>
-            <Text style={s.sectionTitle}>Yeni Program</Text>
+            <Text style={s.sectionTitle}>{t('addToTraining.newProgram')}</Text>
             <TextInput
               style={s.searchInput}
-              placeholder="Program adı"
+              placeholder={t('addToTraining.planNamePlaceholder')}
               placeholderTextColor={colors.muted}
               value={newPlanName}
               onChangeText={setNewPlanName}
@@ -220,7 +229,7 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
             onPress={createAndAdd}
             disabled={createPlan.isPending}
           >
-            <Text style={s.primaryBtnTxt}>{createPlan.isPending ? 'Oluşturuluyor…' : 'Devam Et'}</Text>
+            <Text style={s.primaryBtnTxt}>{createPlan.isPending ? t('common.creating') : t('common.continue')}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -229,7 +238,7 @@ export default function AddToTrainingScreen({ route, navigation }: Props) {
             disabled={!selectedPlanId}
             onPress={goToSettings}
           >
-            <Text style={s.primaryBtnTxt}>Devam Et</Text>
+            <Text style={s.primaryBtnTxt}>{t('common.continue')}</Text>
           </TouchableOpacity>
         )}
       </View>

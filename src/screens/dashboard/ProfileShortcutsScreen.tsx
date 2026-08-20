@@ -1,54 +1,51 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthContext';
 import { useProfile } from '../../hooks/useProfile';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
-
-const levelLabels: Record<string, string> = {
-  başlangıç: 'Başlangıç', baslangic: 'Başlangıç',
-  orta: 'Orta', ileri: 'İleri', profesyonel: 'Profesyonel',
-};
+import { useI18n, profileLevelLabel } from '../../i18n';
 
 type PanelStackParamList = {
   ProfileShortcuts: undefined;
-  NotificationSettings: undefined;
   Logout: undefined;
   DeleteAccount: undefined;
   HelpSupport: undefined;
+  Ayarlar: undefined;
+  Profil: undefined;
+  Legal: { doc: 'kvkk' | 'privacy' };
 };
 
 type Props = { navigation: NativeStackNavigationProp<PanelStackParamList, 'ProfileShortcuts'> };
 
 export default function ProfileShortcutsScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { user } = useAuth() as any;
   const { data: profile } = useProfile();
 
-  const firstName = profile?.first_name || user?.email?.split('@')[0] || 'Oyuncu';
+  const firstName = profile?.first_name || user?.email?.split('@')[0] || t('profile.defaultName');
   const lastName = profile?.last_name || '';
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const initials = (firstName[0] || '🏐').toUpperCase();
   const username = user?.email?.split('@')[0];
-  const levelLabel = profile?.level ? (levelLabels[profile.level] ?? profile.level) : null;
+  const levelLabel = profileLevelLabel(profile?.level, lang);
 
-  const goToParent = (screen: string) =>
-    navigation.getParent()?.navigate('AntrenmanStack' as any, { screen } as any);
 
-  const comingSoon = () => Alert.alert('Yakında', 'Bu bölüm yakında eklenecek.');
-
+  // Ayarlar/Profil bu stack icinde acilir; boylece geri tusu her zaman bu
+  // ekrana doner (once Antrenman sekmesine atlandigi icin geri tusu yanlis
+  // ekrana gidiyordu).
   const ITEMS: Array<{ title: string; onPress: () => void; destructive?: boolean }> = [
-    { title: 'Uygulama Ayarları', onPress: () => goToParent('Ayarlar') },
-    { title: 'Antrenman Tercihlerim', onPress: () => goToParent('Profil') },
-    { title: 'Bildirim Ayarları', onPress: () => navigation.navigate('NotificationSettings') },
-    { title: 'Gizlilik Politikası', onPress: comingSoon },
-    { title: 'KVKK Metni', onPress: comingSoon },
-    { title: 'Yardım & Destek', onPress: () => navigation.navigate('HelpSupport') },
-    { title: 'Hesabı Sil', onPress: () => navigation.navigate('DeleteAccount'), destructive: true },
-    { title: 'Çıkış Yap', onPress: () => navigation.navigate('Logout'), destructive: true },
+    { title: t('shortcuts.appSettings'), onPress: () => navigation.navigate('Ayarlar') },
+    { title: t('shortcuts.myTrainingPreferences'), onPress: () => navigation.navigate('Profil') },
+    { title: t('shortcuts.privacyPolicy'), onPress: () => navigation.navigate('Legal', { doc: 'privacy' }) },
+    { title: t('shortcuts.kvkk'), onPress: () => navigation.navigate('Legal', { doc: 'kvkk' }) },
+    { title: t('shortcuts.helpSupport'), onPress: () => navigation.navigate('HelpSupport') },
+    { title: t('shortcuts.deleteAccount'), onPress: () => navigation.navigate('DeleteAccount'), destructive: true },
+    { title: t('shortcuts.logout'), onPress: () => navigation.navigate('Logout'), destructive: true },
   ];
 
   return (
@@ -58,7 +55,7 @@ export default function ProfileShortcutsScreen({ navigation }: Props) {
           <View style={s.avatar}>
             <Text style={s.avatarTxt}>{initials}</Text>
           </View>
-          <Text style={s.name} numberOfLines={1}>{fullName || 'Oyuncu'}</Text>
+          <Text style={s.name} numberOfLines={1}>{fullName || t('profile.defaultName')}</Text>
           <Text style={s.meta} numberOfLines={1}>
             {username ? `@${username}` : ''}{username && levelLabel ? '  ·  ' : ''}{levelLabel ?? ''}
           </Text>

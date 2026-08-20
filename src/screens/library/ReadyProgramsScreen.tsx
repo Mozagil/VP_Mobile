@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n, useContent } from '../../i18n';
 import { READY_PROGRAMS } from '../../data/readyPrograms';
 import Icon from '../../components/ui/Icon';
 
@@ -11,6 +12,8 @@ type Props = { navigation: NativeStackNavigationProp<any> };
 
 export default function ReadyProgramsScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
+  const { programTitle, programDesc } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
   return (
@@ -19,12 +22,12 @@ export default function ReadyProgramsScreen({ navigation }: Props) {
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Hazır Antrenmanlar</Text>
+        <Text style={s.headerTitle}>{t('library.readyProgramsTitle')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
-        <Text style={s.sub}>Belirli bir beceriye odaklanan, 45 dakikalık hazır antrenman programları. Dilediğini direkt planına ekleyebilirsin.</Text>
+        <Text style={s.sub}>{t('library.readyProgramsSub')}</Text>
 
         {READY_PROGRAMS.map((p) => (
           <TouchableOpacity
@@ -37,9 +40,9 @@ export default function ReadyProgramsScreen({ navigation }: Props) {
               <Icon name="antrenmanlar" size={22} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.cardTitle}>{p.title}</Text>
-              <Text style={s.cardDesc}>{p.desc}</Text>
-              <Text style={s.cardMeta}>45 dk</Text>
+              <Text style={s.cardTitle}>{programTitle(p)}</Text>
+              <Text style={s.cardDesc}>{programDesc(p)}</Text>
+              <Text style={s.cardMeta}>{t('library.programDuration')}</Text>
             </View>
             <Text style={s.arrow}>›</Text>
           </TouchableOpacity>

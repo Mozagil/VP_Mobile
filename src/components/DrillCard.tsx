@@ -5,6 +5,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { Colors } from '../theme/palettes';
 import { coverFor, difficultyLabel } from '../utils/drillCovers';
 import Icon from './ui/Icon';
+import { useI18n, useContent, skillLabel } from '../i18n';
 
 type Props = {
   drill: Drill;
@@ -15,6 +16,8 @@ type Props = {
 
 export default function DrillCard({ drill, onPress, isFavorite, onToggleFavorite }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   return (
     <TouchableOpacity style={s.card} onPress={() => onPress(drill)} activeOpacity={0.8}>
@@ -32,15 +35,15 @@ export default function DrillCard({ drill, onPress, isFavorite, onToggleFavorite
       </View>
 
       <View style={s.body}>
-        <Text style={s.name} numberOfLines={2}>{drill.name}</Text>
-        <Text style={s.meta}>{drill.skill} • {drill.players} Kişi</Text>
+        <Text style={s.name} numberOfLines={2}>{drillName(drill)}</Text>
+        <Text style={s.meta}>{skillLabel(drill.skill, lang)} • {t('common.playerCount', { n: drill.players })}</Text>
         <View style={s.footerRow}>
           <View style={s.durationRow}>
             <Icon name="sure" size={12} />
             <Text style={s.duration}>{drill.duration}</Text>
           </View>
           <View style={s.diffBadge}>
-            <Text style={s.diffBadgeTxt}>{difficultyLabel(drill.level)}</Text>
+            <Text style={s.diffBadgeTxt}>{difficultyLabel(drill.level, lang)}</Text>
           </View>
         </View>
       </View>

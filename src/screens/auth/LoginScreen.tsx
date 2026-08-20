@@ -14,24 +14,31 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 
 // Bump this string with every new EAS build so testers (and we) can confirm
 // which build is actually running on a device, without ambiguity.
-const BUILD_LABEL = 'v12';
+const BUILD_LABEL = 'v13';
 
-const schema = z.object({
-  email: z.string().email('Geçerli bir e-posta girin'),
-  password: z.string().min(1, 'Şifre zorunludur'),
-});
-type FormData = z.infer<typeof schema>;
+// Validation messages are built from the active catalog, so the schema is
+// created inside the component rather than at module scope.
+function makeSchema(t: (key: 'auth.invalidEmail' | 'auth.passwordRequired') => string) {
+  return z.object({
+    email: z.string().email(t('auth.invalidEmail')),
+    password: z.string().min(1, t('auth.passwordRequired')),
+  });
+}
+type FormData = { email: string; password: string };
 
 type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'> };
 
 export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuth();
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [loading, setLoading] = useState(false);
+  const schema = useMemo(() => makeSchema(t), [t]);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -43,8 +50,8 @@ export default function LoginScreen({ navigation }: Props) {
       await signIn(data.email, data.password);
     } catch (err: any) {
       const raw = err?.response?.data?.detail;
-      const msg = Array.isArray(raw) ? raw.map((d: any) => d.msg ?? d).join('\n') : (raw || 'E-posta veya şifre hatalı.');
-      Alert.alert('Giriş Başarısız', String(msg));
+      const msg = Array.isArray(raw) ? raw.map((d: any) => d.msg ?? d).join('\n') : (raw || t('auth.login.badCredentials'));
+      Alert.alert(t('auth.login.failed'), String(msg));
     } finally {
       setLoading(false);
     }
@@ -62,20 +69,20 @@ export default function LoginScreen({ navigation }: Props) {
               <Image source={require('../../../assets/logo-mark.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
             <Text style={styles.title}>VoleyPro</Text>
-            <Text style={styles.subtitle}>Profesyonel voleybol antrenman platformu</Text>
+            <Text style={styles.subtitle}>{t('auth.tagline')}</Text>
           </View>
 
           {/* Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Hesabınıza giriş yapın</Text>
+            <Text style={styles.cardTitle}>{t('auth.login.cardTitle')}</Text>
 
             <Controller
               control={control}
               name="email"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="E-posta"
-                  placeholder="email@örnek.com"
+                  label={t('auth.email')}
+                  placeholder={t('auth.emailPlaceholder')}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={value}
@@ -90,7 +97,7 @@ export default function LoginScreen({ navigation }: Props) {
               name="password"
               render={({ field: { onChange, value } }) => (
                 <Input
-                  label="Şifre"
+                  label={t('auth.password')}
                   placeholder="••••••••"
                   secureTextEntry
                   value={value}
@@ -100,13 +107,13 @@ export default function LoginScreen({ navigation }: Props) {
               )}
             />
 
-            <Button title="Giriş Yap" onPress={handleSubmit(onSubmit)} loading={loading} style={{ marginTop: 8 }} />
+            <Button title={t('auth.login.submit')} onPress={handleSubmit(onSubmit)} loading={loading} style={{ marginTop: 8 }} />
           </View>
 
           {/* Register link */}
           <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.link}>
             <Text style={styles.linkText}>
-              Hesabınız yok mu? <Text style={styles.linkBold}>Kayıt Ol</Text>
+              {t('auth.login.noAccount')} <Text style={styles.linkBold}>{t('nav.register')}</Text>
             </Text>
           </TouchableOpacity>
 

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Drill } from '../../data/types';
 import { coverFor, difficultyLabel } from '../../utils/drillCovers';
+import { useI18n, useContent, skillLabel } from '../../i18n';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import Icon from '../../components/ui/Icon';
@@ -18,6 +19,8 @@ type Props = NativeStackScreenProps<LibraryStackParamList, 'AddToTrainingChoice'
 
 export default function AddToTrainingChoiceScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { drill } = route.params;
 
@@ -29,7 +32,7 @@ export default function AddToTrainingChoiceScreen({ route, navigation }: Props) 
         <TouchableOpacity style={s.closeBtn} onPress={backToLibrary} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={s.closeTxt}>✕</Text>
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Antrenmana Ekle</Text>
+        <Text style={s.headerTitle}>{t('addToTraining.title')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -37,16 +40,16 @@ export default function AddToTrainingChoiceScreen({ route, navigation }: Props) 
         <View style={s.previewCard}>
           <Image source={coverFor(drill.skill, drill.phase, drill.id)} style={s.previewImg} resizeMode="cover" />
           <View style={{ flex: 1 }}>
-            <Text style={s.previewName} numberOfLines={1}>{drill.name}</Text>
-            <Text style={s.previewMeta}>{drill.skill} • {drill.players} Kişi</Text>
+            <Text style={s.previewName} numberOfLines={1}>{drillName(drill)}</Text>
+            <Text style={s.previewMeta}>{skillLabel(drill.skill, lang)} • {t('common.playerCount', { n: drill.players })}</Text>
             <View style={s.previewMetaRow}>
               <Icon name="sure" size={12} />
-              <Text style={s.previewMeta}>{drill.duration} • {difficultyLabel(drill.level)}</Text>
+              <Text style={s.previewMeta}>{drill.duration} • {difficultyLabel(drill.level, lang)}</Text>
             </View>
           </View>
         </View>
 
-        <Text style={s.question}>Nereye eklemek istersin?</Text>
+        <Text style={s.question}>{t('addToTraining.question')}</Text>
 
         <TouchableOpacity
           style={s.option}
@@ -57,8 +60,8 @@ export default function AddToTrainingChoiceScreen({ route, navigation }: Props) 
             <Icon name="antrenmanlar" size={20} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.optionTitle}>Mevcut Bir Antrenmana Ekle</Text>
-            <Text style={s.optionDesc}>Planlarındaki bir antrenmana bu çalışmayı ekle.</Text>
+            <Text style={s.optionTitle}>{t('addToTraining.choice.existingTitle')}</Text>
+            <Text style={s.optionDesc}>{t('addToTraining.choice.existingDesc')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -71,15 +74,15 @@ export default function AddToTrainingChoiceScreen({ route, navigation }: Props) 
             <Text style={s.icon}>➕</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.optionTitle}>Yeni Bir Antrenman Oluştur</Text>
-            <Text style={s.optionDesc}>Bu çalışmayla birlikte sıfırdan yeni bir antrenman oluştur.</Text>
+            <Text style={s.optionTitle}>{t('addToTraining.choice.newTitle')}</Text>
+            <Text style={s.optionDesc}>{t('addToTraining.choice.newDesc')}</Text>
           </View>
         </TouchableOpacity>
       </View>
 
       <View style={s.footer}>
         <TouchableOpacity style={s.cancelBtn} activeOpacity={0.8} onPress={backToLibrary}>
-          <Text style={s.cancelBtnTxt}>İptal</Text>
+          <Text style={s.cancelBtnTxt}>{t('common.cancel')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

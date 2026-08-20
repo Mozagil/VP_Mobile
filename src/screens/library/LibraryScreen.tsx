@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
 import { allDrills } from '../../data/drills';
 import { Drill } from '../../data/types';
 import DrillCard from '../../components/DrillCard';
@@ -10,16 +11,20 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { QUICK_CATEGORIES, matchesCategory, matchesPlayerCount, minDurationMinutes } from '../../utils/libraryFilters';
 import { difficultyLabel } from '../../utils/drillCovers';
+import { useI18n, useContent, skillLabel, libCategoryLabel } from '../../i18n';
 import LibraryFilterModal, { LibraryFilters, DEFAULT_FILTERS } from './LibraryFilterModal';
 import Icon from '../../components/ui/Icon';
 
 type LibraryStackParamList = {
-  DrillList: undefined;
-  DrillDetail: { drill: Drill };
+  DrillList: { targetPlanId?: string } | undefined;
+  DrillDetail: { drill: Drill; targetPlanId?: string };
   ReadyPrograms: undefined;
 };
 
-type Props = { navigation: NativeStackNavigationProp<LibraryStackParamList, 'DrillList'> };
+type Props = {
+  navigation: NativeStackNavigationProp<LibraryStackParamList, 'DrillList'>;
+  route: RouteProp<LibraryStackParamList, 'DrillList'>;
+};
 type Styles = ReturnType<typeof makeStyles>;
 
 function Chip({ label, active, onPress, s }: { label: string; active: boolean; onPress: () => void; s: Styles }) {
@@ -30,8 +35,10 @@ function Chip({ label, active, onPress, s }: { label: string; active: boolean; o
   );
 }
 
-export default function LibraryScreen({ navigation }: Props) {
+export default function LibraryScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
+  const { drillName, drillTags } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const [search, setSearch] = useState('');
   const [quickCategory, setQuickCategory] = useState<string>('Tümü');
@@ -41,11 +48,14 @@ export default function LibraryScreen({ navigation }: Props) {
 
   const filtered = useMemo(() => {
     return allDrills.filter((d) => {
+      // Search runs on the localized name/tags so typing in the active
+      // language matches what the user actually sees on the cards.
+      const q = search.toLowerCase();
       const matchSearch =
         search.length === 0 ||
-        d.name.toLowerCase().includes(search.toLowerCase()) ||
-        d.skill.toLowerCase().includes(search.toLowerCase()) ||
-        d.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+        drillName(d).toLowerCase().includes(q) ||
+        skillLabel(d.skill, lang).toLowerCase().includes(q) ||
+        drillTags(d).some((tag) => tag.toLowerCase().includes(q));
 
       const matchQuick = quickCategory === 'Tümü' || matchesCategory(d, quickCategory);
 
@@ -59,9 +69,10 @@ export default function LibraryScreen({ navigation }: Props) {
 
       return matchSearch && matchQuick && matchCategories && matchDifficulty && matchPlayers && matchDuration;
     });
-  }, [search, quickCategory, filters]);
+  }, [search, quickCategory, filters, lang]);
 
-  const navigateToDrill = (d: Drill) => navigation.navigate('DrillDetail', { drill: d });
+  const targetPlanId = route.params?.targetPlanId;
+  const navigateToDrill = (d: Drill) => navigation.navigate('DrillDetail', { drill: d, targetPlanId });
 
   const activeFilterCount = filters.categories.length + filters.difficulties.length
     + filters.playerCounts.length + (filters.maxDuration < 60 ? 1 : 0);
@@ -71,8 +82,8 @@ export default function LibraryScreen({ navigation }: Props) {
       <TouchableOpacity style={s.readyProgramsBanner} activeOpacity={0.85} onPress={() => navigation.navigate('ReadyPrograms')}>
         <Icon name="antrenmanlar" size={18} />
         <View style={{ flex: 1 }}>
-          <Text style={s.readyProgramsTitle}>Hazır Antrenmanlar</Text>
-          <Text style={s.readyProgramsDesc}>Servis, Atak, Defans, Parmak Pas, Manşet için 45 dk'lık hazır programlar</Text>
+          <Text style={s.readyProgramsTitle}>{t('library.readyProgramsTitle')}</Text>
+          <Text style={s.readyProgramsDesc}>{t('library.readyProgramsDesc')}</Text>
         </View>
         <Text style={s.arrow}>›</Text>
       </TouchableOpacity>
@@ -80,7 +91,7 @@ export default function LibraryScreen({ navigation }: Props) {
       <View style={s.searchRow}>
         <TextInput
           style={s.searchInput}
-          placeholder="Arama yapın..."
+          placeholder={t('library.searchPlaceholder')}
           placeholderTextColor={colors.muted}
           value={search}
           onChangeText={setSearch}
@@ -95,7 +106,7 @@ export default function LibraryScreen({ navigation }: Props) {
           style={{ flex: 1 }}
         >
           {QUICK_CATEGORIES.map((c) => (
-            <Chip key={c} label={c} active={quickCategory === c} onPress={() => setQuickCategory(c)} s={s} />
+            <Chip key={c} label={libCategoryLabel(c, lang)} active={quickCategory === c} onPress={() => setQuickCategory(c)} s={s} />
           ))}
         </ScrollView>
         <TouchableOpacity
@@ -110,7 +121,7 @@ export default function LibraryScreen({ navigation }: Props) {
 
       <View style={s.countRow}>
         <Text style={s.countLabel}>
-          {quickCategory === '__favs__' ? 'Favorilerim' : 'Tüm Antrenmanlar'} ({
+          {quickCategory === '__favs__' ? t('library.myFavorites') : t('library.allTrainings')} ({
             quickCategory === '__favs__' ? favorites.length : filtered.length
           })
         </Text>
@@ -121,7 +132,7 @@ export default function LibraryScreen({ navigation }: Props) {
         >
           <Icon name="favori" size={14} opacity={quickCategory === '__favs__' ? 1 : 0.4} />
           <Text style={s.favToggleTxt}>
-            Favoriler{favorites.length > 0 ? ` (${favorites.length})` : ''}
+            {t('library.favoritesToggle')}{favorites.length > 0 ? ` (${favorites.length})` : ''}
           </Text>
         </TouchableOpacity>
       </View>
@@ -134,7 +145,7 @@ export default function LibraryScreen({ navigation }: Props) {
             <Text style={s.emptyIcon}>🔍</Text>
           )}
           <Text style={s.emptyTxt}>
-            {quickCategory === '__favs__' ? 'Henüz favori eklemedin.' : 'Sonuç bulunamadı.'}
+            {quickCategory === '__favs__' ? t('library.noFavorites') : t('library.noResults')}
           </Text>
         </View>
       ) : (

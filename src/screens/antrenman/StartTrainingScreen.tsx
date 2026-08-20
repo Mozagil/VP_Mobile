@@ -15,16 +15,14 @@ import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/Schedul
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon, { IconName } from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
+import { useI18n, profileLevelLabel } from '../../i18n';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'StartTraining'>;
 type Styles = ReturnType<typeof makeStyles>;
 
-const levelLabels: Record<string, string> = {
-  başlangıç: 'Başlangıç', baslangic: 'Başlangıç', orta: 'Orta', ileri: 'İleri', profesyonel: 'Profesyonel',
-};
-
 export default function StartTrainingScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
@@ -43,17 +41,17 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
     return <View style={s.center}><ActivityIndicator color={colors.accent} size="large" /></View>;
   }
   if (!plan) {
-    return <View style={s.center}><Text style={{ color: colors.muted }}>Antrenman bulunamadı</Text></View>;
+    return <View style={s.center}><Text style={{ color: colors.muted }}>{t('training.notFound')}</Text></View>;
   }
 
   const total = plan.drills.length;
   const minutes = planTotalMinutes(plan, colors);
   const nextSession = findNextSession(sessions, plan.id);
-  const dayLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time)
-    ?? formatSessionBadge(plan.start_date)
-    ?? 'Planlanmadı';
-  const levelLabel = plan.level ? (levelLabels[plan.level] ?? plan.level) : '—';
-  const phaseBreakdown = buildPhaseBreakdown(plan, colors);
+  const dayLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time, lang)
+    ?? formatSessionBadge(plan.start_date, null, lang)
+    ?? t('common.notScheduled');
+  const levelLabel = profileLevelLabel(plan.level, lang) ?? '—';
+  const phaseBreakdown = buildPhaseBreakdown(plan, colors, lang);
 
   const goToPhase = (phase: string) => navigation.navigate('PhaseSequence', { planId: plan.id, phase });
 
@@ -74,7 +72,7 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
             scheduleSessionReminders(plan.id, plan.name, editDate, time ?? null);
             setShowSchedule(false);
           },
-          onError: () => Alert.alert('Hata', 'Güncellenirken sorun oluştu.'),
+          onError: () => Alert.alert(t('common.error'), t('start.updateError')),
         },
       );
     } else {
@@ -85,7 +83,7 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
             scheduleSessionReminders(plan.id, plan.name, editDate, time ?? null);
             setShowSchedule(false);
           },
-          onError: () => Alert.alert('Hata', 'Kaydedilirken sorun oluştu.'),
+          onError: () => Alert.alert(t('common.error'), t('start.saveError')),
         },
       );
     }
@@ -104,15 +102,10 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Antremanı Başlat</Text>
+        <Text style={s.headerTitle}>{t('start.title')}</Text>
         <TouchableOpacity
           style={s.backBtn}
-          onPress={() => {
-            Alert.alert(plan.name, undefined, [
-              { text: 'Antrenmanı Düzenle', onPress: () => navigation.navigate('ProgramDetail', { planId: plan.id }) },
-              { text: 'İptal', style: 'cancel' },
-            ]);
-          }}
+          onPress={() => navigation.navigate('ProgramDetail', { planId: plan.id })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={s.backTxt}>⋮</Text>
@@ -127,29 +120,31 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.planName} numberOfLines={2}>{plan.name}</Text>
-              <Text style={s.planMeta}>{total} hareket{minutes > 0 ? ` • ${minutes} dk` : ''}</Text>
-              {plan.status === 'active' && <Text style={s.activeTag}>● Antrenman Aktif</Text>}
+              <Text style={s.planMeta}>
+                {minutes > 0 ? t('start.drillCountDuration', { n: total, min: minutes }) : t('start.drillCount', { n: total })}
+              </Text>
+              {plan.status === 'active' && <Text style={s.activeTag}>{t('start.activeTag')}</Text>}
             </View>
           </View>
         </View>
 
         <View style={s.infoCard}>
           <TouchableOpacity activeOpacity={0.7} onPress={openScheduleEditor}>
-            <InfoRow iconName="takvim" label="Gün" value={dayLabel} editable s={s} />
+            <InfoRow iconName="takvim" label={t('start.day')} value={dayLabel} editable s={s} />
           </TouchableOpacity>
-          <InfoRow iconName="hedefler" label="Hedef" value={plan.goal || '—'} s={s} />
-          <InfoRow iconName="ilerleme" label="Seviye" value={levelLabel} s={s} />
-          <InfoRow iconName="antrenmanlar" label="Ekipman" value={profile?.equipment_status || '—'} s={s} />
+          <InfoRow iconName="hedefler" label={t('start.goal')} value={plan.goal || '—'} s={s} />
+          <InfoRow iconName="ilerleme" label={t('start.level')} value={levelLabel} s={s} />
+          <InfoRow iconName="antrenmanlar" label={t('start.equipment')} value={profile?.equipment_status || '—'} s={s} />
         </View>
 
-        <Text style={s.sectionTitle}>Antrenman Bölümleri</Text>
+        <Text style={s.sectionTitle}>{t('start.sections')}</Text>
         {phaseBreakdown.map((p) => (
           <TouchableOpacity key={p.phase} style={s.phaseRow} activeOpacity={0.78} onPress={() => goToPhase(p.phase)}>
             <View style={[s.dot, { backgroundColor: p.color }]} />
             <PhaseIcon phase={p.phase} size={15} />
             <View style={{ flex: 1 }}>
               <Text style={s.phaseLabel}>{p.label}</Text>
-              <Text style={s.phaseMeta}>{p.count} hareket • {p.minutes} dk</Text>
+              <Text style={s.phaseMeta}>{t('start.drillCountDuration', { n: p.count, min: p.minutes })}</Text>
             </View>
             <Text style={s.phaseArrow}>›</Text>
           </TouchableOpacity>
@@ -163,7 +158,7 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
           onPress={start}
           disabled={updateStatus.isPending}
         >
-          <Text style={s.primaryBtnTxt}>{updateStatus.isPending ? 'Başlatılıyor…' : 'Antrenmanı Başlat'}</Text>
+          <Text style={s.primaryBtnTxt}>{updateStatus.isPending ? t('common.starting') : t('start.startButton')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -171,7 +166,7 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
         <View style={s.modalOverlay}>
           <View style={s.modalSheet}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Tarih ve Saat Seç</Text>
+              <Text style={s.modalTitle}>{t('start.pickDateTime')}</Text>
               <TouchableOpacity onPress={() => setShowSchedule(false)} style={s.modalCloseBtn}>
                 <Text style={s.modalCloseTxt}>✕</Text>
               </TouchableOpacity>
@@ -190,7 +185,7 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
                 onPress={saveSchedule}
                 disabled={updateSessionTime.isPending || createSession.isPending}
               >
-                <Text style={s.primaryBtnTxt}>Kaydet</Text>
+                <Text style={s.primaryBtnTxt}>{t('common.save')}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

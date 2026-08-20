@@ -1,8 +1,10 @@
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon, { IconName } from '../components/ui/Icon';
+import { useI18n, useContent } from '../i18n';
 
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import AllTrainingsScreen from '../screens/dashboard/AllTrainingsScreen';
@@ -10,15 +12,14 @@ import NextTrainingDetailScreen from '../screens/dashboard/NextTrainingDetailScr
 import TrainingCalendarScreen from '../screens/dashboard/TrainingCalendarScreen';
 import ProfileShortcutsScreen from '../screens/dashboard/ProfileShortcutsScreen';
 import TrainingHistoryScreen from '../screens/dashboard/TrainingHistoryScreen';
-import NotificationSettingsScreen from '../screens/settings/NotificationSettingsScreen';
 import BildirimlerScreen from '../screens/dashboard/BildirimlerScreen';
 import LogoutScreen from '../screens/dashboard/LogoutScreen';
 import DeleteAccountScreen from '../screens/dashboard/DeleteAccountScreen';
 import HelpSupportScreen from '../screens/dashboard/HelpSupportScreen';
+import LegalScreen from '../screens/legal/LegalScreen';
 import PlatformScreen from '../screens/platform/PlatformScreen';
 import AIWizardScreen from '../screens/platform/AIWizardScreen';
 import VoIleybolOkuluScreen from '../screens/platform/VoIleybolOkuluScreen';
-import AntrenmanHubScreen from '../screens/antrenman/AntrenmanHubScreen';
 import ProgramlarimScreen from '../screens/antrenman/ProgramlarimScreen';
 import ProgramDetailScreen from '../screens/antrenman/ProgramDetailScreen';
 import NewTrainingChoiceScreen from '../screens/antrenman/NewTrainingChoiceScreen';
@@ -40,7 +41,6 @@ import CreatePlanScreen from '../screens/plans/CreatePlanScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import SozlukStackNav from './SozlukStack';
-import GelisimScreen from '../screens/gelisim/GelisimScreen';
 import { useTheme } from '../theme/ThemeContext';
 import { Colors } from '../theme/palettes';
 import { Drill } from '../data/types';
@@ -55,7 +55,6 @@ export type AppTabsParamList = {
 
 export type AntrenmanStackParamList = {
   AntrenmanHub: undefined;
-  AntrenmanMenu: undefined;
   ProgramDetail: { planId: string };
   NewTrainingChoice: undefined;
   TrainingSuccess: { planId: string; planName: string; drillName: string };
@@ -66,12 +65,12 @@ export type AntrenmanStackParamList = {
   PlanList: undefined;
   PlanDetail: { planId: string };
   CreatePlan: undefined;
-  DrillList: undefined;
-  DrillDetail: { drill: Drill };
+  // targetPlanId verildiginde kutuphane "bu programa hareket ekle" modunda acilir.
+  DrillList: { targetPlanId?: string } | undefined;
+  DrillDetail: { drill: Drill; targetPlanId?: string };
   AddToTrainingChoice: { drill: Drill };
   AddToTraining: { drill: Drill };
   PlanDrillSettings: { drill: Drill; planId: string };
-  GelisimMain: undefined;
   Profil: undefined;
   Ayarlar: undefined;
 };
@@ -85,11 +84,16 @@ const PanelStack = createNativeStackNavigator<{
   TrainingCalendar: undefined;
   ProfileShortcuts: undefined;
   TrainingHistory: undefined;
-  NotificationSettings: undefined;
   Bildirimler: undefined;
   Logout: undefined;
   DeleteAccount: undefined;
   HelpSupport: undefined;
+  // Ayarlar/Profil, Antrenman sekmesinde de kayitli. Panel sekmesinden
+  // acildiklarinda geri tusu Profil Kısayolları'na donsun diye burada da
+  // kayitlilar (DrillDetail'in iki stack'te birden durmasiyla ayni yaklasim).
+  Ayarlar: undefined;
+  Profil: undefined;
+  Legal: { doc: 'kvkk' | 'privacy' };
 }>();
 
 const PlatformStack = createNativeStackNavigator<{
@@ -110,55 +114,80 @@ const KutuphaneStack = createNativeStackNavigator<{
   ReadyProgramDetail: { programKey: string };
 }>();
 
+// Tek tip geri butonu: custom header'li ekranlardaki ile ayni "geri" ikonu.
+const HeaderBackButton = ({ onPress }: { onPress: () => void }) => (
+  <TouchableOpacity
+    style={{ width: 36, height: 36, alignItems: 'flex-start', justifyContent: 'center' }}
+    onPress={onPress}
+    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+  >
+    <Icon name="geri" size={18} />
+  </TouchableOpacity>
+);
+
 function getStackOpts(colors: Colors) {
-  return {
-    headerStyle: { backgroundColor: colors.background },
-    headerTintColor: colors.foreground,
-    headerShadowVisible: false,
-    headerBackTitle: '',          // iOS: show only the back chevron, no text
-    contentStyle: { backgroundColor: colors.background },
+  return ({ navigation, route }: any) => {
+    const routes = navigation.getState()?.routes ?? [];
+    const isFirstScreen = routes[0]?.key === route.key;
+    return {
+      headerStyle: { backgroundColor: colors.background },
+      headerTintColor: colors.foreground,
+      headerShadowVisible: false,
+      headerBackTitle: '',                          // iOS: onceki ekranin adi geri butonunda gorunmesin
+      headerBackButtonDisplayMode: 'minimal' as const,
+      headerBackVisible: false,                     // yerine asagidaki tek tip buton kullaniliyor
+      headerLeft: isFirstScreen
+        ? undefined
+        : () => <HeaderBackButton onPress={() => navigation.goBack()} />,
+      contentStyle: { backgroundColor: colors.background },
+    };
   };
 }
 
 function PanelStackNav() {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const stackOpts = getStackOpts(colors);
   return (
     <PanelStack.Navigator screenOptions={stackOpts}>
       <PanelStack.Screen name="PanelMain" component={DashboardScreen} options={{ headerShown: false }} />
-      <PanelStack.Screen name="AllTrainings" component={AllTrainingsScreen} options={{ title: 'Antrenmanlarım' }} />
-      <PanelStack.Screen name="NextTrainingDetail" component={NextTrainingDetailScreen} options={{ title: 'Antrenman Detayı' }} />
-      <PanelStack.Screen name="TrainingCalendar" component={TrainingCalendarScreen} options={{ title: 'Antrenman Takvimi' }} />
-      <PanelStack.Screen name="ProfileShortcuts" component={ProfileShortcutsScreen} options={{ title: 'Profil Kısayolları' }} />
-      <PanelStack.Screen name="TrainingHistory" component={TrainingHistoryScreen} options={{ title: 'Antrenman Geçmişim' }} />
-      <PanelStack.Screen name="NotificationSettings" component={NotificationSettingsScreen} options={{ title: 'Bildirim Ayarları' }} />
+      <PanelStack.Screen name="AllTrainings" component={AllTrainingsScreen} options={{ title: t('nav.allTrainings') }} />
+      <PanelStack.Screen name="NextTrainingDetail" component={NextTrainingDetailScreen} options={{ title: t('nav.trainingDetail') }} />
+      <PanelStack.Screen name="TrainingCalendar" component={TrainingCalendarScreen} options={{ title: t('nav.trainingCalendar') }} />
+      <PanelStack.Screen name="ProfileShortcuts" component={ProfileShortcutsScreen} options={{ title: t('nav.profileShortcuts') }} />
+      <PanelStack.Screen name="TrainingHistory" component={TrainingHistoryScreen} options={{ title: t('nav.trainingHistory') }} />
       <PanelStack.Screen name="Bildirimler" component={BildirimlerScreen} options={{ headerShown: false }} />
       <PanelStack.Screen name="Logout" component={LogoutScreen} options={{ headerShown: false }} />
       <PanelStack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ headerShown: false }} />
       <PanelStack.Screen name="HelpSupport" component={HelpSupportScreen} options={{ headerShown: false }} />
+      <PanelStack.Screen name="Ayarlar" component={SettingsScreen} options={{ headerShown: false }} />
+      <PanelStack.Screen name="Profil" component={ProfileScreen} options={{ title: t('nav.trainingPreferences') }} />
+      <PanelStack.Screen name="Legal" component={LegalScreen} options={{ headerShown: false }} />
     </PanelStack.Navigator>
   );
 }
 
 function PlatformStackNav() {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const stackOpts = getStackOpts(colors);
   return (
     <PlatformStack.Navigator screenOptions={stackOpts}>
-      <PlatformStack.Screen name="PlatformMain" component={PlatformScreen} options={{ title: 'Platform Özellikleri' }} />
-      <PlatformStack.Screen name="AIWizard" component={AIWizardScreen} options={{ title: 'AI Antrenman Sihirbazı' }} />
-      <PlatformStack.Screen name="VoIleybolOkulu" component={VoIleybolOkuluScreen} options={{ title: 'Voleybol Okulu' }} />
+      <PlatformStack.Screen name="PlatformMain" component={PlatformScreen} options={{ title: t('nav.platformFeatures') }} />
+      <PlatformStack.Screen name="AIWizard" component={AIWizardScreen} options={{ title: t('nav.aiWizard') }} />
+      <PlatformStack.Screen name="VoIleybolOkulu" component={VoIleybolOkuluScreen} options={{ title: t('nav.volleyballSchool') }} />
     </PlatformStack.Navigator>
   );
 }
 
 function AntrenmanStackNav() {
   const { colors } = useTheme();
+  const { t } = useI18n();
+  const { drillName } = useContent();
   const stackOpts = getStackOpts(colors);
   return (
     <AntrenmanStack.Navigator screenOptions={stackOpts}>
       <AntrenmanStack.Screen name="AntrenmanHub" component={ProgramlarimScreen} options={{ headerShown: false }} />
-      <AntrenmanStack.Screen name="AntrenmanMenu" component={AntrenmanHubScreen} options={{ title: 'Diğer' }} />
       <AntrenmanStack.Screen name="ProgramDetail" component={ProgramDetailScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="NewTrainingChoice" component={NewTrainingChoiceScreen} options={{ headerShown: false, presentation: 'modal' }} />
       <AntrenmanStack.Screen name="TrainingSuccess" component={TrainingSuccessScreen} options={{ headerShown: false }} />
@@ -166,20 +195,19 @@ function AntrenmanStackNav() {
       <AntrenmanStack.Screen name="PhaseSequence" component={PhaseSequenceScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="DrillPlayer" component={DrillPlayerScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="WorkoutComplete" component={WorkoutCompleteScreen} options={{ headerShown: false }} />
-      <AntrenmanStack.Screen name="PlanList" component={PlansScreen} options={{ title: 'Antrenman Planlarım' }} />
-      <AntrenmanStack.Screen name="PlanDetail" component={PlanDetailScreen} options={{ title: 'Plan Detay' }} />
-      <AntrenmanStack.Screen name="CreatePlan" component={CreatePlanScreen} options={{ title: 'Yeni Plan' }} />
-      <AntrenmanStack.Screen name="DrillList" component={LibraryScreen} options={{ title: 'Drill Kütüphanesi' }} />
+      <AntrenmanStack.Screen name="PlanList" component={PlansScreen} options={{ title: t('nav.planList') }} />
+      <AntrenmanStack.Screen name="PlanDetail" component={PlanDetailScreen} options={{ title: t('nav.planDetail') }} />
+      <AntrenmanStack.Screen name="CreatePlan" component={CreatePlanScreen} options={{ title: t('nav.createPlan') }} />
+      <AntrenmanStack.Screen name="DrillList" component={LibraryScreen} options={{ title: t('nav.drillLibrary') }} />
       <AntrenmanStack.Screen
         name="DrillDetail"
         component={DrillDetailScreen}
-        options={({ route }) => ({ title: route.params.drill.name })}
+        options={({ route }) => ({ title: drillName(route.params.drill) })}
       />
       <AntrenmanStack.Screen name="AddToTrainingChoice" component={AddToTrainingChoiceScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="AddToTraining" component={AddToTrainingScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="PlanDrillSettings" component={PlanDrillSettingsScreen} options={{ headerShown: false }} />
-      <AntrenmanStack.Screen name="GelisimMain" component={GelisimScreen} options={{ title: 'Gelişim Modülleri' }} />
-      <AntrenmanStack.Screen name="Profil" component={ProfileScreen} options={{ title: 'Antrenman Tercihleri' }} />
+      <AntrenmanStack.Screen name="Profil" component={ProfileScreen} options={{ title: t('nav.trainingPreferences') }} />
       <AntrenmanStack.Screen name="Ayarlar" component={SettingsScreen} options={{ headerShown: false }} />
     </AntrenmanStack.Navigator>
   );
@@ -187,14 +215,16 @@ function AntrenmanStackNav() {
 
 function KutuphaneStackNav() {
   const { colors } = useTheme();
+  const { t } = useI18n();
+  const { drillName } = useContent();
   const stackOpts = getStackOpts(colors);
   return (
     <KutuphaneStack.Navigator screenOptions={stackOpts}>
-      <KutuphaneStack.Screen name="DrillList" component={LibraryScreen} options={{ title: 'Antrenman Kütüphanesi' }} />
+      <KutuphaneStack.Screen name="DrillList" component={LibraryScreen} options={{ title: t('nav.tab.library') }} />
       <KutuphaneStack.Screen
         name="DrillDetail"
         component={DrillDetailScreen}
-        options={({ route }) => ({ title: route.params.drill.name })}
+        options={({ route }) => ({ title: drillName(route.params.drill) })}
       />
       <KutuphaneStack.Screen name="AddToTrainingChoice" component={AddToTrainingChoiceScreen} options={{ headerShown: false }} />
       <KutuphaneStack.Screen name="AddToTraining" component={AddToTrainingScreen} options={{ headerShown: false }} />
@@ -220,6 +250,7 @@ const resetTabOnPress = (initialScreen: string) => ({ navigation, route }: any) 
 
 export default function AppTabs() {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
@@ -244,7 +275,7 @@ export default function AppTabs() {
         name="Panel"
         component={PanelStackNav}
         options={{
-          title: 'Ana Sayfa',
+          title: t('nav.tab.home'),
           tabBarIcon: ({ focused }) => <TabSvgIcon name="ana-sayfa" focused={focused} />,
         }}
         listeners={resetTabOnPress('PanelMain')}
@@ -253,7 +284,7 @@ export default function AppTabs() {
         name="ÖzelliklerStack"
         component={PlatformStackNav}
         options={{
-          title: 'Platform Özellikleri',
+          title: t('nav.platformFeatures'),
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },
         }}
@@ -262,7 +293,7 @@ export default function AppTabs() {
         name="AntrenmanStack"
         component={AntrenmanStackNav}
         options={{
-          title: 'Antrenman',
+          title: t('nav.tab.training'),
           tabBarIcon: ({ focused }) => <TabSvgIcon name="antrenmanlar" focused={focused} />,
         }}
         listeners={resetTabOnPress('AntrenmanHub')}
@@ -271,7 +302,7 @@ export default function AppTabs() {
         name="KütüphaneStack"
         component={KutuphaneStackNav}
         options={{
-          title: 'Antrenman Kütüphanesi',
+          title: t('nav.tab.library'),
           tabBarIcon: ({ focused }) => <TabSvgIcon name="servis" focused={focused} />,
         }}
         listeners={resetTabOnPress('DrillList')}
@@ -280,7 +311,7 @@ export default function AppTabs() {
         name="Sözlük"
         component={SozlukStackNav}
         options={{
-          title: 'Voleybol Sözlüğü',
+          title: t('nav.tab.glossary'),
           tabBarIcon: ({ focused }) => <TabSvgIcon name="pas" focused={focused} />,
         }}
         listeners={resetTabOnPress('SozlukList')}

@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
+import type { TranslationKey } from '../../i18n';
 
 type PlatformParamList = {
   PlatformMain: undefined;
@@ -16,80 +18,67 @@ type Props = {
 };
 
 const STATS = [
-  { value: '100+', label: 'Drill' },
-  { value: '20+',  label: 'Modül' },
-  { value: '4',    label: 'Seviye' },
-  { value: '∞',   label: 'Plan' },
-];
+  { value: '100+', labelKey: 'platform.stat.drills' },
+  { value: '20+',  labelKey: 'platform.stat.modules' },
+  { value: '4',    labelKey: 'platform.stat.levels' },
+  { value: '∞',   labelKey: 'platform.stat.plans' },
+] as const;
 
 type Feature = {
   icon: string;
-  title: string;
-  desc: string;
+  titleKey: TranslationKey;
+  descKey: TranslationKey;
   color: string;
-  tag?: string;        // optional "active" tag label
-  dest?: 'ai' | 'library' | 'gelisim' | 'sozluk' | 'dashboard' | 'okul' | 'wizard';
+  tagKey?: TranslationKey;   // optional "active" tag label
+  dest?: 'ai' | 'library' | 'sozluk' | 'dashboard' | 'okul' | 'wizard';
 };
 
 function getFeatures(colors: Colors): Feature[] {
   return [
   {
-    icon: '🤖', color: colors.accent, tag: 'BAŞLAT',
-    title: 'AI Antrenman Sihirbazı',
-    desc: 'Seviyenize ve hedeflerinize göre saniyeler içinde kişiselleştirilmiş antrenman planı oluşturun.',
+    icon: '🤖', color: colors.accent, tagKey: 'platform.tag.start',
+    titleKey: 'platform.feature.ai', descKey: 'platform.feature.ai.desc',
     dest: 'wizard',
   },
   {
-    icon: '🎓', color: colors.blue, tag: 'YENİ',
-    title: 'Voleybol Okulu',
-    desc: 'Temel ve ileri teknikler, modüller ve favorilere ekleme. Voleybol öğrenmenin en kolay yolu.',
+    icon: '🎓', color: colors.blue, tagKey: 'platform.tag.new',
+    titleKey: 'platform.feature.school', descKey: 'platform.feature.school.desc',
     dest: 'okul',
   },
   {
     icon: '📚', color: colors.blue,
-    title: '100+ Drill Kütüphanesi',
-    desc: 'Isınma, servis, manşet, smaç, blok ve daha fazlası. Her drill için detaylı açıklama, süre ve oyuncu bilgisi.',
+    titleKey: 'platform.feature.library', descKey: 'platform.feature.library.desc',
     dest: 'library',
   },
   {
-    icon: '📈', color: colors.green,
-    title: 'Gelişim Modülleri',
-    desc: 'Bireysel performans, teknik ve takım organizasyonu modülleri. Haftalık ilerleme takibi.',
-    dest: 'gelisim',
-  },
-  {
     icon: '🏆', color: colors.warning,
-    title: 'İlerleme Takibi',
-    desc: 'Tamamlanan drill ve oturumlarla performans analizi. Hedeflerinize ne kadar yaklaştığınızı görün.',
+    titleKey: 'platform.feature.progress', descKey: 'platform.feature.progress.desc',
     dest: 'dashboard',
   },
   {
     icon: '📖', color: colors.purple,
-    title: 'Voleybol Sözlüğü',
-    desc: '100\'den fazla voleybol terimi ve açıklaması. Teknik kavramları kolayca öğrenin.',
+    titleKey: 'platform.feature.glossary', descKey: 'platform.feature.glossary.desc',
     dest: 'sozluk',
   },
   {
     icon: '⭐', color: colors.warning,
-    title: 'Favori Drill\'ler',
-    desc: 'Beğendiğiniz drill\'leri favorilerinize ekleyin, hızlıca erişin.',
+    titleKey: 'platform.feature.favorites', descKey: 'platform.feature.favorites.desc',
     dest: 'library',
   },
   {
     icon: '📅', color: colors.indigo,
-    title: 'Antrenman Takvimi',
-    desc: 'Planlarınızı takvime ekleyin, yaklaşan antrenmanları kaçırmayın. Haftalık program oluşturun.',
+    titleKey: 'platform.feature.calendar', descKey: 'platform.feature.calendar.desc',
   },
   {
     icon: '👥', color: colors.green,
-    title: 'Takım Yönetimi',
-    desc: 'Takımınız için özel planlar oluşturun. U18, U16 gibi kategorilere göre antrenman programları.',
+    titleKey: 'platform.feature.team', descKey: 'platform.feature.team.desc',
   },
   ];
 }
 
 export default function PlatformScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const FEATURES = useMemo(() => getFeatures(colors), [colors]);
   const tabNav = navigation.getParent();
@@ -100,7 +89,6 @@ export default function PlatformScreen({ navigation }: Props) {
       case 'wizard':    navigation.navigate('AIWizard');         break;
       case 'okul':      navigation.navigate('VoIleybolOkulu');   break;
       case 'library':   tabNav?.navigate('AntrenmanStack' as any, { screen: 'DrillList' });     break;
-      case 'gelisim':   tabNav?.navigate('AntrenmanStack' as any, { screen: 'GelisimMain' });   break;
       case 'sozluk':    tabNav?.navigate('Sözlük' as any);                                       break;
       case 'dashboard': tabNav?.navigate('Panel' as any);                                        break;
     }
@@ -113,27 +101,24 @@ export default function PlatformScreen({ navigation }: Props) {
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>🏐 Platform Özellikleri</Text>
+            <Text style={styles.heroBadgeText}>{t('platform.heroBadge')}</Text>
           </View>
-          <Text style={styles.heroTitle}>VOLEYBOLda{'\n'}YENİ DÖNEM</Text>
-          <Text style={styles.heroDesc}>
-            AI destekli antrenman planları, 100+ drill kütüphanesi, gelişim modülleri ve
-            ilerleme takibi ile voleybol performansınızı üst seviyeye taşıyın.
-          </Text>
+          <Text style={styles.heroTitle}>{t('platform.heroTitle')}</Text>
+          <Text style={styles.heroDesc}>{t('platform.heroDesc')}</Text>
         </View>
 
         {/* Stats */}
         <View style={styles.statsRow}>
-          {STATS.map(s => (
-            <View key={s.label} style={styles.statItem}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+          {STATS.map(stat => (
+            <View key={stat.labelKey} style={styles.statItem}>
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statLabel}>{t(stat.labelKey)}</Text>
             </View>
           ))}
         </View>
 
         {/* Features */}
-        <Text style={styles.sectionTitle}>Tüm Özellikler</Text>
+        <Text style={styles.sectionTitle}>{t('platform.allFeatures')}</Text>
         {FEATURES.map(f => {
           const tappable = !!f.dest;
           const Wrapper = tappable ? TouchableOpacity : View;
@@ -141,20 +126,20 @@ export default function PlatformScreen({ navigation }: Props) {
             ? { activeOpacity: 0.75, onPress: () => handleFeaturePress(f.dest) }
             : {};
           return (
-            <Wrapper key={f.title} style={[styles.featureCard, tappable && styles.featureCardTappable]} {...wrapperProps}>
+            <Wrapper key={f.titleKey} style={[styles.featureCard, tappable && styles.featureCardTappable]} {...wrapperProps}>
               <View style={[styles.featureIconBox, { backgroundColor: f.color + '20' }]}>
                 <Text style={styles.featureIcon}>{f.icon}</Text>
               </View>
               <View style={styles.featureText}>
                 <View style={styles.featureTitleRow}>
-                  <Text style={styles.featureTitle}>{f.title}</Text>
-                  {f.tag && (
+                  <Text style={styles.featureTitle}>{t(f.titleKey)}</Text>
+                  {f.tagKey && (
                     <View style={[styles.featureTag, { backgroundColor: f.color + '25', borderColor: f.color + '60' }]}>
-                      <Text style={[styles.featureTagTxt, { color: f.color }]}>{f.tag}</Text>
+                      <Text style={[styles.featureTagTxt, { color: f.color }]}>{t(f.tagKey)}</Text>
                     </View>
                   )}
                 </View>
-                <Text style={styles.featureDesc}>{f.desc}</Text>
+                <Text style={styles.featureDesc}>{t(f.descKey)}</Text>
               </View>
               {tappable && <Text style={styles.featureArrow}>›</Text>}
             </Wrapper>
@@ -163,7 +148,7 @@ export default function PlatformScreen({ navigation }: Props) {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>VoleyPro — Voleybol antrenmanında yeni dönem</Text>
+          <Text style={styles.footerText}>{t('platform.footer')}</Text>
         </View>
 
       </ScrollView>

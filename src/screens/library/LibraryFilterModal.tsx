@@ -4,6 +4,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { FULL_CATEGORIES, DIFFICULTIES, PLAYER_COUNTS } from '../../utils/libraryFilters';
 import Slider from '../../components/ui/Slider';
+import { useI18n, libCategoryLabel, difficultyLabel, playersLabel } from '../../i18n';
 
 export type LibraryFilters = {
   categories: string[];
@@ -29,6 +30,7 @@ function toggle(list: string[], value: string): string[] {
 
 export default function LibraryFilterModal({ visible, filters, onApply, onClose }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const [draft, setDraft] = useState<LibraryFilters>(filters);
 
@@ -48,13 +50,13 @@ export default function LibraryFilterModal({ visible, filters, onApply, onClose 
       <View style={s.overlay}>
         <View style={s.sheet}>
           <View style={s.header}>
-            <Text style={s.title}>Filtrele</Text>
+            <Text style={s.title}>{t('sozluk.filterTitle')}</Text>
             <TouchableOpacity onPress={clear}>
-              <Text style={s.clearLink}>Temizle</Text>
+              <Text style={s.clearLink}>{t('sozluk.filter.clear')}</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={s.sectionTitle}>Kategoriler</Text>
+          <Text style={s.sectionTitle}>{t('library.filter.categories')}</Text>
           <View style={s.chipsRow}>
             {FULL_CATEGORIES.map((c) => {
               const active = draft.categories.includes(c);
@@ -65,13 +67,13 @@ export default function LibraryFilterModal({ visible, filters, onApply, onClose 
                   onPress={() => setDraft((d) => ({ ...d, categories: toggle(d.categories, c) }))}
                   activeOpacity={0.8}
                 >
-                  <Text style={[s.chipTxt, active && s.chipTxtActive]}>{c}</Text>
+                  <Text style={[s.chipTxt, active && s.chipTxtActive]}>{libCategoryLabel(c, lang)}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <Text style={s.sectionTitle}>Zorluk Seviyesi</Text>
+          <Text style={s.sectionTitle}>{t('library.filter.difficultyLevel')}</Text>
           <View style={s.chipsRow}>
             {DIFFICULTIES.map((d) => {
               const active = draft.difficulties.includes(d);
@@ -82,13 +84,13 @@ export default function LibraryFilterModal({ visible, filters, onApply, onClose 
                   onPress={() => setDraft((prev) => ({ ...prev, difficulties: toggle(prev.difficulties, d) }))}
                   activeOpacity={0.8}
                 >
-                  <Text style={[s.chipTxt, active && s.chipTxtActive]}>{d}</Text>
+                  <Text style={[s.chipTxt, active && s.chipTxtActive]}>{difficultyLabel(d, lang)}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <Text style={s.sectionTitle}>Oyuncu Sayısı</Text>
+          <Text style={s.sectionTitle}>{t('library.filter.playerCount')}</Text>
           <View style={s.chipsRow}>
             {PLAYER_COUNTS.map((p) => {
               const active = draft.playerCounts.includes(p);
@@ -99,22 +101,22 @@ export default function LibraryFilterModal({ visible, filters, onApply, onClose 
                   onPress={() => setDraft((prev) => ({ ...prev, playerCounts: toggle(prev.playerCounts, p) }))}
                   activeOpacity={0.8}
                 >
-                  <Text style={[s.chipTxt, active && s.chipTxtActive]}>{p}</Text>
+                  <Text style={[s.chipTxt, active && s.chipTxtActive]}>{playersLabel(p, lang)}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <Text style={s.sectionTitle}>Süre</Text>
+          <Text style={s.sectionTitle}>{t('library.filter.duration')}</Text>
           <Slider
             min={5} max={60} step={5}
             value={draft.maxDuration}
             onChange={(v) => setDraft((prev) => ({ ...prev, maxDuration: v }))}
-            formatValue={(v) => (v >= 60 ? '60+ dk' : `${v} dk`)}
+            formatValue={(v) => (v >= 60 ? t('library.filter.maxDurationPlus') : t('library.filter.maxDuration', { n: v }))}
           />
 
           <TouchableOpacity style={s.applyBtn} onPress={apply} activeOpacity={0.85}>
-            <Text style={s.applyBtnTxt}>Uygula</Text>
+            <Text style={s.applyBtnTxt}>{t('sozluk.filter.apply')}</Text>
           </TouchableOpacity>
         </View>
       </View>

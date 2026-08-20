@@ -7,6 +7,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { getFeed, markAllRead, markRead, NotificationEntry, NotificationType } from '../../utils/notifications';
 import Icon, { IconName } from '../../components/ui/Icon';
+import { useI18n } from '../../i18n';
 
 const notificationIconNames: Record<NotificationType, IconName | null> = {
   reminder: 'takvim',
@@ -22,26 +23,29 @@ type PanelStackParamList = { Bildirimler: undefined };
 type Props = NativeStackScreenProps<PanelStackParamList, 'Bildirimler'>;
 
 const TABS = [
-  { key: 'all', label: 'Tümü' },
-  { key: 'unread', label: 'Okunmamış' },
-  { key: 'important', label: 'Önemli' },
+  { key: 'all', labelKey: 'notifications.filter.all' },
+  { key: 'unread', labelKey: 'notifications.filter.unread' },
+  { key: 'read', labelKey: 'notifications.filter.read' },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
 
-function relativeTime(iso: string): string {
+type Translate = ReturnType<typeof useI18n>['t'];
+
+function relativeTime(iso: string, t: Translate): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Az önce';
-  if (diffMin < 60) return `${diffMin} dk önce`;
+  if (diffMin < 1) return t('common.justNow');
+  if (diffMin < 60) return t('common.minutesAgo', { n: diffMin });
   const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour} saat önce`;
+  if (diffHour < 24) return t('common.hoursAgo', { n: diffHour });
   const diffDay = Math.floor(diffHour / 24);
-  if (diffDay === 1) return 'Dün';
-  return `${diffDay} gün önce`;
+  if (diffDay === 1) return t('common.yesterday');
+  return t('common.daysAgo', { n: diffDay });
 }
 
 export default function BildirimlerScreen({ navigation }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const [tab, setTab] = useState<TabKey>('all');
   const [feed, setFeed] = useState<NotificationEntry[]>([]);
@@ -54,7 +58,7 @@ export default function BildirimlerScreen({ navigation }: Props) {
 
   const filtered = feed.filter((n) => {
     if (tab === 'unread') return !n.read;
-    if (tab === 'important') return n.important;
+    if (tab === 'read') return n.read;
     return true;
   });
 
@@ -76,23 +80,23 @@ export default function BildirimlerScreen({ navigation }: Props) {
         <TouchableOpacity style={s.iconBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Icon name="geri" size={18} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Bildirimler</Text>
+        <Text style={s.headerTitle}>{t('notifications.title')}</Text>
         <TouchableOpacity onPress={onMarkAllRead} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={s.markAllTxt}>Tümünü Okundu İşaretle</Text>
+          <Text style={s.markAllTxt}>{t('notifications.markAllRead')}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={s.tabRow}>
-        {TABS.map((t) => {
-          const active = tab === t.key;
+        {TABS.map((tab_) => {
+          const active = tab === tab_.key;
           return (
             <TouchableOpacity
-              key={t.key}
+              key={tab_.key}
               style={[s.tab, active && s.tabActive]}
               activeOpacity={0.8}
-              onPress={() => setTab(t.key)}
+              onPress={() => setTab(tab_.key)}
             >
-              <Text style={[s.tabTxt, active && s.tabTxtActive]}>{t.label}</Text>
+              <Text style={[s.tabTxt, active && s.tabTxtActive]}>{t(tab_.labelKey)}</Text>
             </TouchableOpacity>
           );
         })}
@@ -106,8 +110,8 @@ export default function BildirimlerScreen({ navigation }: Props) {
         ListEmptyComponent={
           <View style={s.emptyCard}>
             <Text style={s.emptyIcon}>🔔</Text>
-            <Text style={s.emptyTitle}>Henüz bildirimin yok</Text>
-            <Text style={s.emptyDesc}>Antrenman hatırlatmaların ve başarıların burada görünecek.</Text>
+            <Text style={s.emptyTitle}>{t('notifications.emptyTitle')}</Text>
+            <Text style={s.emptyDesc}>{t('notifications.emptyDesc')}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -125,7 +129,7 @@ export default function BildirimlerScreen({ navigation }: Props) {
               <Text style={s.rowTitle}>{item.title}</Text>
               <Text style={s.rowBody}>{item.body}</Text>
             </View>
-            <Text style={s.rowTime}>{relativeTime(item.timestamp)}</Text>
+            <Text style={s.rowTime}>{relativeTime(item.timestamp, t)}</Text>
           </TouchableOpacity>
         )}
       />

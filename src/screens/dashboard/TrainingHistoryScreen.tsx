@@ -6,9 +6,11 @@ import { useTrainingPlans } from '../../hooks/useTrainingPlans';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { parseLocalDate } from '../../utils/trainingPlan';
+import { useI18n, LOCALE } from '../../i18n';
 
 export default function TrainingHistoryScreen() {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { data: sessions = [], isLoading } = useScheduledSessions();
   const { data: plans = [] } = useTrainingPlans();
@@ -23,12 +25,12 @@ export default function TrainingHistoryScreen() {
     <SafeAreaView style={s.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
         {isLoading ? (
-          <Text style={s.empty}>Yükleniyor…</Text>
+          <Text style={s.empty}>{t('common.loading')}</Text>
         ) : completed.length === 0 ? (
           <View style={s.emptyCard}>
             <Text style={s.emptyIcon}>🏐</Text>
-            <Text style={s.emptyTitle}>Henüz tamamlanmış antrenman yok</Text>
-            <Text style={s.emptyDesc}>Antrenmanlarını tamamladıkça burada listelenecek.</Text>
+            <Text style={s.emptyTitle}>{t('dashboard.historyEmptyTitle')}</Text>
+            <Text style={s.emptyDesc}>{t('dashboard.historyEmptyDesc')}</Text>
           </View>
         ) : (
           completed.map((session) => {
@@ -39,9 +41,9 @@ export default function TrainingHistoryScreen() {
                   <Text style={s.checkTxt}>✓</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.rowName} numberOfLines={1}>{plan?.name ?? 'Antrenman'}</Text>
+                  <Text style={s.rowName} numberOfLines={1}>{plan?.name ?? t('training.genericName')}</Text>
                   <Text style={s.rowDate}>
-                    {parseLocalDate(session.session_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {parseLocalDate(session.session_date).toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric' })}
                     {session.session_time ? ` • ${session.session_time}` : ''}
                   </Text>
                 </View>

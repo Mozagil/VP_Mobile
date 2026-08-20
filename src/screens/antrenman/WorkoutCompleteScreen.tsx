@@ -6,6 +6,7 @@ import { useTrainingPlans, useUpdatePlanStatus } from '../../hooks/useTrainingPl
 import { useScheduledSessions, useCompleteScheduledSession } from '../../hooks/useScheduledSessions';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
+import { useI18n } from '../../i18n';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 import { estimateCalories, findNextSession, planTotalMinutes } from '../../utils/trainingPlan';
 import { cancelSessionReminders, sendImmediateNotification } from '../../utils/notifications';
@@ -15,6 +16,7 @@ type Props = NativeStackScreenProps<AntrenmanStackParamList, 'WorkoutComplete'>;
 
 export default function WorkoutCompleteScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
@@ -32,7 +34,12 @@ export default function WorkoutCompleteScreen({ route, navigation }: Props) {
       const session = findNextSession(sessions, plan.id);
       if (session) completeSession.mutate(session.id);
       cancelSessionReminders(plan.id);
-      sendImmediateNotification('completed', 'Program Tamamlandı', `"${plan.name}" antrenmanını tamamladın. Tebrikler! 🎉`, true);
+      sendImmediateNotification(
+        'completed',
+        t('notifications.programCompleteTitle'),
+        t('notifications.programCompleteBody', { plan: plan.name }),
+        true,
+      );
     }
   }, [plan]);
 
@@ -48,29 +55,29 @@ export default function WorkoutCompleteScreen({ route, navigation }: Props) {
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <View style={s.body}>
         <Icon name="basarilar" size={64} style={s.trophy} />
-        <Text style={s.title}>Tebrikler!</Text>
-        <Text style={s.subtitle}>Antrenmanınızı başarıyla tamamladınız.</Text>
+        <Text style={s.title}>{t('complete.congrats')}</Text>
+        <Text style={s.subtitle}>{t('complete.subtitle')}</Text>
 
         <View style={s.summaryCard}>
-          <Text style={s.summaryTitle}>Antrenman Özeti</Text>
+          <Text style={s.summaryTitle}>{t('complete.summaryTitle')}</Text>
           <View style={s.summaryRow}>
             <View style={s.summaryLabelRow}>
               <Icon name="sure" size={14} />
-              <Text style={s.summaryLabel}>Toplam Süre</Text>
+              <Text style={s.summaryLabel}>{t('complete.totalDuration')}</Text>
             </View>
-            <Text style={s.summaryValue}>{minutes} dk</Text>
+            <Text style={s.summaryValue}>{t('common.minShort', { n: minutes })}</Text>
           </View>
           <View style={s.summaryRow}>
             <View style={s.summaryLabelRow}>
               <Icon name="hareketler" size={14} />
-              <Text style={s.summaryLabel}>Toplam Hareket</Text>
+              <Text style={s.summaryLabel}>{t('complete.totalDrills')}</Text>
             </View>
             <Text style={s.summaryValue}>{totalDrills}</Text>
           </View>
           <View style={s.summaryRow}>
             <View style={s.summaryLabelRow}>
               <Icon name="kalori" size={14} />
-              <Text style={s.summaryLabel}>Tahmini Kalori</Text>
+              <Text style={s.summaryLabel}>{t('complete.estimatedCalories')}</Text>
             </View>
             <Text style={s.summaryValue}>{calories} kcal</Text>
           </View>
@@ -83,14 +90,14 @@ export default function WorkoutCompleteScreen({ route, navigation }: Props) {
           activeOpacity={0.85}
           onPress={() => navigation.navigate('AntrenmanHub')}
         >
-          <Text style={s.primaryBtnTxt}>Antrenmanlarım</Text>
+          <Text style={s.primaryBtnTxt}>{t('complete.myTrainings')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={s.secondaryBtn}
           activeOpacity={0.8}
           onPress={() => navigation.getParent()?.navigate('Panel' as any)}
         >
-          <Text style={s.secondaryBtnTxt}>Ana Sayfa</Text>
+          <Text style={s.secondaryBtnTxt}>{t('nav.tab.home')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

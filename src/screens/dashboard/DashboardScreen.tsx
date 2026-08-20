@@ -12,6 +12,7 @@ import {
   buildPhaseBreakdown, buildPhaseCompletionBreakdown, buildWeekDays, findActivePlan, findNextUpcomingSession,
   formatSessionBadge, locationLabel, overallCompletionPct, planTotalMinutes, weekSessionsOf,
 } from '../../utils/trainingPlan';
+import { useI18n, profileLevelLabel } from '../../i18n';
 import { maybeNotifyWeeklyGoal } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
@@ -27,37 +28,23 @@ type PanelStackParamList = {
 
 type Props = { navigation: NativeStackNavigationProp<PanelStackParamList, 'PanelMain'> };
 
-const levelLabels: Record<string, string> = {
-  başlangıç: 'Başlangıç', baslangic: 'Başlangıç',
-  orta: 'Orta', ileri: 'İleri', profesyonel: 'Profesyonel',
-};
-
-function CourtPlaceholder({ s }: { s: Styles }) {
-  return (
-    <View style={s.court}>
-      <View style={s.courtNet} />
-      <Icon name="voleybol-topu" size={34} style={s.courtIcon} />
-      <Text style={s.courtCaption}>taktik şeması</Text>
-    </View>
-  );
-}
-
 export default function DashboardScreen({ navigation }: Props) {
   const { colors, mode } = useTheme();
+  const { t, lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const { user } = useAuth() as any;
   const { data: profile } = useProfile();
   const { data: plans = [] } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
 
-  const firstName = profile?.first_name || user?.email?.split('@')[0] || 'Oyuncu';
+  const firstName = profile?.first_name || user?.email?.split('@')[0] || t('profile.defaultName');
   const lastName = profile?.last_name || '';
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
   const initials = (firstName[0] || '🏐').toUpperCase();
   const username = user?.email?.split('@')[0];
-  const levelLabel = profile?.level ? (levelLabels[profile.level] ?? profile.level) : null;
+  const levelLabel = profileLevelLabel(profile?.level, lang);
 
-  const weekDays = buildWeekDays(sessions);
+  const weekDays = buildWeekDays(sessions, lang);
   const weekSessions = weekSessionsOf(sessions);
   const weeklyDone = weekSessions.filter((s) => s.completed).length;
   const weeklyTarget = profile?.frequency ?? (weekSessions.length || undefined);
@@ -65,13 +52,13 @@ export default function DashboardScreen({ navigation }: Props) {
   const nextSession = findNextUpcomingSession(sessions, plans);
   const nextSessionPlan = nextSession ? plans.find((p) => p.id === nextSession.plan_id) : undefined;
   const activePlan = nextSessionPlan ?? findActivePlan(plans, sessions);
-  const phaseBreakdown = activePlan ? buildPhaseBreakdown(activePlan, colors) : [];
+  const phaseBreakdown = activePlan ? buildPhaseBreakdown(activePlan, colors, lang) : [];
   const totalMinutes = activePlan ? planTotalMinutes(activePlan, colors) : 0;
-  const nextDateLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time)
-    ?? formatSessionBadge(activePlan?.start_date);
-  const activeLocation = locationLabel(activePlan?.location);
+  const nextDateLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time, lang)
+    ?? formatSessionBadge(activePlan?.start_date, null, lang);
+  const activeLocation = locationLabel(activePlan?.location, lang);
   const overallPct = overallCompletionPct(plans);
-  const phaseCompletion = buildPhaseCompletionBreakdown(plans, colors);
+  const phaseCompletion = buildPhaseCompletionBreakdown(plans, colors, lang);
 
   useEffect(() => {
     maybeNotifyWeeklyGoal(weeklyDone, weeklyTarget);
@@ -112,8 +99,8 @@ export default function DashboardScreen({ navigation }: Props) {
 
         {/* ── Greeting ── */}
         <View style={s.greetWrap}>
-          <Text style={s.greetTitle}>Merhaba, {firstName}! 👋</Text>
-          <Text style={s.greetSub}>Bugün daha iyi bir sen olmak için hazır mısın?</Text>
+          <Text style={s.greetTitle}>{t('dashboard.greeting', { name: firstName })}</Text>
+          <Text style={s.greetSub}>{t('dashboard.greetSub')}</Text>
         </View>
 
         {/* ── Profil kısayolu kartı ── */}
@@ -123,7 +110,7 @@ export default function DashboardScreen({ navigation }: Props) {
               <Text style={s.profileAvatarTxt}>{initials}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.profileName} numberOfLines={1}>{fullName || 'Oyuncu'}</Text>
+              <Text style={s.profileName} numberOfLines={1}>{fullName || t('profile.defaultName')}</Text>
               <Text style={s.profileMeta} numberOfLines={1}>
                 {username ? `@${username}` : ''}{username && levelLabel ? '  ·  ' : ''}{levelLabel ?? ''}
               </Text>
@@ -133,7 +120,7 @@ export default function DashboardScreen({ navigation }: Props) {
               activeOpacity={0.8}
               onPress={() => navigation.navigate('ProfileShortcuts')}
             >
-              <Text style={s.profileBtnTxt}>Profil ve Ayarlar</Text>
+              <Text style={s.profileBtnTxt}>{t('dashboard.profileAndSettings')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -142,9 +129,9 @@ export default function DashboardScreen({ navigation }: Props) {
         <View style={s.section}>
           <View style={s.card}>
             <View style={s.cardHeaderRow}>
-              <Text style={s.cardTitle}>Bu Hafta</Text>
+              <Text style={s.cardTitle}>{t('dashboard.thisWeek')}</Text>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={s.goalLabel}>Hedefin</Text>
+                <Text style={s.goalLabel}>{t('dashboard.yourGoal')}</Text>
                 <Text style={s.goalValue}>
                   {weeklyTarget ? `${weeklyDone}/${weeklyTarget}` : `${weeklyDone}`}
                 </Text>
@@ -172,11 +159,11 @@ export default function DashboardScreen({ navigation }: Props) {
 
             <View style={s.divider} />
 
-            <Text style={s.cardTitle}>Genel İlerleme</Text>
+            <Text style={s.cardTitle}>{t('dashboard.overallProgress')}</Text>
             <View style={s.ring}>
               <Text style={s.ringPct}>{overallPct}%</Text>
             </View>
-            <Text style={s.ringCaption}>Genel Puan</Text>
+            <Text style={s.ringCaption}>{t('dashboard.overallScore')}</Text>
 
             {phaseCompletion.map((ph) => (
               <View key={ph.phase} style={s.skillRow}>
@@ -185,13 +172,6 @@ export default function DashboardScreen({ navigation }: Props) {
                 <Text style={s.skillPct}>{ph.pct}%</Text>
               </View>
             ))}
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => navigation.getParent()?.navigate('AntrenmanStack' as any, { screen: 'GelisimMain' } as any)}
-            >
-              <Text style={s.detailLink}>Detaylı Analiz  ›</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -200,7 +180,7 @@ export default function DashboardScreen({ navigation }: Props) {
           {activePlan ? (
             <View style={s.card}>
               <View style={s.cardHeaderRow}>
-                <Text style={s.cardTitle}>Sıradaki Antrenman</Text>
+                <Text style={s.cardTitle}>{t('dashboard.nextTraining')}</Text>
                 {nextDateLabel && (
                   <View style={s.nextDateRow}>
                     <Icon name="sure" size={12} />
@@ -218,23 +198,21 @@ export default function DashboardScreen({ navigation }: Props) {
                 <Text style={s.planTitleArrow}>›</Text>
               </TouchableOpacity>
               <Text style={s.planMeta}>
-                {totalMinutes > 0 ? `${totalMinutes} dakika` : 'Süre belirtilmedi'}
+                {totalMinutes > 0 ? t('common.minutes', { n: totalMinutes }) : t('common.durationUnset')}
                 {activeLocation ? `  ·  ${activeLocation}` : ''}
                 {activePlan.team ? `  ·  ${activePlan.team}` : ''}
               </Text>
-
-              <CourtPlaceholder s={s} />
 
               {phaseBreakdown.length > 0 ? (
                 phaseBreakdown.map((p) => (
                   <View key={p.phase} style={s.phaseRow}>
                     <PhaseIcon phase={p.phase} size={14} />
                     <Text style={s.phaseLabel}>{p.label}</Text>
-                    <Text style={s.phaseMinutes}>{p.minutes} dk</Text>
+                    <Text style={s.phaseMinutes}>{t('common.minShort', { n: p.minutes })}</Text>
                   </View>
                 ))
               ) : (
-                <Text style={s.noDrills}>Bu planda henüz dril yok.</Text>
+                <Text style={s.noDrills}>{t('dashboard.noDrillsInPlan')}</Text>
               )}
 
               <TouchableOpacity
@@ -242,14 +220,14 @@ export default function DashboardScreen({ navigation }: Props) {
                 activeOpacity={0.85}
                 onPress={() => navigation.getParent()?.navigate('AntrenmanStack' as any, { screen: 'AntrenmanHub' } as any)}
               >
-                <Text style={s.goBtnTxt}>Antrenmanları Gör  ›</Text>
+                <Text style={s.goBtnTxt}>{t('dashboard.viewTrainings')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={s.emptyCard}>
               <Icon name="antrenmanlar" size={36} style={{ marginBottom: 12 }} />
-              <Text style={s.emptyTitle}>Henüz antrenman planınız yok</Text>
-              <Text style={s.emptyDesc}>Antrenman sekmesinden yeni bir plan oluşturun.</Text>
+              <Text style={s.emptyTitle}>{t('dashboard.noPlanTitle')}</Text>
+              <Text style={s.emptyDesc}>{t('dashboard.noPlanDesc')}</Text>
             </View>
           )}
         </View>
@@ -332,7 +310,6 @@ function makeStyles(colors: Colors) {
   skillLabel: { color: colors.foreground, fontSize: 13, flex: 1 },
   skillPct: { color: colors.muted, fontSize: 13, fontWeight: '700' },
 
-  detailLink: { color: colors.accent, fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 10 },
 
   nextDateRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   nextDate: { color: colors.accent, fontSize: 12, fontWeight: '700' },
@@ -344,15 +321,6 @@ function makeStyles(colors: Colors) {
   planTitle: { color: colors.foreground, fontSize: 16, fontWeight: '800', flex: 1, marginRight: 8 },
   planTitleArrow: { color: colors.accent, fontSize: 18, fontWeight: '700' },
   planMeta: { color: colors.muted, fontSize: 13, marginBottom: 4 },
-
-  court: {
-    height: 110, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border,
-    backgroundColor: colors.cardAlt, alignItems: 'center', justifyContent: 'center',
-    marginVertical: 14, overflow: 'hidden', position: 'relative',
-  },
-  courtNet: { position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, backgroundColor: colors.border },
-  courtIcon: { marginBottom: 4 },
-  courtCaption: { color: colors.muted, fontSize: 10, fontFamily: 'monospace', letterSpacing: 0.5 },
 
   phaseRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 8 },
   phaseIcon: { fontSize: 14, width: 20 },
