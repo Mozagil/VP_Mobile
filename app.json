@@ -42,6 +42,12 @@
         "projectId": "1bd58e07-104c-48a9-bffb-b7555cb3bcfb"
       }
     },
-    "owner": "hulagu"
+    "owner": "hulagu",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1bd58e07-104c-48a9-bffb-b7555cb3bcfb"
+    }
   }
 }
