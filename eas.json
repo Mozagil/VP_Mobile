@@ -20,6 +20,9 @@
     },
     "production": {
       "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://voleypro.com/api"
+      },
       "android": {
         "autoIncrement": true
       },
