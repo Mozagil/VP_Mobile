@@ -41,19 +41,40 @@ export function normalizePhase(phase: string): string {
   return phase === 'Oyun' ? 'Ana Antrenman' : phase;
 }
 
-export function resolveDrillMinutes(pd: { drill_id: number; custom_duration?: number | null }): number {
-  if (pd.custom_duration) return pd.custom_duration;
-  const drill = allDrills.find((d) => d.id === pd.drill_id);
-  if (!drill) return 5;
-  // Durations are stored as "MM:SS" (most drills are under a minute, e.g. "0:45").
-  // A plain parseInt would read only the leading digits before ":" and silently
-  // truncate anything under a minute to 0, so parse both parts and round up to
-  // at least 1 minute for any non-zero duration.
-  const [minPart, secPart] = drill.duration.split(':');
+// Durations are stored as "MM:SS" (warm-up moves are under a minute, e.g. "0:45").
+// A plain parseInt would read only the leading digits before ":" and silently
+// truncate anything under a minute to 0, so parse both parts and round up to
+// at least 1 minute for any non-zero duration.
+export function parseDurationMinutes(duration: string): number {
+  const [minPart, secPart] = duration.split(':');
   const min = parseInt(minPart, 10) || 0;
   const sec = parseInt(secPart ?? '0', 10) || 0;
   const totalMinutes = min + sec / 60;
   return totalMinutes > 0 ? Math.max(1, Math.round(totalMinutes)) : 5;
+}
+
+export function resolveDrillMinutes(pd: { drill_id: number; custom_duration?: number | null }): number {
+  if (pd.custom_duration) return pd.custom_duration;
+  const drill = allDrills.find((d) => d.id === pd.drill_id);
+  if (!drill) return 5;
+  return parseDurationMinutes(drill.duration);
+}
+
+// Sıralı bir havuzdan, hedef dakikaya ulaşana kadar hareket seçer. Sabit sayıda
+// hareket yerine süreye göre seçtiği için oluşan programın toplam süresi
+// kullanıcıya vaat edilen süreyle tutarlı oluyor.
+export function fillToBudget<T extends { duration: string }>(ordered: T[], budgetMinutes: number): T[] {
+  const picked: T[] = [];
+  let total = 0;
+  for (const drill of ordered) {
+    if (total >= budgetMinutes - 1) break;
+    const minutes = parseDurationMinutes(drill.duration);
+    // Hedefi belirgin şekilde aşacak hareketi atla, ama bölüm boş kalmasın.
+    if (picked.length > 0 && total + minutes > budgetMinutes + 2) continue;
+    picked.push(drill);
+    total += minutes;
+  }
+  return picked;
 }
 
 export function resolveDrillName(pd: { drill_id: number; custom_name?: string | null }, lang: Lang = 'tr'): string {

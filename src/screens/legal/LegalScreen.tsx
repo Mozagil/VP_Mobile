@@ -32,7 +32,13 @@ export default function LegalScreen({ route, navigation }: Props) {
         {doc.sections.map((section) => (
           <View key={section.heading} style={s.section}>
             <Text style={s.sectionTitle}>{section.heading}</Text>
-            <Text style={s.sectionBody}>{section.body}</Text>
+            {/* Paragraflar ayrı Text olarak render ediliyor: tek bir uzun Text'te
+                iOS bazı satırları kırpabiliyordu. */}
+            {section.body.split('\n\n').map((paragraph, i) => (
+              <Text key={i} style={[s.sectionBody, i > 0 && s.paragraphSpacing]}>
+                {paragraph}
+              </Text>
+            ))}
           </View>
         ))}
       </ScrollView>
@@ -59,6 +65,7 @@ function makeStyles(colors: Colors) {
       padding: 14, marginBottom: 10,
     },
     sectionTitle: { color: colors.accent, fontSize: 14, fontWeight: '800', marginBottom: 8 },
-    sectionBody: { color: colors.foreground, fontSize: 14, lineHeight: 21 },
+    sectionBody: { color: colors.foreground, fontSize: 14, lineHeight: 21, flexShrink: 1, width: '100%' },
+    paragraphSpacing: { marginTop: 12 },
   });
 }

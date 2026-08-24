@@ -11,6 +11,7 @@ import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/Schedul
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
 import { allDrills } from '../../data/drills';
+import { fillToBudget, parseDurationMinutes } from '../../utils/trainingPlan';
 import { Drill } from '../../data/types';
 
 function todayKey(): string {
@@ -32,14 +33,16 @@ function shuffle<T>(arr: T[]): T[] {
 // in our video library. When a level is given, only drills of that level are
 // used — unless the level pool is too small to fill the section, in which case
 // the whole pool is used again so a plan is never left short.
-function pickRealDrills(pool: Drill[], n: number, skills: string[], usedIds: Set<number>, level?: string): Drill[] {
+function pickRealDrills(pool: Drill[], budgetMinutes: number, skills: string[], usedIds: Set<number>, level?: string): Drill[] {
   const all = pool.filter((d) => !usedIds.has(d.id));
   const levelPool = level ? all.filter((d) => d.level === level) : [];
-  const available = levelPool.length >= n ? levelPool : all;
+  // Seviye havuzu bölümü dolduramayacak kadar kısaysa tüm havuza dönülür.
+  const levelTotal = levelPool.reduce((sum, d) => sum + parseDurationMinutes(d.duration), 0);
+  const available = levelTotal >= budgetMinutes ? levelPool : all;
   const preferred = skills.length > 0 ? available.filter((d) => skills.includes(d.skill)) : [];
   const rest = available.filter((d) => !preferred.includes(d));
   const ordered = [...shuffle(preferred), ...shuffle(rest)];
-  const picked = ordered.slice(0, n);
+  const picked = fillToBudget(ordered, budgetMinutes);
   picked.forEach((d) => usedIds.add(d.id));
   return picked;
 }
@@ -47,25 +50,24 @@ function pickRealDrills(pool: Drill[], n: number, skills: string[], usedIds: Set
 type PlanSection = { phase: string; minutes: number; drills: Drill[] };
 
 function buildPlan(totalMinutes: number, goalSkills: string[], level: string): PlanSection[] {
-  let wu: number, te: number, ga: number, co: number;
-  if (totalMinutes <= 45) { wu = 8; te = 17; ga = 15; co = 5; }
-  else if (totalMinutes <= 60) { wu = 10; te = 20; ga = 20; co = 5; }
-  else if (totalMinutes <= 90) { wu = 10; te = 25; ga = 25; co = 8; }
-  else { wu = 12; te = 30; ga = 30; co = 10; }
+  // Bölüm süreleri seçilen toplam süreye göre dağıtılır ve toplamları her zaman
+  // istenen süreyi verir; böylece oluşan program vaat edilen süreye yakın çıkar.
+  const wu = Math.max(6, Math.min(12, Math.round(totalMinutes * 0.18)));
+  const co = Math.max(4, Math.min(10, Math.round(totalMinutes * 0.11)));
+  const main = Math.max(10, totalMinutes - wu - co);
 
   const warmupPool = allDrills.filter((d) => d.phase === 'Isınma');
   const mainPool = allDrills.filter((d) => d.phase === 'Ana Antrenman');
   const cooldownPool = allDrills.filter((d) => d.phase === 'Soğuma');
 
   const usedIds = new Set<number>();
-  const mainCount = (te <= 20 ? 3 : 4) + (ga <= 20 ? 2 : 3);
 
   return [
-    { phase: 'Isınma', minutes: wu, drills: pickRealDrills(warmupPool, wu <= 8 ? 2 : 3, [], usedIds) },
+    { phase: 'Isınma', minutes: wu, drills: pickRealDrills(warmupPool, wu, [], usedIds) },
     // Isınma/Soğuma havuzunun tamami "Başlangıç" oldugu icin seviye yalnizca
     // ana antrenman driller'ine uygulanir.
-    { phase: 'Ana Antrenman', minutes: te + ga, drills: pickRealDrills(mainPool, mainCount, goalSkills, usedIds, level) },
-    { phase: 'Soğuma', minutes: co, drills: pickRealDrills(cooldownPool, 2, [], usedIds) },
+    { phase: 'Ana Antrenman', minutes: main, drills: pickRealDrills(mainPool, main, goalSkills, usedIds, level) },
+    { phase: 'Soğuma', minutes: co, drills: pickRealDrills(cooldownPool, co, [], usedIds) },
   ].filter((sec) => sec.drills.length > 0);
 }
 

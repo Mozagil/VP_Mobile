@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -114,34 +114,57 @@ const KutuphaneStack = createNativeStackNavigator<{
   ReadyProgramDetail: { programKey: string };
 }>();
 
-// Tek tip geri butonu: custom header'li ekranlardaki ile ayni "geri" ikonu.
-const HeaderBackButton = ({ onPress }: { onPress: () => void }) => (
-  <TouchableOpacity
-    style={{ width: 36, height: 36, alignItems: 'flex-start', justifyContent: 'center' }}
-    onPress={onPress}
-    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-  >
-    <Icon name="geri" size={18} />
-  </TouchableOpacity>
-);
+// Tum stack ekranlari icin tek tip baslik. Native header yerine bunu
+// kullaniyoruz: iOS 26 native header butonlarini yuvarlak "glass" zemin
+// icine aliyor, bu da uygulamanin kendi custom header'lariyla uyusmuyordu.
+function StackHeader({ title, onBack, colors }: { title?: string; onBack?: () => void; colors: Colors }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={{
+        backgroundColor: colors.background,
+        paddingTop: insets.top + 8,
+        paddingBottom: 8,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      {onBack ? (
+        <TouchableOpacity
+          style={{ width: 36, height: 36, alignItems: 'flex-start', justifyContent: 'center' }}
+          onPress={onBack}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Icon name="geri" size={18} />
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 36, height: 36 }} />
+      )}
+      <Text
+        style={{ color: colors.foreground, fontSize: 17, fontWeight: '800', flex: 1, textAlign: 'center' }}
+        numberOfLines={1}
+      >
+        {title ?? ''}
+      </Text>
+      <View style={{ width: 36, height: 36 }} />
+    </View>
+  );
+}
 
 function getStackOpts(colors: Colors) {
-  return ({ navigation, route }: any) => {
-    const routes = navigation.getState()?.routes ?? [];
-    const isFirstScreen = routes[0]?.key === route.key;
-    return {
-      headerStyle: { backgroundColor: colors.background },
-      headerTintColor: colors.foreground,
-      headerShadowVisible: false,
-      headerBackTitle: '',                          // iOS: onceki ekranin adi geri butonunda gorunmesin
-      headerBackButtonDisplayMode: 'minimal' as const,
-      headerBackVisible: false,                     // yerine asagidaki tek tip buton kullaniliyor
-      headerLeft: isFirstScreen
-        ? undefined
-        : () => <HeaderBackButton onPress={() => navigation.goBack()} />,
-      contentStyle: { backgroundColor: colors.background },
-    };
-  };
+  return ({ navigation }: any) => ({
+    headerShadowVisible: false,
+    header: ({ options, back }: any) => (
+      <StackHeader
+        title={options.title}
+        onBack={back ? () => navigation.goBack() : undefined}
+        colors={colors}
+      />
+    ),
+    contentStyle: { backgroundColor: colors.background },
+  });
 }
 
 function PanelStackNav() {
@@ -174,7 +197,7 @@ function PlatformStackNav() {
   return (
     <PlatformStack.Navigator screenOptions={stackOpts}>
       <PlatformStack.Screen name="PlatformMain" component={PlatformScreen} options={{ title: t('nav.platformFeatures') }} />
-      <PlatformStack.Screen name="AIWizard" component={AIWizardScreen} options={{ title: t('nav.aiWizard') }} />
+      <PlatformStack.Screen name="AIWizard" component={AIWizardScreen} options={{ headerShown: false }} />
       <PlatformStack.Screen name="VoIleybolOkulu" component={VoIleybolOkuluScreen} options={{ title: t('nav.volleyballSchool') }} />
     </PlatformStack.Navigator>
   );
@@ -197,7 +220,7 @@ function AntrenmanStackNav() {
       <AntrenmanStack.Screen name="WorkoutComplete" component={WorkoutCompleteScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="PlanList" component={PlansScreen} options={{ title: t('nav.planList') }} />
       <AntrenmanStack.Screen name="PlanDetail" component={PlanDetailScreen} options={{ title: t('nav.planDetail') }} />
-      <AntrenmanStack.Screen name="CreatePlan" component={CreatePlanScreen} options={{ title: t('nav.createPlan') }} />
+      <AntrenmanStack.Screen name="CreatePlan" component={CreatePlanScreen} options={{ headerShown: false }} />
       <AntrenmanStack.Screen name="DrillList" component={LibraryScreen} options={{ title: t('nav.drillLibrary') }} />
       <AntrenmanStack.Screen
         name="DrillDetail"

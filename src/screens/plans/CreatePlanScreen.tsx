@@ -12,12 +12,12 @@ import { allDrills } from '../../data/drills';
 import { Drill } from '../../data/types';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
-import Slider from '../../components/ui/Slider';
 import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/ScheduleStep';
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
 import { useI18n, useContent, phaseLabel, skillLabel } from '../../i18n';
+import { resolveDrillMinutes } from '../../utils/trainingPlan';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'CreatePlan'>;
@@ -68,7 +68,6 @@ export default function CreatePlanScreen({ navigation }: Props) {
   // Step 1
   const [name, setName] = useState('');
   const [planType, setPlanType] = useState('Teknik');
-  const [targetDuration, setTargetDuration] = useState(60);
 
   // Step 2
   const [drillSearch, setDrillSearch] = useState('');
@@ -89,6 +88,9 @@ export default function CreatePlanScreen({ navigation }: Props) {
   }, [drillSearch, phaseFilter, isFavorite, lang]);
 
   const isSelected = (id: number) => selected.some((sd) => sd.drill.id === id);
+
+  // Sure artik sorulmuyor; secilen hareketlerin gercek sureleri toplaniyor.
+  const totalMinutes = selected.reduce((sum, sd) => sum + resolveDrillMinutes({ drill_id: sd.drill.id }), 0);
 
   const toggleDrill = (drill: Drill) => {
     setSelected((prev) =>
@@ -147,7 +149,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
       const plan = await createPlan.mutateAsync({
         name: name.trim(),
         plan_type: planType,
-        target_duration: targetDuration,
+        target_duration: totalMinutes,
         drills: drillPayload as any,
       });
       const planId = (plan as any)?.id;
@@ -214,15 +216,6 @@ export default function CreatePlanScreen({ navigation }: Props) {
                 );
               })}
             </View>
-
-            <Text style={s.fieldLabel}>{t('createPlan.durationLabel')}</Text>
-            <Slider
-              min={30} max={120} step={5}
-              value={targetDuration}
-              onChange={setTargetDuration}
-              formatValue={(v) => t('createPlan.duration', { n: v })}
-            />
-            <Text style={s.durationValue}>{t('createPlan.duration', { n: targetDuration })}</Text>
 
             <TouchableOpacity
               style={s.primaryBtn}
@@ -375,7 +368,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                 onSelectDate={setSelectedDate}
                 time={sessionTime}
                 onTimeChange={setSessionTime}
-                durationMinutes={targetDuration}
+                durationMinutes={totalMinutes}
               />
             </ScrollView>
             <View style={s.bottomBar}>
@@ -422,7 +415,6 @@ function makeStyles(colors: Colors) {
     backgroundColor: colors.card, color: colors.foreground, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 12, borderWidth: 1, borderColor: colors.border, fontSize: 14,
   },
-  durationValue: { color: colors.accent, fontSize: 13, fontWeight: '700', textAlign: 'center', marginTop: -6 },
 
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {

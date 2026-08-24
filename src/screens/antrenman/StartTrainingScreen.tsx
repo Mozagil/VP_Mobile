@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTrainingPlans, useUpdatePlanStatus } from '../../hooks/useTrainingPlans';
 import { useScheduledSessions, useCreateScheduledSession, useUpdateScheduledSessionTime } from '../../hooks/useScheduledSessions';
-import { useProfile } from '../../hooks/useProfile';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { AntrenmanStackParamList } from '../../navigation/AppTabs';
@@ -15,7 +14,7 @@ import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/Schedul
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon, { IconName } from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
-import { useI18n, profileLevelLabel } from '../../i18n';
+import { useI18n } from '../../i18n';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'StartTraining'>;
 type Styles = ReturnType<typeof makeStyles>;
@@ -27,7 +26,6 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
   const { planId } = route.params;
   const { data: plans = [], isLoading } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
-  const { data: profile } = useProfile();
   const updateStatus = useUpdatePlanStatus();
   const createSession = useCreateScheduledSession();
   const updateSessionTime = useUpdateScheduledSessionTime();
@@ -50,7 +48,6 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
   const dayLabel = formatSessionBadge(nextSession?.session_date, nextSession?.session_time, lang)
     ?? formatSessionBadge(plan.start_date, null, lang)
     ?? t('common.notScheduled');
-  const levelLabel = profileLevelLabel(plan.level, lang) ?? '—';
   const phaseBreakdown = buildPhaseBreakdown(plan, colors, lang);
 
   const goToPhase = (phase: string) => navigation.navigate('PhaseSequence', { planId: plan.id, phase });
@@ -132,9 +129,6 @@ export default function StartTrainingScreen({ route, navigation }: Props) {
           <TouchableOpacity activeOpacity={0.7} onPress={openScheduleEditor}>
             <InfoRow iconName="takvim" label={t('start.day')} value={dayLabel} editable s={s} />
           </TouchableOpacity>
-          <InfoRow iconName="hedefler" label={t('start.goal')} value={plan.goal || '—'} s={s} />
-          <InfoRow iconName="ilerleme" label={t('start.level')} value={levelLabel} s={s} />
-          <InfoRow iconName="antrenmanlar" label={t('start.equipment')} value={profile?.equipment_status || '—'} s={s} />
         </View>
 
         <Text style={s.sectionTitle}>{t('start.sections')}</Text>

@@ -11,11 +11,8 @@ type Props = { navigation: NativeStackNavigationProp<any> };
 
 const ITEMS = [
   { titleKey: 'help.faq', subtitleKey: null },
-  { titleKey: 'help.contact', subtitleKey: 'help.contact.sub' },
   { titleKey: 'help.feedback', subtitleKey: 'help.feedback.sub' },
   { titleKey: 'help.report', subtitleKey: 'help.report.sub' },
-  { titleKey: 'help.videos', subtitleKey: 'help.videos.sub' },
-  { titleKey: 'help.rules', subtitleKey: 'help.rules.sub' },
 ] as const;
 
 const SUPPORT_EMAIL = 'info@voleypro.com';

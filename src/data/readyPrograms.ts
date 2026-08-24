@@ -1,4 +1,5 @@
 import { allDrills } from './drills';
+import { fillToBudget } from '../utils/trainingPlan';
 import { Drill } from './types';
 
 export type ReadyProgram = {
@@ -46,8 +47,12 @@ export const READY_PROGRAMS: ReadyProgram[] = [
 
 export type ProgramSection = { phase: string; drills: Drill[] };
 
+// Hazır programlar 45 dakikalık olarak duyuruluyor; bölüm süreleri buna göre
+// dağıtılıyor (8 dk ısınma + 32 dk ana antrenman + 5 dk soğuma).
+const READY_PROGRAM_BUDGET = { 'Isınma': 8, 'Ana Antrenman': 32, 'Soğuma': 5 } as const;
+
 // Deterministic (non-random) selection so the "ready" program shows the same
-// drills every time — mirrors AIWizardScreen's buildPlan sizing for a 45min plan.
+// drills every time.
 export function buildReadyProgram(skill: string): ProgramSection[] {
   const byId = (a: Drill, b: Drill) => a.id - b.id;
 
@@ -56,18 +61,18 @@ export function buildReadyProgram(skill: string): ProgramSection[] {
   const cooldownPool = allDrills.filter((d) => d.phase === 'Soğuma').sort(byId);
 
   const usedIds = new Set<number>();
-  const take = (pool: Drill[], n: number, preferSkill?: string) => {
+  const take = (pool: Drill[], budget: number, preferSkill?: string) => {
     const available = pool.filter((d) => !usedIds.has(d.id));
     const preferred = preferSkill ? available.filter((d) => d.skill === preferSkill) : [];
     const rest = available.filter((d) => !preferred.includes(d));
-    const picked = [...preferred, ...rest].slice(0, n);
+    const picked = fillToBudget([...preferred, ...rest], budget);
     picked.forEach((d) => usedIds.add(d.id));
     return picked;
   };
 
   return [
-    { phase: 'Isınma', drills: take(warmupPool, 2) },
-    { phase: 'Ana Antrenman', drills: take(mainPool, 5, skill) },
-    { phase: 'Soğuma', drills: take(cooldownPool, 2) },
+    { phase: 'Isınma', drills: take(warmupPool, READY_PROGRAM_BUDGET['Isınma']) },
+    { phase: 'Ana Antrenman', drills: take(mainPool, READY_PROGRAM_BUDGET['Ana Antrenman'], skill) },
+    { phase: 'Soğuma', drills: take(cooldownPool, READY_PROGRAM_BUDGET['Soğuma']) },
   ].filter((sec) => sec.drills.length > 0);
 }
