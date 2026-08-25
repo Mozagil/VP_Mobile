@@ -104,7 +104,7 @@ function makeStyles(colors: Colors) {
     backgroundColor: colors.card, borderRadius: 14, padding: 12, marginBottom: 24,
     borderWidth: 1, borderColor: colors.border,
   },
-  previewImg: { width: 56, height: 56, borderRadius: 10 },
+  previewImg: { width: 80, aspectRatio: 16 / 9, borderRadius: 10 },
   previewName: { color: colors.foreground, fontSize: 14, fontWeight: '700', marginBottom: 3 },
   previewMeta: { color: colors.muted, fontSize: 12 },
   previewMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

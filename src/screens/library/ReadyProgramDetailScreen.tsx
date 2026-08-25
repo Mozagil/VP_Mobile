@@ -50,8 +50,8 @@ export default function ReadyProgramDetailScreen({ navigation, route }: Props) {
       );
 
       const plan = await createPlan.mutateAsync({
-        name: program.title,
-        goal: program.desc,
+        name: programTitle(program),
+        goal: programDesc(program),
         plan_type: 'Teknik',
         target_duration: 45,
         drills: drills as any,
@@ -60,14 +60,14 @@ export default function ReadyProgramDetailScreen({ navigation, route }: Props) {
 
       if (selectedDate && planId) {
         await createSession.mutateAsync({ plan_id: planId, session_date: selectedDate, session_time: sessionTime.trim() || undefined });
-        scheduleSessionReminders(planId, program.title, selectedDate, sessionTime.trim() || null);
+        scheduleSessionReminders(planId, programTitle(program), selectedDate, sessionTime.trim() || null);
       }
 
       navigation.getParent()?.navigate('AntrenmanStack' as any, {
         screen: 'TrainingSuccess',
         params: {
           planId,
-          planName: program.title,
+          planName: programTitle(program),
           drillName: sections[0]?.drills[0] ? drillName(sections[0].drills[0]) : programTitle(program),
         },
       } as any);

@@ -20,7 +20,7 @@ function make(map: Record<string, string>) {
 export const PHASE_EN: Record<string, string> = {
   'Isınma': 'Warm-up',
   'Ana Antrenman': 'Main Session',
-  'Soğuma': 'Cool-down',
+  'Soğuma': 'Stretch',
 };
 export const phaseLabel = make(PHASE_EN);
 

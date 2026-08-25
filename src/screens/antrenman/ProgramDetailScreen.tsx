@@ -56,9 +56,6 @@ export default function ProgramDetailScreen({ route, navigation }: Props) {
           {plan.status === 'active' ? t('program.activeBadge') : t('program.badge')}
         </Text>
         <View style={s.hero}>
-          <View style={s.heroThumb}>
-            <Icon name="voleybol-topu" size={28} />
-          </View>
           <View style={s.heroNameRow}>
             <Text style={s.heroName} numberOfLines={2}>{plan.name}</Text>
             <TouchableOpacity
@@ -180,11 +177,6 @@ function makeStyles(colors: Colors) {
   eyebrow: { color: colors.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginTop: 12, marginBottom: 8 },
   eyebrowActive: { color: colors.success },
   hero: { backgroundColor: colors.card, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: colors.border, marginBottom: 20 },
-  heroThumb: {
-    width: 56, height: 56, borderRadius: 16, backgroundColor: colors.cardAlt,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
-  },
-  heroThumbIcon: { fontSize: 28 },
   heroNameRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 4 },
   heroName: { color: colors.foreground, fontSize: 20, fontWeight: '800', flex: 1 },
   editBtn: {

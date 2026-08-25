@@ -93,7 +93,7 @@ const PanelStack = createNativeStackNavigator<{
   // kayitlilar (DrillDetail'in iki stack'te birden durmasiyla ayni yaklasim).
   Ayarlar: undefined;
   Profil: undefined;
-  Legal: { doc: 'kvkk' | 'privacy' };
+  Legal: { doc: 'kvkk' | 'privacy' | 'faq' };
 }>();
 
 const PlatformStack = createNativeStackNavigator<{
@@ -243,7 +243,22 @@ function KutuphaneStackNav() {
   const stackOpts = getStackOpts(colors);
   return (
     <KutuphaneStack.Navigator screenOptions={stackOpts}>
-      <KutuphaneStack.Screen name="DrillList" component={LibraryScreen} options={{ title: t('nav.tab.library') }} />
+      {/* Sekme kokunde normalde geri butonu olmaz; Antrenmanlar ve Sözlük
+          sekmeleri gibi burada da Ana Sayfa'ya donen bir geri butonu var. */}
+      <KutuphaneStack.Screen
+        name="DrillList"
+        component={LibraryScreen}
+        options={({ navigation }) => ({
+          title: t('nav.tab.library'),
+          header: () => (
+            <StackHeader
+              title={t('nav.tab.library')}
+              onBack={() => navigation.getParent()?.navigate('Panel' as any)}
+              colors={colors}
+            />
+          ),
+        })}
+      />
       <KutuphaneStack.Screen
         name="DrillDetail"
         component={DrillDetailScreen}

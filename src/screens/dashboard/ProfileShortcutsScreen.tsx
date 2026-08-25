@@ -15,7 +15,7 @@ type PanelStackParamList = {
   HelpSupport: undefined;
   Ayarlar: undefined;
   Profil: undefined;
-  Legal: { doc: 'kvkk' | 'privacy' };
+  Legal: { doc: 'kvkk' | 'privacy' | 'faq' };
 };
 
 type Props = { navigation: NativeStackNavigationProp<PanelStackParamList, 'ProfileShortcuts'> };
@@ -97,7 +97,7 @@ function makeStyles(colors: Colors) {
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: {
-    width: '47.8%',
+    width: '47.8%', minHeight: 76,
     backgroundColor: colors.card, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 10,
     borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
   },

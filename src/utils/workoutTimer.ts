@@ -1,16 +1,11 @@
-// "Antrenmanı Başlat"a basıldığı an plan bazında saklanır; böylece hareketler
-// arasında yeni ekran açılsa da (DrillPlayer her hareket için yeniden mount
-// olur) sayaç sıfırlanmadan devam eder.
+// Sayacın başlangıç anı plan bazında saklanır. Hem "Antrenmanı Başlat"a
+// basıldığında hem de her yeni harekete geçildiğinde yeniden başlatılır;
+// böylece sayaç o hareket üzerinde geçen süreyi gösterir.
 const startedAt = new Map<string, number>();
 
-/** Antrenmanı Başlat: sayacı bu andan itibaren yeniden başlatır. */
+/** Sayacı bu andan itibaren yeniden başlatır. */
 export function startWorkoutTimer(planId: string): void {
   startedAt.set(planId, Date.now());
-}
-
-/** Sayaç hiç başlatılmadıysa (ör. listeden doğrudan bir harekete girildiyse) başlatır. */
-export function ensureWorkoutTimer(planId: string): void {
-  if (!startedAt.has(planId)) startWorkoutTimer(planId);
 }
 
 export function workoutElapsedSeconds(planId: string): number {

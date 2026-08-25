@@ -124,7 +124,7 @@ function makeStyles(colors: Colors) {
   safe: { flex: 1, backgroundColor: colors.background },
   container: { padding: 16, paddingBottom: 20 },
 
-  imageWrap: { height: 180, borderRadius: 16, overflow: 'hidden', marginBottom: 16, position: 'relative' },
+  imageWrap: { width: '100%', aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', marginBottom: 16, position: 'relative' },
   image: { width: '100%', height: '100%' },
   favBtn: {
     position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: 17,

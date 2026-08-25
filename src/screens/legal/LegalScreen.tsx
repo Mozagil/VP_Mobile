@@ -6,16 +6,20 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { useI18n } from '../../i18n';
 import { legalDoc, LegalDocKey } from '../../data/legalTexts';
+import { faqDoc } from '../../data/faqTexts';
 import Icon from '../../components/ui/Icon';
 
-type LegalStackParamList = { Legal: { doc: LegalDocKey } };
+// Aynı ekran hem yasal metinleri hem Sık Sorulan Sorular'ı gösterir:
+// ikisi de "başlık + bölümler" yapısında.
+type DocKey = LegalDocKey | 'faq';
+type LegalStackParamList = { Legal: { doc: DocKey } };
 type Props = NativeStackScreenProps<LegalStackParamList, 'Legal'>;
 
 export default function LegalScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
   const { lang } = useI18n();
   const s = useMemo(() => makeStyles(colors), [colors]);
-  const doc = legalDoc(route.params.doc, lang);
+  const doc = route.params.doc === 'faq' ? faqDoc(lang) : legalDoc(route.params.doc, lang);
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -28,7 +32,7 @@ export default function LegalScreen({ route, navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={s.updated}>{doc.updated}</Text>
+        {!!doc.updated && <Text style={s.updated}>{doc.updated}</Text>}
         {doc.sections.map((section) => (
           <View key={section.heading} style={s.section}>
             <Text style={s.sectionTitle}>{section.heading}</Text>

@@ -19,13 +19,12 @@ import { parseDrillDesc } from '../../utils/drillText';
 import { Drill, PlanDrill } from '../../data/types';
 import Icon from '../../components/ui/Icon';
 import PhaseIcon from '../../components/ui/PhaseIcon';
-import { ensureWorkoutTimer, formatElapsed, workoutElapsedSeconds } from '../../utils/workoutTimer';
+import { formatElapsed, startWorkoutTimer, workoutElapsedSeconds } from '../../utils/workoutTimer';
 
 type Props = NativeStackScreenProps<AntrenmanStackParamList, 'DrillPlayer'>;
 type Styles = ReturnType<typeof makeStyles>;
 
-// "Antrenmanı Başlat"a basıldığı andan itibaren geçen süre. Süre plan bazında
-// tutulduğu için hareketler arası geçişlerde sıfırlanmaz.
+// Her harekette sıfırdan başlayan sayaç: o hareket üzerinde geçen süreyi gösterir.
 function WorkoutTimer({ planId, s }: { planId: string; s: Styles }) {
   const [seconds, setSeconds] = useState(() => workoutElapsedSeconds(planId));
   useEffect(() => {
@@ -90,8 +89,8 @@ export default function DrillPlayerScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (!pd) return;
     setMode('playing');
-    // Listeden dogrudan bir harekete girildiyse sayac henuz baslamamis olabilir.
-    ensureWorkoutTimer(planId);
+    // Sayaç her yeni harekette sıfırlanır.
+    startWorkoutTimer(planId);
   }, [pd?.id]);
 
   if (!plan || !pd || !info) {
@@ -274,7 +273,7 @@ function makeStyles(colors: Colors) {
     overflow: 'hidden',
   },
   heroCardActive: { borderColor: colors.success, borderWidth: 2 },
-  heroVideo: { width: '100%', height: 200, backgroundColor: '#000' },
+  heroVideo: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' },
   heroBody: { padding: 18, alignItems: 'center' },
   heroBadge: {
     position: 'absolute', top: 12, left: 12, backgroundColor: colors.cardAlt,

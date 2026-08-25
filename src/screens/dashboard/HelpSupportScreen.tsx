@@ -40,7 +40,9 @@ export default function HelpSupportScreen({ navigation }: Props) {
               key={item.titleKey}
               style={[s.row, i === ITEMS.length - 1 && { borderBottomWidth: 0 }]}
               activeOpacity={0.7}
-              onPress={comingSoon}
+              onPress={item.titleKey === 'help.faq'
+                ? () => navigation.navigate('Legal', { doc: 'faq' })
+                : comingSoon}
             >
               <View style={{ flex: 1 }}>
                 <Text style={s.rowTitle}>{t(item.titleKey)}</Text>
