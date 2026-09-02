@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useTrainingPlans, useToggleDrillComplete, useRemoveDrillFromPlan } from '../../hooks/useTrainingPlans';
+import {
+  useTrainingPlans, useToggleDrillComplete, useRemoveDrillFromPlan, useRenamePlan, useDeletePlan,
+} from '../../hooks/useTrainingPlans';
 import { allDrills } from '../../data/drills';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
@@ -22,11 +24,30 @@ export default function ProgramDetailScreen({ route, navigation }: Props) {
   const { data: plans = [], isLoading } = useTrainingPlans();
   const toggle = useToggleDrillComplete();
   const removeDrill = useRemoveDrillFromPlan();
+  const renamePlan = useRenamePlan();
+  const deletePlan = useDeletePlan();
   const [editMode, setEditMode] = useState(false);
   // Hareket silme onayi native Alert yerine uygulama temasindaki modal ile soruluyor.
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
+  const [confirmDeletePlan, setConfirmDeletePlan] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
 
   const plan = plans.find((p) => p.id === planId);
+
+  // Duzenleme moduna girildiginde ad alani plandaki guncel isimle baslar.
+  useEffect(() => {
+    if (plan) setNameDraft(plan.name);
+  }, [plan?.id, plan?.name]);
+
+  // "Bitti"ye basildiginda isim degistiyse kaydedilir.
+  const toggleEditMode = () => {
+    if (editMode && plan) {
+      const next = nameDraft.trim();
+      if (next && next !== plan.name) renamePlan.mutate({ plan, name: next });
+      else setNameDraft(plan.name);
+    }
+    setEditMode((v) => !v);
+  };
 
   if (isLoading) {
     return <View style={s.center}><ActivityIndicator color={colors.accent} size="large" /></View>;
@@ -57,11 +78,23 @@ export default function ProgramDetailScreen({ route, navigation }: Props) {
         </Text>
         <View style={s.hero}>
           <View style={s.heroNameRow}>
-            <Text style={s.heroName} numberOfLines={2}>{plan.name}</Text>
+            {editMode ? (
+              <TextInput
+                style={s.nameInput}
+                value={nameDraft}
+                onChangeText={setNameDraft}
+                placeholder={t('program.namePlaceholder')}
+                placeholderTextColor={colors.muted}
+                maxLength={60}
+                returnKeyType="done"
+              />
+            ) : (
+              <Text style={s.heroName} numberOfLines={2}>{plan.name}</Text>
+            )}
             <TouchableOpacity
               style={s.editBtn}
               activeOpacity={0.8}
-              onPress={() => setEditMode((v) => !v)}
+              onPress={toggleEditMode}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={s.editBtnTxt}>{editMode ? t('common.done') : t('program.editButton')}</Text>
@@ -126,6 +159,16 @@ export default function ProgramDetailScreen({ route, navigation }: Props) {
             <Text style={s.addDrillBtnTxt}>{t('program.addDrill')}</Text>
           </TouchableOpacity>
         )}
+
+        {editMode && (
+          <TouchableOpacity
+            style={s.deletePlanBtn}
+            activeOpacity={0.85}
+            onPress={() => setConfirmDeletePlan(true)}
+          >
+            <Text style={s.deletePlanBtnTxt}>{t('program.deletePlan')}</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       <Modal
@@ -160,6 +203,39 @@ export default function ProgramDetailScreen({ route, navigation }: Props) {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={confirmDeletePlan}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmDeletePlan(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>{t('program.deletePlanTitle')}</Text>
+            <Text style={s.modalBody}>{t('program.deletePlanBody', { name: plan.name })}</Text>
+            <View style={s.modalBtnRow}>
+              <TouchableOpacity
+                style={s.modalCancelBtn}
+                activeOpacity={0.8}
+                onPress={() => setConfirmDeletePlan(false)}
+              >
+                <Text style={s.modalCancelTxt}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.modalRemoveBtn}
+                activeOpacity={0.85}
+                onPress={() => {
+                  setConfirmDeletePlan(false);
+                  deletePlan.mutate(plan.id, { onSuccess: () => navigation.goBack() });
+                }}
+              >
+                <Text style={s.modalRemoveTxt}>{t('common.remove')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -179,6 +255,10 @@ function makeStyles(colors: Colors) {
   hero: { backgroundColor: colors.card, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: colors.border, marginBottom: 20 },
   heroNameRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 4 },
   heroName: { color: colors.foreground, fontSize: 20, fontWeight: '800', flex: 1 },
+  nameInput: {
+    flex: 1, color: colors.foreground, fontSize: 20, fontWeight: '800',
+    borderBottomWidth: 1.5, borderBottomColor: colors.accent, paddingVertical: 2, paddingHorizontal: 0,
+  },
   editBtn: {
     borderWidth: 1, borderColor: colors.accent, borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 5,
@@ -210,6 +290,11 @@ function makeStyles(colors: Colors) {
     paddingVertical: 12, alignItems: 'center', marginBottom: 8,
   },
   addDrillBtnTxt: { color: colors.accent, fontSize: 14, fontWeight: '700' },
+  deletePlanBtn: {
+    borderRadius: 12, borderWidth: 1.5, borderColor: colors.error + '70',
+    backgroundColor: colors.error + '15', paddingVertical: 12, alignItems: 'center', marginTop: 4,
+  },
+  deletePlanBtnTxt: { color: colors.error, fontSize: 14, fontWeight: '700' },
   statusCircle: {
     width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: colors.border,
     alignItems: 'center', justifyContent: 'center',

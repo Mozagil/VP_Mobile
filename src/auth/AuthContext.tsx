@@ -14,6 +14,8 @@ export type UserProfile = {
   frequency: number | null;
   avatar_url: string | null;
   language: string;
+  /** Sunucu tarafında doğrulanmış abonelik durumu — RevenueCat webhook'u yazar. */
+  is_pro?: boolean;
 };
 
 type AuthContextType = {

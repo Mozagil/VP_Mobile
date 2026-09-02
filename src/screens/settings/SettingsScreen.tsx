@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Share, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthContext';
+import { usePurchases } from '../../purchases/PurchasesContext';
 import { apiClient } from '../../api/client';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -85,6 +86,7 @@ export default function SettingsScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { colors, mode, setMode } = useTheme();
   const { t, lang, setLang } = useI18n();
+  const { enabled: purchasesEnabled, isPro, isTrial, expiresAt, willRenew, managementUrl, restore } = usePurchases();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const [showPwForm, setShowPwForm] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
@@ -123,6 +125,35 @@ export default function SettingsScreen({ navigation }: Props) {
     Share.share({ message: t('settings.inviteMessage') });
   };
 
+  const restorePurchases = async () => {
+    const result = await restore();
+    if (result.status === 'success') {
+      Alert.alert(t('paywall.restoreTitle'), t('paywall.restored'));
+    } else if (result.status === 'nothing') {
+      Alert.alert(t('paywall.restoreTitle'), t('paywall.restoreNothing'));
+    } else if (result.status === 'error') {
+      Alert.alert(t('common.error'), result.message || t('paywall.restoreFailed'));
+    }
+  };
+
+  // Iptal ve odeme yontemi degisikligi store'un kendi ekraninda yapilir; uygulama
+  // icinde iptal etmenin bir yolu yok, bu yuzden dogrudan oraya yonlendiriyoruz.
+  const openSubscriptionManagement = () => {
+    Linking.openURL(managementUrl).catch(() => Alert.alert(t('common.error'), t('settings.manageSubscriptionFailed')));
+  };
+
+  const subscriptionStatus = !isPro
+    ? t('settings.subscriptionNone')
+    : isTrial
+      ? t('settings.subscriptionTrial')
+      : t('settings.subscriptionActive');
+
+  const renewalLine = expiresAt
+    ? t(willRenew ? 'settings.renewsOn' : 'settings.expiresOn', {
+        date: new Date(expiresAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'tr-TR'),
+      })
+    : null;
+
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <View style={s.header}>
@@ -155,6 +186,26 @@ export default function SettingsScreen({ navigation }: Props) {
           <LinkRow label={t('settings.inviteFriend')} onPress={inviteFriend} s={s} />
           <LinkRow label={t('settings.version')} value={APP_VERSION} onPress={() => {}} s={s} />
         </View>
+
+        {purchasesEnabled && (
+          <>
+            <Text style={s.sectionTitle}>{t('settings.section.subscription')}</Text>
+            <View style={s.card}>
+              <View style={s.row}>
+                <Text style={s.rowLabel}>{t('settings.subscriptionStatus')}</Text>
+                <Text style={[s.rowValue, isPro && { color: colors.success }]}>{subscriptionStatus}</Text>
+              </View>
+              {renewalLine && (
+                <View style={[s.row, s.rowBorder]}>
+                  <Text style={s.rowLabel}>{t('settings.renewalLabel')}</Text>
+                  <Text style={s.rowValue}>{renewalLine}</Text>
+                </View>
+              )}
+              <LinkRow label={t('settings.manageSubscription')} onPress={openSubscriptionManagement} s={s} />
+              <LinkRow label={t('settings.restorePurchases')} onPress={restorePurchases} s={s} />
+            </View>
+          </>
+        )}
 
         <Text style={s.sectionTitle}>{t('settings.section.account')}</Text>
         <View style={s.card}>

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useTrainingPlans } from '../../hooks/useTrainingPlans';
+import { useTrainingPlans, useDeletePlan } from '../../hooks/useTrainingPlans';
 import { useScheduledSessions } from '../../hooks/useScheduledSessions';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
@@ -57,6 +57,11 @@ export default function ProgramlarimScreen({ navigation }: Props) {
   const [historyPhaseFilter, setHistoryPhaseFilter] = useState<HistoryPhaseFilter>('all');
   const [historySortNewestFirst, setHistorySortNewestFirst] = useState(true);
   const [showHistoryFilter, setShowHistoryFilter] = useState(false);
+  // Toplu silme: secim modunda kartlara dokunmak antrenmani acmak yerine secer.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const deletePlan = useDeletePlan();
   const { data: plans = [], isLoading } = useTrainingPlans();
   const { data: sessions = [] } = useScheduledSessions();
 
@@ -176,7 +181,12 @@ export default function ProgramlarimScreen({ navigation }: Props) {
             <TouchableOpacity
               key={tabItem.key}
               style={[s.tab, active && s.tabActive]}
-              onPress={() => setTab(tabItem.key)}
+              onPress={() => {
+                setTab(tabItem.key);
+                // Sekme degisince secim modundan cikilir, secim de temizlenir.
+                setSelectMode(false);
+                setSelectedIds([]);
+              }}
               activeOpacity={0.8}
             >
               <Text style={[s.tabTxt, active && s.tabTxtActive]}>{t(tabItem.labelKey)}</Text>
@@ -190,6 +200,20 @@ export default function ProgramlarimScreen({ navigation }: Props) {
           <>
             <View style={s.sectionHeaderRow}>
               <Text style={s.sectionTitle}>{t('training.createdSection')}</Text>
+              {sortedPlans.length > 0 && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setSelectMode((v) => !v);
+                    setSelectedIds([]);
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={s.allLink}>
+                    {selectMode ? t('training.selectCancel') : t('training.selectMode')}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {isLoading ? (
@@ -205,16 +229,31 @@ export default function ProgramlarimScreen({ navigation }: Props) {
                 const { total, pct } = planStats(plan);
                 const minutes = planTotalMinutes(plan, colors);
                 const isScheduled = sessions.some((sess) => sess.plan_id === plan.id && !sess.completed);
+                const selected = selectedIds.includes(plan.id);
                 return (
                   <TouchableOpacity
                     key={plan.id}
-                    style={s.card}
+                    style={[s.card, selectMode && selected && s.cardSelected]}
                     activeOpacity={0.78}
-                    onPress={() => navigation.navigate('StartTraining', { planId: plan.id })}
+                    onPress={() => {
+                      if (selectMode) {
+                        setSelectedIds((prev) =>
+                          prev.includes(plan.id) ? prev.filter((id) => id !== plan.id) : [...prev, plan.id],
+                        );
+                      } else {
+                        navigation.navigate('StartTraining', { planId: plan.id });
+                      }
+                    }}
                   >
-                    <View style={s.thumb}>
-                      <Icon name="antrenmanlar" size={20} />
-                    </View>
+                    {selectMode ? (
+                      <View style={[s.checkbox, selected && s.checkboxOn]}>
+                        {selected && <Text style={s.checkboxTick}>✓</Text>}
+                      </View>
+                    ) : (
+                      <View style={s.thumb}>
+                        <Icon name="antrenmanlar" size={20} />
+                      </View>
+                    )}
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                         <Text style={s.cardName} numberOfLines={1}>{plan.name}</Text>
@@ -236,7 +275,7 @@ export default function ProgramlarimScreen({ navigation }: Props) {
                         <View style={[s.barFill, { width: `${pct}%` }]} />
                       </View>
                     </View>
-                    <Text style={s.cardArrow}>›</Text>
+                    {!selectMode && <Text style={s.cardArrow}>›</Text>}
                   </TouchableOpacity>
                 );
               })
@@ -413,15 +452,61 @@ export default function ProgramlarimScreen({ navigation }: Props) {
 
       {tab === 'list' && (
         <View style={s.stickyFooter}>
-          <TouchableOpacity
-            style={s.newBtn}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate('NewTrainingChoice')}
-          >
-            <Text style={s.newBtnTxt}>{t('training.newSession')}</Text>
-          </TouchableOpacity>
+          {selectMode ? (
+            <TouchableOpacity
+              style={[s.deleteBtn, selectedIds.length === 0 && s.deleteBtnDisabled]}
+              activeOpacity={0.85}
+              disabled={selectedIds.length === 0}
+              onPress={() => setConfirmBulkDelete(true)}
+            >
+              <Text style={s.deleteBtnTxt}>{t('training.deleteSelected', { n: selectedIds.length })}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={s.newBtn}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('NewTrainingChoice')}
+            >
+              <Text style={s.newBtnTxt}>{t('training.newSession')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
+
+      <Modal
+        visible={confirmBulkDelete}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmBulkDelete(false)}
+      >
+        <View style={s.confirmOverlay}>
+          <View style={s.confirmCard}>
+            <Text style={s.confirmTitle}>{t('training.deleteSelectedTitle')}</Text>
+            <Text style={s.confirmBody}>{t('training.deleteSelectedBody', { n: selectedIds.length })}</Text>
+            <View style={s.confirmBtnRow}>
+              <TouchableOpacity
+                style={s.confirmCancelBtn}
+                activeOpacity={0.8}
+                onPress={() => setConfirmBulkDelete(false)}
+              >
+                <Text style={s.confirmCancelTxt}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.confirmDeleteBtn}
+                activeOpacity={0.85}
+                onPress={() => {
+                  selectedIds.forEach((id) => deletePlan.mutate(id));
+                  setConfirmBulkDelete(false);
+                  setSelectedIds([]);
+                  setSelectMode(false);
+                }}
+              >
+                <Text style={s.confirmDeleteTxt}>{t('common.remove')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={!!selectedDay}
@@ -549,6 +634,39 @@ function makeStyles(colors: Colors) {
   stickyFooter: { paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.background },
   newBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   newBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  cardSelected: { borderColor: colors.accent, backgroundColor: colors.accent + '12' },
+  checkbox: {
+    width: 40, height: 40, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
+  checkboxTick: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  deleteBtn: { backgroundColor: colors.error, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  deleteBtnDisabled: { opacity: 0.45 },
+  deleteBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  confirmOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center', justifyContent: 'center', padding: 28,
+  },
+  confirmCard: {
+    width: '100%', backgroundColor: colors.card, borderRadius: 16,
+    borderWidth: 1, borderColor: colors.border, padding: 20,
+  },
+  confirmTitle: { color: colors.foreground, fontSize: 17, fontWeight: '800', marginBottom: 8 },
+  confirmBody: { color: colors.muted, fontSize: 14, lineHeight: 20, marginBottom: 20 },
+  confirmBtnRow: { flexDirection: 'row', gap: 10 },
+  confirmCancelBtn: {
+    flex: 1, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border,
+    paddingVertical: 12, alignItems: 'center',
+  },
+  confirmCancelTxt: { color: colors.foreground, fontSize: 14, fontWeight: '700' },
+  confirmDeleteBtn: {
+    flex: 1, borderRadius: 12, backgroundColor: colors.error,
+    paddingVertical: 12, alignItems: 'center',
+  },
+  confirmDeleteTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
 
   emptyCard: {
     backgroundColor: colors.card, borderRadius: 14, padding: 32, alignItems: 'center',

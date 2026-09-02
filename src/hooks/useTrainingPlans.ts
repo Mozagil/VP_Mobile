@@ -38,6 +38,33 @@ export function useUpdatePlanStatus() {
   );
 }
 
+// Backend'de PATCH yalnizca status/location kabul ediyor, isim degistirmek icin
+// PUT gerekiyor. PUT ise plan drill'lerini silip payload'dan yeniden yaziyor;
+// bu yuzden mevcut hareketler sirasi bozulmadan oldugu gibi geri gonderiliyor.
+export function useRenamePlan() {
+  const qc = useQueryClient();
+  return useMutation(
+    ({ plan, name }: { plan: TrainingPlan; name: string }) =>
+      apiClient.put(`/training-plans/${plan.id}`, {
+        name,
+        team: plan.team,
+        location: plan.location,
+        drills: [...plan.drills]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((pd) => ({
+            drill_id: pd.drill_id,
+            phase: pd.phase,
+            completed: pd.completed,
+            custom_name: pd.custom_name,
+            custom_skill: pd.custom_skill,
+            custom_duration: pd.custom_duration,
+            note: pd.note,
+          })),
+      }).then((r) => r.data),
+    { onSuccess: () => qc.invalidateQueries(QUERY_KEY) },
+  );
+}
+
 export function useDeletePlan() {
   const qc = useQueryClient();
   return useMutation(

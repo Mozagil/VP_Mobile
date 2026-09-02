@@ -14,3 +14,21 @@ jest.mock('expo-secure-store', () => {
     }),
   };
 });
+
+// react-native-purchases native modul gerektirir; testlerde no-op bir SDK yeterli.
+jest.mock('react-native-purchases', () => ({
+  __esModule: true,
+  default: {
+    setLogLevel: jest.fn(),
+    configure: jest.fn(),
+    addCustomerInfoUpdateListener: jest.fn(),
+    removeCustomerInfoUpdateListener: jest.fn(),
+    getCustomerInfo: jest.fn(() => Promise.resolve({ entitlements: { active: {} }, managementURL: null })),
+    getOfferings: jest.fn(() => Promise.resolve({ current: null, all: {} })),
+    purchasePackage: jest.fn(),
+    restorePurchases: jest.fn(),
+    logIn: jest.fn(() => Promise.resolve({ customerInfo: { entitlements: { active: {} } }, created: false })),
+    logOut: jest.fn(() => Promise.resolve({ entitlements: { active: {} } })),
+  },
+  LOG_LEVEL: { DEBUG: 'DEBUG', ERROR: 'ERROR' },
+}));

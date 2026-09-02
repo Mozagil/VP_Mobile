@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/auth/AuthContext';
+import { PurchasesProvider } from './src/purchases/PurchasesContext';
 import { ThemeProvider } from './src/theme/ThemeContext';
 import { LanguageProvider } from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -25,7 +26,9 @@ export default function App() {
         <LanguageProvider>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
-              <RootNavigator />
+              <PurchasesProvider>
+                <RootNavigator />
+              </PurchasesProvider>
             </AuthProvider>
           </QueryClientProvider>
         </LanguageProvider>
