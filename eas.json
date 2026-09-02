@@ -15,7 +15,8 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_RC_IOS_KEY": "REPLACE_WITH_REVENUECAT_IOS_PUBLIC_KEY",
+        "EXPO_PUBLIC_API_URL": "https://voleypro.com/api",
+        "EXPO_PUBLIC_RC_IOS_KEY": "appl_xVOfgPKnGuoFQDHpybdDfuPDaHi",
         "EXPO_PUBLIC_RC_ANDROID_KEY": "goog_jQzvnRJTRbIVRHfFOxCeIYlGLAk"
       },
       "ios": {
@@ -26,7 +27,7 @@
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://voleypro.com/api",
-        "EXPO_PUBLIC_RC_IOS_KEY": "REPLACE_WITH_REVENUECAT_IOS_PUBLIC_KEY",
+        "EXPO_PUBLIC_RC_IOS_KEY": "appl_xVOfgPKnGuoFQDHpybdDfuPDaHi",
         "EXPO_PUBLIC_RC_ANDROID_KEY": "goog_jQzvnRJTRbIVRHfFOxCeIYlGLAk"
       },
       "android": {
