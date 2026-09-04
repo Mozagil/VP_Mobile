@@ -152,12 +152,15 @@ Gelen gövdedeki alanlar:
 | `event.expiration_at_ms` | Dönem bitişi |
 | `event.period_type` | `TRIAL` \| `NORMAL` \| `INTRO` |
 
-Yapılacak iş: `users` tablosuna `is_pro`, `subscription_period_type`,
-`subscription_expires_at`, `subscription_store` alanlarını ekle ve her olayda güncelle.
-`EXPIRATION` ve `BILLING_ISSUE` olaylarında `is_pro = false`.
+**Erişim kuralı** — `EXPIRATION` ve `SUBSCRIPTION_PAUSED` erişimi kapatır. `CANCELLATION`
+ve `BILLING_ISSUE` **kapatmaz**: iptal eden kullanıcı dönem sonuna kadar, ödemesi
+başarısız olan kullanıcı ek süre boyunca (Play'de 7-14 gün) kullanmaya devam eder.
+Her ikisinde de gerçek kapanış `EXPIRATION` olarak gelir. Diğer olaylarda
+`expiration_at_ms` geleceyse erişim açıktır.
 
-Webhook'lar tekrar gönderilebilir; endpoint **idempotent** olmalı (`event.id` ile
-tekrarları ele).
+Webhook'lar tekrar gönderilebilir ve sıralı gelmeyebilir; `event_timestamp_ms`
+saklanıp daha eski olaylar yok sayılmalı — aksi halde eski bir olay iptal edilmiş
+bir aboneliği yeniden açabilir.
 
 ### 4.2 `/auth/me` yanıtı
 
