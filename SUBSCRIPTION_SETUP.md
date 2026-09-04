@@ -17,8 +17,13 @@ endpoint'i.
 3. **Entitlement** identifier: `voleypro_premium`
    Bu değer kodda [src/purchases/config.ts](src/purchases/config.ts) içindeki `ENTITLEMENT_ID` ile birebir aynı olmalı.
 4. **Products** → store'larda tanımladığın ürünleri içeri al (bölüm 2 ve 3'ten sonra), her birini `voleypro_premium` entitlement’ına bağla.
-5. **Offerings** → `default` offering oluştur, `current` olarak işaretle, içine `$rc_monthly` package'ı ekle ve aylık ürünü bağla.
+5. **Offerings** → `default` offering, **Current** işaretli. İki package:
+   - `$rc_monthly` → aylık ürünler (Test Store + Play + App Store)
+   - `$rc_annual` → yıllık ürünler
+   Bir package mağaza başına bir ürün tutar; SDK hangi ortamdaysa doğru olanı seçer.
    Kod `offerings.current` okuyor; `current` işaretlenmezse paywall "seçenekler yüklenemedi" der.
+   Package kimlikleri RevenueCat'in standart adları olmalı — `$rc_annual` yerine özel
+   bir isim verilirse paywall paketi listeler ama yıllık olduğunu anlayamaz.
 6. **API Keys** → iOS ve Android **public** SDK anahtarlarını kopyala (`appl_…` / `goog_…`).
    Secret key'i uygulamaya koyma; o yalnızca backend içindir.
 
@@ -38,11 +43,23 @@ App Store Connect → Users and Access → Integrations → **In-App Purchase** 
 oluştur, `.p8` dosyasını indir ve RevenueCat'te iOS app ayarlarına yükle. Ayrıca
 **App-Specific Shared Secret**'i de gir.
 
-### Android için Service Account
+### Android için Service Account (kuruldu)
 
-Google Cloud'da bir service account oluştur, JSON key indir, Play Console →
-Users and permissions'ta bu hesaba **Financial data / View app information** yetkisi ver,
-JSON'u RevenueCat'e yükle. Yetkinin aktif olması birkaç saat sürebilir.
+Google Cloud projesi `voleypro-505308`, servis hesabı
+`revenuecat-service-account@voleypro-505308.iam.gserviceaccount.com`.
+
+Kurulum Cloud Shell'de tek blokla yapıldı: 5 API etkinleştirildi
+(`cloudresourcemanager`, `iam`, `androidpublisher`, `playdeveloperreporting`,
+`pubsub`), servis hesabı oluşturuldu, `roles/pubsub.editor` ve
+`roles/monitoring.viewer` verildi, JSON anahtar üretildi.
+
+Play Console → Kullanıcılar ve izinler'de bu hesaba dört izin verildi:
+uygulama bilgilerini görüntüleme, finansal verileri görüntüleme, siparişleri ve
+abonelikleri yönetme, mağazadaki varlığı yönetme.
+
+> Doğrulamanın üç kontrolünden ikisi (katalog okuma) anında geçer; üçüncüsü
+> (satın alma doğrulama) finansal izinlerin yayılmasını bekler — 36 saati
+> bulabiliyor. Products → **Import** çalışıyorsa kimlik bilgileri sağlamdır.
 
 ---
 
@@ -53,14 +70,17 @@ olmalı. Bunlar tamamlanmadan ürünler `Missing Metadata` durumunda kalır ve c
 hiç görünmez.
 
 1. Uygulama → **Subscriptions** → yeni **Subscription Group**: `VoleyPro Premium`
-2. Gruba abonelik ekle:
-   - Product ID: `com.voleypro.mobile.pro.monthly`
-   - Duration: **1 Month**
-   - Fiyat: Türkiye ve diğer pazarlar için belirle
-3. Aynı ürünün altında **Introductory Offer** ekle:
+2. Gruba **iki** abonelik ekle — App Store'da base plan kavramı yok, her süre ayrı ürün:
+
+   | Product ID | Duration | Türkiye | Avrupa |
+   |---|---|---|---|
+   | `voleypro_membership_monthly` | 1 Month | ₺99 | €5,99 |
+   | `voleypro_membership_annual` | 1 Year | ₺990 | €59,99 |
+
+3. Her ürünün altında **Introductory Offer** ekle:
    - Type: **Free Trial**
    - Duration: **1 Week**
-   - Territories: satış yaptığın tüm ülkeler
+   - Territories: fiyat tanımladığın tüm ülkeler
 4. Localization ekle (görünen ad + açıklama) — TR ve EN.
 5. **Review Information**: ekran görüntüsü + inceleme notu.
 6. **Sandbox tester** oluştur (Users and Access → Sandbox → Test Accounts).
@@ -73,19 +93,40 @@ hiç görünmez.
 
 ## 3. Google Play Console
 
-1. Monetize → **Subscriptions** → yeni abonelik
-   - Product ID: `pro_monthly`
-2. **Base plan** ekle:
-   - ID: `monthly`
-   - Type: **Auto-renewing**, Billing period: **1 month**
-   - Fiyatları ayarla ve base plan'ı **aktive et**
-3. Base plan'ın altına **Offer** ekle:
-   - Offer type: **Free trial**, süre **7 gün**
-   - Eligibility: *New customer acquisition → never had a subscription*
-   - Offer'ı **aktive et**
-4. Monetization setup → **Licensing** → test hesaplarını *License testers*'a ekle.
-5. Uygulamayı en az bir kez **Internal testing** track'ine yükle.
-   Play'de ürünler, uygulamanın yayınlanmış bir sürümü olmadan cihazda görünmez.
+**Ön koşullar (sırayla, atlanamaz):**
+
+1. **Google Payments satıcı hesabı** — bu olmadan abonelik ürünü oluşturulamaz.
+2. **Play Billing kütüphanesi içeren bir sürüm yüklenmiş olmalı.** Play, abonelik
+   oluşturma ekranını ancak öyle açıyor; aksi halde "Yeni bir APK yükleyin" der.
+   Yani sıra: build al → dahili teste yükle → ürünü oluştur.
+
+**Kurulan yapı:**
+
+```
+Ürün: voleypro_membership          (VoleyPro Premium)
+  ├─ temel plan: monthly   1 ay    ₺99   / €5,99   + freetrial-monthly (7 gün)
+  └─ temel plan: annual    1 yıl   ₺990  / €59,99  + freetrial-annual  (7 gün)
+```
+
+Ülkeler: Türkiye, Almanya, Avusturya, Hollanda. Fiyatı olmayan ülkede ürün satılmaz;
+satış yapılmayacak ülkeleri *Ülke/bölge bazında kullanım durumunu yönet* ile kapat,
+yoksa Play fiyatsız açık ülkeleri hata sayar.
+
+**Kalıcı alanlar** — kaydedildikten sonra hiçbiri değiştirilemez:
+ürün kimliği, temel plan kimliği, teklif kimliği, temel planın fatura dönemi.
+Fatura dönemi menüsü varsayılan olarak **Aylık** gelir; yıllık plan eklerken
+kaydetmeden önce "Yıllık, otomatik yenileme" yazdığını doğrula.
+
+**Teklif uygunluğu:** *Yeni müşteri edinme → hiçbir abonelik edinmemiş* seçildi —
+kullanıcı başına ömür boyu tek deneme. İleride Kulüp ürünü eklenirse aynı kişi
+ikinci kez deneme alamaz.
+
+Her temel planı ve her teklifi ayrı ayrı **etkinleştir**. Taslak durumdaki plan
+veya teklif cihazda hiç görünmez.
+
+**Test hesapları** (iki ayrı liste, ikisi de gerekli):
+- Dahili test → **Test kullanıcıları** → uygulamayı indirebilmek için
+- Ayarlar → **Lisans testi** → satın almaları ücretsiz ve hızlandırılmış yapmak için
 
 ---
 
@@ -134,19 +175,29 @@ paywall yalnızca arayüz seviyesinde bir engeldir.
 
 ## 5. Build ve test
 
-Satın alma **Expo Go'da çalışmaz**, dev build gerekir:
+Gerçek satın alma **Expo Go'da çalışmaz** — StoreKit ve Play Billing native.
+Ama SDK Expo Go'yu algılayıp **Browser Mode**'a düşüyor: RevenueCat **Test Store**
+anahtarıyla (`test_…`) paywall arayüzü ve simüle satın alma akışı test edilebilir.
+`appl_`/`goog_` anahtarları Expo Go'da açıkça reddedilir.
 
 ```bash
-npx expo prebuild --clean
+npx expo start --go --port 8082 --clear
 ```
 
-```bash
-npx expo run:ios
-```
+Gerçek ödeme panelini görmek için store build'i gerekiyor:
 
 ```bash
-npx expo run:android
+npx eas build --profile production --platform android
 ```
+
+Çıkan `.aab` Play Console → **Dahili test**'e yüklenir (kapalı teste değil —
+ürünler bağlanana kadar paywall "seçenekler yüklenemedi" der ve test
+kullanıcıları uygulamaya giremez).
+
+> EAS ücretsiz kuyruğunda Android build'i saatlerce bekleyebiliyor; derlemenin
+> kendisi 10-15 dakika. Yerel derleme için Android SDK'nın `build-tools` ve
+> `platforms` bileşenleri gerekiyor (`platform-tools` tek başına yetmiyor) ve
+> `eas build --local` Windows'ta desteklenmiyor.
 
 ### iOS sandbox
 
