@@ -247,6 +247,8 @@ export const tr = {
   'paywall.period.month': 'AYLIK',
   'paywall.period.year': 'YILLIK',
   'paywall.trialBadge': '{n} gün ücretsiz',
+  'paywall.savingsBadge': '%{n} tasarruf',
+  'paywall.perMonth': 'ayda {price}',
   'paywall.ctaTrial': '{n} Gün Ücretsiz Dene',
   'paywall.ctaBuy': 'Aboneliği Başlat',
   'paywall.fineTrial':

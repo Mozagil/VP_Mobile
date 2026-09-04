@@ -31,3 +31,26 @@ export function periodKey(pkg: PurchasesPackage): TranslationKey {
 
 /** Kullanıcının ödeme yaptığı mağazanın adı — yasal metinde geçmesi gerekiyor. */
 export const STORE_NAME = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
+
+/**
+ * Bir paketin diğerlerine göre aylık bazda ne kadar ucuz olduğunu yüzde olarak
+ * verir. Referans, diğer paketlerin en yüksek aylık maliyeti — yani yıllık plan
+ * aylıkla kıyaslanır. Fiyatlar store'dan geldiği için oran kullanıcının para
+ * biriminde hesaplanır ve panelde fiyat değişince kendiliğinden güncellenir.
+ * Kıyaslanacak veri yoksa (tek paket, ya da store aylık karşılık döndürmüyorsa)
+ * null döner ve rozet gösterilmez.
+ */
+export function savingsPercent(pkg: PurchasesPackage, all: PurchasesPackage[]): number | null {
+  const perMonth = pkg.product.pricePerMonth;
+  if (perMonth == null || perMonth <= 0) return null;
+
+  const reference = all
+    .filter((p) => p.identifier !== pkg.identifier)
+    .map((p) => p.product.pricePerMonth)
+    .filter((v): v is number => v != null && v > 0)
+    .reduce((max, v) => Math.max(max, v), 0);
+
+  if (reference <= 0) return null;
+  const percent = Math.round((1 - perMonth / reference) * 100);
+  return percent > 0 ? percent : null;
+}

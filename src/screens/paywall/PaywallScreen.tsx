@@ -10,7 +10,7 @@ import { Colors } from '../../theme/palettes';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../auth/AuthContext';
 import { usePurchases } from '../../purchases/PurchasesContext';
-import { periodKey, trialDays, STORE_NAME } from '../../purchases/format';
+import { periodKey, trialDays, savingsPercent, STORE_NAME } from '../../purchases/format';
 import { TERMS_URL } from '../../purchases/config';
 
 const BENEFITS = [
@@ -103,6 +103,10 @@ export default function PaywallScreen({ navigation }: Props) {
             {packages.map((pkg) => {
               const active = selected?.identifier === pkg.identifier;
               const pkgTrial = trialDays(pkg);
+              const savings = savingsPercent(pkg, packages);
+              // Aylik disi planlarda aylik karsiligi da gosteriliyor; kullanici
+              // iki plani ancak ayni birimde kiyaslayabiliyor.
+              const perMonth = savings != null ? pkg.product.pricePerMonthString : null;
               return (
                 <TouchableOpacity
                   key={pkg.identifier}
@@ -115,12 +119,19 @@ export default function PaywallScreen({ navigation }: Props) {
                     {/* Fiyat store'dan geldigi gibi gosteriliyor: para birimi ve
                         bicim kullanicinin store ulkesine gore degisir. */}
                     <Text style={s.planPrice}>{pkg.product.priceString}</Text>
+                    {!!perMonth && <Text style={s.planPerMonth}>{t('paywall.perMonth', { price: perMonth })}</Text>}
                   </View>
-                  {pkgTrial != null && (
-                    <View style={s.trialBadge}>
-                      <Text style={s.trialBadgeText}>{t('paywall.trialBadge', { n: pkgTrial })}</Text>
+                  {/* Rozet slotu tek: indirim varsa onu gosterir, yoksa deneme
+                      suresini. Deneme bilgisi zaten butonda ve alt metinde var. */}
+                  {savings != null ? (
+                    <View style={s.savingsBadge}>
+                      <Text style={s.badgeText}>{t('paywall.savingsBadge', { n: savings })}</Text>
                     </View>
-                  )}
+                  ) : pkgTrial != null ? (
+                    <View style={s.trialBadge}>
+                      <Text style={s.badgeText}>{t('paywall.trialBadge', { n: pkgTrial })}</Text>
+                    </View>
+                  ) : null}
                 </TouchableOpacity>
               );
             })}
@@ -190,8 +201,10 @@ function makeStyles(colors: Colors) {
     planCardActive: { borderColor: colors.accent, backgroundColor: colors.cardAlt },
     planPeriod: { color: colors.muted, fontSize: 12, fontWeight: '700', letterSpacing: 0.4 },
     planPrice: { color: colors.foreground, fontSize: 20, fontWeight: '800', marginTop: 2 },
+    planPerMonth: { color: colors.muted, fontSize: 12, marginTop: 2 },
     trialBadge: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
-    trialBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    savingsBadge: { backgroundColor: colors.success, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+    badgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
 
     errorBox: { gap: 12, marginVertical: 12 },
     errorText: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center' },

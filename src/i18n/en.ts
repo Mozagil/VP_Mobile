@@ -250,6 +250,8 @@ export const en: Catalog = {
   'paywall.period.month': 'MONTHLY',
   'paywall.period.year': 'YEARLY',
   'paywall.trialBadge': '{n} days free',
+  'paywall.savingsBadge': 'Save {n}%',
+  'paywall.perMonth': '{price} / month',
   'paywall.ctaTrial': 'Start {n}-Day Free Trial',
   'paywall.ctaBuy': 'Start Subscription',
   'paywall.fineTrial':
