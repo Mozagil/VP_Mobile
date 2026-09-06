@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { useCreatePlan } from '../../hooks/useTrainingPlans';
@@ -132,7 +133,35 @@ export default function AIWizardScreen({ navigation }: Props) {
   const toggleFocus = (f: string) =>
     setFocus((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
 
-  const goBackStep = () => (step === 0 ? navigation.goBack() : setStep(step - 1));
+  // Ekran sekme yiginlarinda mount halinde kaldigi icin, sihirbaz kapatilip
+  // tekrar acildiginda yarim kalan adimda aciliyordu. Odak kaybedildiginde
+  // butun secimler basa alinir; her giris ilk adimdan baslar.
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setStep(0);
+        setGoalKey('teknik');
+        setCustomName('');
+        setLevel('Orta');
+        setDuration(60);
+        setFocus([]);
+        setSelectedDate(todayKey());
+        setSessionTime(getRoundedCurrentTime());
+      },
+      [],
+    ),
+  );
+
+  const goBackStep = () => {
+    if (step > 0) {
+      setStep(step - 1);
+      return;
+    }
+    // Sihirbaza sekme atlayarak gelindiginde yiginda geri gidilecek ekran
+    // olmayabiliyor; o durumda bolumun kok ekranina donuluyor.
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('PlatformMain');
+  };
 
   const save = async () => {
     setSaving(true);

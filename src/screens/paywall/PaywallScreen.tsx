@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PurchasesPackage } from 'react-native-purchases';
@@ -64,6 +64,24 @@ export default function PaywallScreen({ navigation }: Props) {
     }
   };
 
+  // Fiyat ve para birimi store'dan geliyor; yanlis para birimi ancak cihazin
+  // store'dan ne aldigi gorulerek teshis edilebilir. Logoya uzun basinca ham
+  // degerler gosteriliyor — kazara tetiklenmez, normal kullanimda gorunmez.
+  const showStoreDiagnostics = () => {
+    const lines = packages.map((p) =>
+      [
+        p.identifier,
+        `  ${p.product.identifier}`,
+        `  ${p.product.priceString}  (${p.product.currencyCode})  raw=${p.product.price}`,
+        `  /ay: ${p.product.pricePerMonthString ?? '-'}`,
+      ].join('\n'),
+    );
+    Alert.alert(
+      'Store bilgisi',
+      [`offering: ${offering?.identifier ?? '-'}`, ...(lines.length ? lines : ['paket yok'])].join('\n\n'),
+    );
+  };
+
   const confirmSignOut = () => {
     Alert.alert(t('paywall.signOutTitle'), t('paywall.signOutBody'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -75,9 +93,16 @@ export default function PaywallScreen({ navigation }: Props) {
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <View style={s.hero}>
-          <View style={s.heroIcon}>
-            <Icon name="voleybol-topu" size={36} />
-          </View>
+          {/* Giris ekraniyla ayni logo dosyasi; ikon setindeki eski top cizimi
+              markayla uyusmuyordu. */}
+          <TouchableOpacity
+            style={s.heroIcon}
+            activeOpacity={1}
+            delayLongPress={1200}
+            onLongPress={showStoreDiagnostics}
+          >
+            <Image source={require('../../../assets/logo-mark.png')} style={s.heroLogo} resizeMode="contain" />
+          </TouchableOpacity>
           <Text style={s.title}>{t('paywall.title')}</Text>
           <Text style={s.subtitle}>{t('paywall.subtitle')}</Text>
         </View>
@@ -183,6 +208,7 @@ function makeStyles(colors: Colors) {
       width: 68, height: 68, borderRadius: 34, backgroundColor: colors.cardAlt,
       alignItems: 'center', justifyContent: 'center', marginBottom: 14,
     },
+    heroLogo: { width: 40, height: 40 },
     title: { color: colors.foreground, fontSize: 22, fontWeight: '800', textAlign: 'center' },
     subtitle: { color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8 },
 
