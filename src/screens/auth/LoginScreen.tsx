@@ -19,7 +19,7 @@ import { useI18n } from '../../i18n';
 
 // Bump this string with every new EAS build so testers (and we) can confirm
 // which build is actually running on a device, without ambiguity.
-const BUILD_LABEL = 'v16';
+const BUILD_LABEL = 'v17';
 
 // Validation messages are built from the active catalog, so the schema is
 // created inside the component rather than at module scope.
