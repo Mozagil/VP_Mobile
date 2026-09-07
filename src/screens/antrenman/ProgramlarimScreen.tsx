@@ -160,12 +160,20 @@ export default function ProgramlarimScreen({ navigation }: Props) {
       .sort((a, b) => (historySortNewestFirst ? b.date.getTime() - a.date.getTime() : a.date.getTime() - b.date.getTime()));
   }, [sessions, plans, pastPlansWithoutSessions, historyFilter, historyPhaseFilter, historySortNewestFirst, colors]);
 
+  // Bu ekrana antrenman akisinin icinden gelindiginde modal olarak sunulmus
+  // oluyor; sadece sekme degistirmek modali ekranda birakiyordu. Once yigin
+  // kokune iniliyor. Ekran zaten kokteyse popToTop bir sey yapmaz.
+  const goBackHome = () => {
+    navigation.popToTop();
+    navigation.getParent()?.navigate('Panel' as any);
+  };
+
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <View style={s.header}>
         <TouchableOpacity
           style={s.closeBtn}
-          onPress={() => navigation.getParent()?.navigate('Panel' as any)}
+          onPress={goBackHome}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Icon name="geri" size={18} />

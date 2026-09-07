@@ -27,6 +27,19 @@ export default function WorkoutCompleteScreen({ route, navigation }: Props) {
 
   const plan = plans.find((p) => p.id === planId);
 
+  // Antrenman akisi modal olarak sunuluyor (NewTrainingChoice: presentation
+  // 'modal'), sonrasinda push edilen ekranlar da o modalin icinde kaliyor.
+  // Yalnizca sekme degistirmek modali ekranda biraktigi icin butonlar
+  // calismiyormus gibi gorunuyordu; once yigin kokune inip modali kapatiyoruz.
+  const goToMyTrainings = () => {
+    navigation.popToTop();
+  };
+
+  const goHome = () => {
+    navigation.popToTop();
+    navigation.getParent()?.navigate('Panel' as any);
+  };
+
   useEffect(() => {
     if (plan && !marked.current) {
       marked.current = true;
@@ -88,14 +101,14 @@ export default function WorkoutCompleteScreen({ route, navigation }: Props) {
         <TouchableOpacity
           style={s.primaryBtn}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate('AntrenmanHub')}
+          onPress={goToMyTrainings}
         >
           <Text style={s.primaryBtnTxt}>{t('complete.myTrainings')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={s.secondaryBtn}
           activeOpacity={0.8}
-          onPress={() => navigation.getParent()?.navigate('Panel' as any)}
+          onPress={goHome}
         >
           <Text style={s.secondaryBtnTxt}>{t('nav.tab.home')}</Text>
         </TouchableOpacity>
