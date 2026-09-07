@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ScrollView,
 } from 'react-native';
@@ -164,6 +164,16 @@ export default function VoIleybolOkuluScreen() {
     [level],
   );
 
+  // "Modul Ekle" butonunun islevsiz kaldigi yerdi. Modul eklemek, asagidaki
+  // katalogdan bir modulu yer imine almak demek; buton da oraya goturuyor.
+  // Baslik yuksekligi olcumden geliyor, sabit deger varsayilmiyor.
+  const listRef = useRef<FlatList<Module>>(null);
+  const headerHeight = useRef(0);
+
+  const scrollToCatalog = () => {
+    listRef.current?.scrollToOffset({ offset: headerHeight.current, animated: true });
+  };
+
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
       {/* Level filter */}
@@ -174,19 +184,20 @@ export default function VoIleybolOkuluScreen() {
       </View>
 
       <FlatList
+        ref={listRef}
         data={filtered}
         keyExtractor={item => `${item.type}-${item.id}`}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.list}
         ListHeaderComponent={
-          <View style={s.savedSection}>
+          <View style={s.savedSection} onLayout={(e) => { headerHeight.current = e.nativeEvent.layout.height; }}>
             <View style={s.savedHeader}>
               <View style={s.savedHeaderLeft}>
                 <Text style={s.savedHeaderIcon}>🔖</Text>
                 <Text style={s.savedHeaderTitle}>{t('school.savedHeader')}</Text>
               </View>
               <View style={s.addBtnWrap}>
-                <TouchableOpacity style={s.addBtn} activeOpacity={0.8} onPress={() => {}}>
+                <TouchableOpacity style={s.addBtn} activeOpacity={0.8} onPress={scrollToCatalog}>
                   <Text style={s.addBtnTxt}>{t('school.addModule')}</Text>
                 </TouchableOpacity>
               </View>

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Share, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Share, Linking, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthContext';
@@ -13,7 +14,21 @@ import { Colors } from '../../theme/palettes';
 import { useI18n } from '../../i18n';
 import type { Lang } from '../../i18n';
 
-const APP_VERSION = '1.0.0';
+// Surum app.json'dan okunuyor; elle yazilan deger guncellenmeyi unutuldugu
+// icin ekranda 1.0.0 kalmisti.
+const APP_VERSION = Constants.expoConfig?.version ?? '—';
+
+// Degerlendirme baglantisi. iOS'ta uygulama kimligi App Store Connect'ten,
+// Android'de paket adi app.json'dan geliyor.
+const REVIEW_URL = Platform.select({
+  ios: 'itms-apps://itunes.apple.com/app/id6802449927?action=write-review',
+  android: 'market://details?id=com.voleypro.mobile',
+}) as string;
+
+const REVIEW_URL_FALLBACK = Platform.select({
+  ios: 'https://apps.apple.com/app/id6802449927?action=write-review',
+  android: 'https://play.google.com/store/apps/details?id=com.voleypro.mobile',
+}) as string;
 
 type Styles = ReturnType<typeof makeStyles>;
 
@@ -66,16 +81,27 @@ function SegmentedRow<T extends string>({
   );
 }
 
+// onPress verilmeyen satir bilgi satiridir: dokunma tepkisi ve ok isareti
+// gosterilmez. Surum numarasi gibi salt okunur alanlar tiklanabilir gorunup
+// hicbir sey yapmasin diye.
 function LinkRow({
   label, value, onPress, first, s,
-}: { label: string; value?: string; onPress: () => void; first?: boolean; s: Styles }) {
-  return (
-    <TouchableOpacity style={[s.row, !first && s.rowBorder]} activeOpacity={0.7} onPress={onPress}>
+}: { label: string; value?: string; onPress?: () => void; first?: boolean; s: Styles }) {
+  const content = (
+    <>
       <Text style={s.rowLabel}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         {value && <Text style={s.rowValue}>{value}</Text>}
-        <Text style={s.rowArrow}>›</Text>
+        {!!onPress && <Text style={s.rowArrow}>›</Text>}
       </View>
+    </>
+  );
+  if (!onPress) {
+    return <View style={[s.row, !first && s.rowBorder]}>{content}</View>;
+  }
+  return (
+    <TouchableOpacity style={[s.row, !first && s.rowBorder]} activeOpacity={0.7} onPress={onPress}>
+      {content}
     </TouchableOpacity>
   );
 }
@@ -103,7 +129,7 @@ export default function SettingsScreen({ navigation }: Props) {
       Alert.alert(t('common.error'), t('settings.passwordMismatch'));
       return;
     }
-    if (newPw.length < 6) {
+    if (newPw.length < 8) {
       Alert.alert(t('common.error'), t('settings.passwordTooShort'));
       return;
     }
@@ -119,7 +145,17 @@ export default function SettingsScreen({ navigation }: Props) {
     }
   };
 
-  const comingSoon = () => Alert.alert(t('common.comingSoonTitle'), t('common.comingSoonBody'));
+  // Magaza uygulamasi yuklu degilse veya sema desteklenmiyorsa tarayici
+  // adresine dusuluyor; hicbiri acilmazsa sessizce kalmak yerine uyariyoruz.
+  const rateApp = async () => {
+    try {
+      await Linking.openURL(REVIEW_URL);
+    } catch {
+      Linking.openURL(REVIEW_URL_FALLBACK).catch(() =>
+        Alert.alert(t('common.error'), t('settings.rateAppFailed')),
+      );
+    }
+  };
 
   const inviteFriend = () => {
     Share.share({ message: t('settings.inviteMessage') });
@@ -182,9 +218,9 @@ export default function SettingsScreen({ navigation }: Props) {
             onValueChange={(v) => setMode(v ? 'dark' : 'light')}
             colors={colors} s={s}
           />
-          <LinkRow label={t('settings.rateApp')} onPress={comingSoon} s={s} />
+          <LinkRow label={t('settings.rateApp')} onPress={rateApp} s={s} />
           <LinkRow label={t('settings.inviteFriend')} onPress={inviteFriend} s={s} />
-          <LinkRow label={t('settings.version')} value={APP_VERSION} onPress={() => {}} s={s} />
+          <LinkRow label={t('settings.version')} value={APP_VERSION} s={s} />
         </View>
 
         {purchasesEnabled && (

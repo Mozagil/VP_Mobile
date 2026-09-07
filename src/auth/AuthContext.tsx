@@ -11,7 +11,7 @@ export type UserProfile = {
   level: string | null;
   position: string | null;
   goals: string[];
-  frequency: number | null;
+  frequency: string | null;
   avatar_url: string | null;
   language: string;
   /** Sunucu tarafında doğrulanmış abonelik durumu — RevenueCat webhook'u yazar. */
@@ -36,7 +36,7 @@ export type RegisterData = {
   level?: string;
   position?: string;
   goals?: string[];
-  frequency?: number;
+  frequency?: string;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
