@@ -64,6 +64,12 @@ export const tr = {
   'auth.login.failed': 'Giriş Başarısız',
   'auth.login.badCredentials': 'E-posta veya şifre hatalı.',
   'auth.login.noAccount': 'Hesabınız yok mu?',
+  'auth.login.forgot': 'Şifremi unuttum',
+  'auth.forgot.needEmail': 'Önce e-posta adresinizi yazın, sonra tekrar dokunun.',
+  'auth.forgot.sentTitle': 'E-posta gönderildi',
+  'auth.forgot.sentBody':
+    '{email} adresi kayıtlıysa şifre sıfırlama bağlantısı gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.',
+  'auth.forgot.failed': 'Şifre sıfırlama e-postası gönderilemedi. Daha sonra tekrar deneyin.',
   'auth.email': 'E-posta',
   'auth.emailPlaceholder': 'email@ornek.com',
   'auth.password': 'Şifre',

@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/AuthStack';
 import { useAuth } from '../../auth/AuthContext';
+import { apiClient } from '../../api/client';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useTheme } from '../../theme/ThemeContext';
@@ -40,9 +41,31 @@ export default function LoginScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
   const schema = useMemo(() => makeSchema(t), [t]);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const [sendingReset, setSendingReset] = useState(false);
+
+  const { control, handleSubmit, getValues, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  // Sifre sifirlama e-posta ile yurutuluyor: link tarayicida acilan bir formu
+  // gosteriyor. Bu yuzden uygulama tarafinda ayri bir ekrana gerek yok, tek
+  // ihtiyac duyulan sey e-posta adresi.
+  const onForgotPassword = async () => {
+    const email = (getValues('email') ?? '').trim();
+    if (!z.string().email().safeParse(email).success) {
+      Alert.alert(t('auth.login.forgot'), t('auth.forgot.needEmail'));
+      return;
+    }
+    setSendingReset(true);
+    try {
+      await apiClient.post('/auth/forgot-password', { email });
+      Alert.alert(t('auth.forgot.sentTitle'), t('auth.forgot.sentBody', { email }));
+    } catch {
+      Alert.alert(t('auth.login.failed'), t('auth.forgot.failed'));
+    } finally {
+      setSendingReset(false);
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -108,6 +131,10 @@ export default function LoginScreen({ navigation }: Props) {
             />
 
             <Button title={t('auth.login.submit')} onPress={handleSubmit(onSubmit)} loading={loading} style={{ marginTop: 8 }} />
+
+            <TouchableOpacity onPress={onForgotPassword} disabled={sendingReset} style={styles.forgotBtn}>
+              <Text style={styles.forgotText}>{t('auth.login.forgot')}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Register link */}
@@ -151,6 +178,8 @@ function makeStyles(colors: Colors) {
   cardTitle: { color: colors.foreground, fontSize: 18, fontWeight: '600', marginBottom: 20 },
 
   link: { alignItems: 'center' },
+  forgotBtn: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 8, marginTop: 4 },
+  forgotText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
   linkText: { color: colors.muted, fontSize: 14 },
   linkBold: { color: colors.accent, fontWeight: '600' },
   buildLabel: { color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 24, opacity: 0.5 },

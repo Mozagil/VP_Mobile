@@ -67,6 +67,12 @@ export const en: Catalog = {
   'auth.login.failed': 'Sign-in Failed',
   'auth.login.badCredentials': 'Incorrect email or password.',
   'auth.login.noAccount': "Don't have an account?",
+  'auth.login.forgot': 'Forgot password?',
+  'auth.forgot.needEmail': 'Enter your email address first, then tap again.',
+  'auth.forgot.sentTitle': 'Email sent',
+  'auth.forgot.sentBody':
+    'If {email} is registered, a password reset link has been sent. Check your inbox and spam folder.',
+  'auth.forgot.failed': 'Could not send the password reset email. Please try again later.',
   'auth.email': 'Email',
   'auth.emailPlaceholder': 'email@example.com',
   'auth.password': 'Password',
