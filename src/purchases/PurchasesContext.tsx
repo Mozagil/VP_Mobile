@@ -6,6 +6,7 @@ import Purchases, {
   PurchasesPackage,
 } from 'react-native-purchases';
 import { useAuth } from '../auth/AuthContext';
+import { setPaymentRequiredHandler } from '../api/client';
 import { ENTITLEMENT_ID, PURCHASES_ENABLED, RC_API_KEY, STORE_SUBSCRIPTIONS_URL } from './config';
 
 export type PurchaseOutcome =
@@ -45,7 +46,7 @@ function hasEntitlement(info: CustomerInfo | null): boolean {
 }
 
 export function PurchasesProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [infoReady, setInfoReady] = useState(!PURCHASES_ENABLED);
   // RevenueCat kimligi uygulama hesabiyla eslesene kadar abonelik durumu anonim
   // kullaniciya ait olur; bu bayrak olmadan abone kullanici acilista bir an
@@ -143,6 +144,19 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
       reloadOfferings();
     })();
   }, [user?.id, reloadOfferings]);
+
+  // Sunucu 402 dondugunde abonelik durumu iki kaynaktan da yeniden okunuyor.
+  // refreshUser her render'da yeni bir fonksiyon oldugu icin ref uzerinden
+  // cagriliyor; aksi halde bu efekt surekli yeniden kurulurdu.
+  const refreshUserRef = useRef(refreshUser);
+  refreshUserRef.current = refreshUser;
+
+  useEffect(() => {
+    setPaymentRequiredHandler(async () => {
+      await Promise.allSettled([refreshUserRef.current(), refreshCustomerInfo()]);
+    });
+    return () => setPaymentRequiredHandler(null);
+  }, [refreshCustomerInfo]);
 
   const purchase = useCallback(async (pkg: PurchasesPackage): Promise<PurchaseOutcome> => {
     try {

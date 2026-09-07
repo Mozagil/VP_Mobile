@@ -13,6 +13,27 @@ export const apiClient = axios.create({
 let isRefreshing = false;
 let refreshQueue: Array<(token: string) => void> = [];
 
+// Sunucu 402 dondugunde abonelik durumunu yeniden okumak icin cagrilir.
+// PurchasesContext kendini buraya kaydediyor; api katmani React'e bagimli
+// olmadan abonelik durumunun tazelenmesini tetikleyebiliyor.
+let paymentRequiredHandler: (() => Promise<void>) | null = null;
+let paymentRefreshInFlight: Promise<void> | null = null;
+
+export function setPaymentRequiredHandler(fn: (() => Promise<void>) | null) {
+  paymentRequiredHandler = fn;
+}
+
+function refreshSubscriptionState(): Promise<void> {
+  if (!paymentRequiredHandler) return Promise.resolve();
+  // Ayni anda birden fazla istek 402 alabiliyor; hepsi tek tazelemeyi beklesin.
+  if (!paymentRefreshInFlight) {
+    paymentRefreshInFlight = paymentRequiredHandler().finally(() => {
+      paymentRefreshInFlight = null;
+    });
+  }
+  return paymentRefreshInFlight;
+}
+
 apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   const token = await getAccessToken();
   if (token) {
@@ -25,6 +46,25 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
+
+    // 402 = sunucu aboneligi kapali goruyor. Iki sebebi olabilir:
+    //   1. Abonelik gercekten bitti — bu durumda tazeleme sonrasi isPro false
+    //      olur ve RootNavigator kullaniciyi paywall'a alir.
+    //   2. Satin alma yeni yapildi ve RevenueCat webhook'u sunucuya henuz
+    //      ulasmadi — bu durumda kisa bir bekleyisin ardindan tekrar denemek
+    //      yetiyor.
+    // 402 istegi sunucuda hicbir sey yapmadan reddedildigi icin tekrar deneme
+    // guvenli; ayni kayit iki kez olusmaz.
+    if (error.response?.status === 402 && original) {
+      await refreshSubscriptionState();
+      if (!original._retry402) {
+        original._retry402 = true;
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return apiClient(original);
+      }
+      return Promise.reject(error);
+    }
+
     if (error.response?.status !== 401 || original._retry) {
       return Promise.reject(error);
     }
