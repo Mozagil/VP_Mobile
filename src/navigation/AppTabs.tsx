@@ -57,7 +57,9 @@ export type AntrenmanStackParamList = {
   AntrenmanHub: undefined;
   ProgramDetail: { planId: string };
   NewTrainingChoice: undefined;
-  TrainingSuccess: { planId: string; planName: string; drillName: string };
+  // drillName yalnizca "drili plana ekle" akisinda dolu; AI sihirbazi bir
+  // drili degil butun antrenmani olusturdugu icin bos birakiyor.
+  TrainingSuccess: { planId: string; planName: string; drillName?: string };
   StartTraining: { planId: string };
   PhaseSequence: { planId: string; phase: string; showAll?: boolean };
   DrillPlayer: { planId: string; phase: string; index: number };

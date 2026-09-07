@@ -7,7 +7,7 @@ import { Colors } from '../../theme/palettes';
 import { useCreatePlan } from '../../hooks/useTrainingPlans';
 import { useCreateScheduledSession } from '../../hooks/useScheduledSessions';
 import Slider from '../../components/ui/Slider';
-import { useI18n, useContent, levelLabel } from '../../i18n';
+import { useI18n, levelLabel } from '../../i18n';
 import ScheduleStep, { getRoundedCurrentTime } from '../../components/ui/ScheduleStep';
 import { scheduleSessionReminders } from '../../utils/notifications';
 import Icon from '../../components/ui/Icon';
@@ -116,7 +116,6 @@ type Props = { navigation: any };
 export default function AIWizardScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const { t, lang } = useI18n();
-  const { drillName } = useContent();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const createPlan = useCreatePlan();
   const createSession = useCreateScheduledSession();
@@ -196,13 +195,12 @@ export default function AIWizardScreen({ navigation }: Props) {
         scheduleSessionReminders(planId, planName, selectedDate, sessionTime.trim() || null);
       }
 
+      // Dril adi gonderilmiyor: burada tek bir dril degil butun antrenman
+      // olusturuluyor. Basari ekrani antrenmanin adini gosteriyor — kullanici
+      // isim verdiyse onu, vermediyse "AI - Teknik Gelisim" gibi hedef adini.
       navigation.getParent()?.navigate('AntrenmanStack', {
         screen: 'TrainingSuccess',
-        params: {
-          planId,
-          planName,
-          drillName: sections[0]?.drills[0] ? drillName(sections[0].drills[0]) : planName,
-        },
+        params: { planId, planName },
       });
     } catch {
       Alert.alert(t('common.error'), t('ai.createError'));

@@ -376,6 +376,7 @@ export const tr = {
   'addToTraining.notePlaceholder': 'Bu çalışma ile ilgili not ekle...',
   'addToTraining.addError': 'Antrenmana eklenirken sorun oluştu.',
   'addToTraining.successBody': '"{drill}" çalışması {plan} antrenmanına eklendi.',
+  'addToTraining.successBodyPlan': '{plan} antrenmanı oluşturuldu.',
   'addToTraining.viewTraining': 'Antrenmanı Görüntüle',
 
   // ── Trainings / programs ───────────────────────────────────────────────────

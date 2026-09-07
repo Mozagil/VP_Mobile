@@ -30,7 +30,14 @@ export default function TrainingSuccessScreen({ route, navigation }: Props) {
           <Text style={s.checkTxt}>✓</Text>
         </View>
         <Text style={s.title}>{t('addToTraining.successTitle')}</Text>
-        <Text style={s.desc}>{t('addToTraining.successBody', { drill: drillName, plan: planName })}</Text>
+        {/* Bir dril eklendiginde hangi dril oldugu yaziliyor. AI sihirbazi
+            butun antrenmani olusturdugu icin dril adi gondermiyor; orada
+            antrenmanin kendi adi gosteriliyor. */}
+        <Text style={s.desc}>
+          {drillName
+            ? t('addToTraining.successBody', { drill: drillName, plan: planName })
+            : t('addToTraining.successBodyPlan', { plan: planName })}
+        </Text>
       </View>
 
       <View style={s.footer}>

@@ -379,6 +379,7 @@ export const en: Catalog = {
   'addToTraining.notePlaceholder': 'Add a note about this drill...',
   'addToTraining.addError': 'Something went wrong while adding it to the session.',
   'addToTraining.successBody': 'The "{drill}" drill was added to the {plan} session.',
+  'addToTraining.successBodyPlan': 'The {plan} session has been created.',
   'addToTraining.viewTraining': 'View Session',
 
   // ── Trainings / programs ───────────────────────────────────────────────────
