@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PurchasesPackage } from 'react-native-purchases';
@@ -11,7 +11,6 @@ import { useI18n } from '../../i18n';
 import { useAuth } from '../../auth/AuthContext';
 import { usePurchases } from '../../purchases/PurchasesContext';
 import { periodKey, trialDays, savingsPercent, STORE_NAME } from '../../purchases/format';
-import { TERMS_URL } from '../../purchases/config';
 
 const BENEFITS = [
   'paywall.benefit.programs',
@@ -181,7 +180,7 @@ export default function PaywallScreen({ navigation }: Props) {
         </TouchableOpacity>
 
         <View style={s.legalRow}>
-          <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
+          <TouchableOpacity onPress={() => navigation.navigate('Legal', { doc: 'terms' })}>
             <Text style={s.legalLink}>{t('paywall.terms')}</Text>
           </TouchableOpacity>
           <Text style={s.legalSep}>·</Text>

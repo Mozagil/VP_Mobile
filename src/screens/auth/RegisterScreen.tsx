@@ -4,6 +4,9 @@ import {
   ScrollView, TouchableOpacity, Alert, Modal, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '../../navigation/AuthStack';
 import { useAuth } from '../../auth/AuthContext';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -48,8 +51,45 @@ const GOALS = [
 
 const FREQUENCIES = [2, 3, 4, 5] as const;
 
+// Onay satiri: kutu ve metnin tamami dokunulabilir, yalnizca belge adi ayri
+// bir dokunma hedefi. Boylece kullanici yanlislikla kabul etmis olmadan metni
+// acabiliyor.
+function ConsentRow({
+  checked, onToggle, prefix, linkLabel, suffix, onOpen, styles,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  // Bagi cumlenin neresine dustugu dile gore degisiyor: Turkcede sonda ek
+  // aliyor, Ingilizcede basta bir giris cumlesi gerekiyor.
+  prefix: string;
+  linkLabel: string;
+  suffix: string;
+  onOpen: () => void;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <View style={styles.consentRow}>
+      <TouchableOpacity
+        onPress={onToggle}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked }}
+        style={[styles.checkbox, checked && styles.checkboxChecked]}
+      >
+        {checked && <Text style={styles.checkboxMark}>✓</Text>}
+      </TouchableOpacity>
+      <Text style={styles.consentText}>
+        {!!prefix && <Text>{prefix}</Text>}
+        <Text style={styles.consentLink} onPress={onOpen}>{linkLabel}</Text>
+        <Text>{suffix}</Text>
+      </Text>
+    </View>
+  );
+}
+
 export default function RegisterScreen() {
   const { signUp, finalizeSignUp } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'Register'>>();
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -66,6 +106,10 @@ export default function RegisterScreen() {
   const [position, setPosition] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
   const [frequency, setFrequency] = useState(3);
+  // Web arayuzuyle ayni onay: kullanici hesap acmadan once iki metni de kabul
+  // etmeli. Kutular isaretlenmeden Kayit Ol butonu pasif kalir.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   const toggleGoal = (g: string) =>
     setGoals((prev) => prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]);
@@ -192,6 +236,27 @@ export default function RegisterScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
+
+              <View style={styles.consentBox}>
+                <ConsentRow
+                  checked={acceptedTerms}
+                  onToggle={() => setAcceptedTerms((v) => !v)}
+                  linkLabel={t('legal.terms')}
+                  prefix={t('auth.register.consentPrefix')}
+                  suffix={t('auth.register.consentSuffix')}
+                  onOpen={() => navigation.navigate('Legal', { doc: 'terms' })}
+                  styles={styles}
+                />
+                <ConsentRow
+                  checked={acceptedPrivacy}
+                  onToggle={() => setAcceptedPrivacy((v) => !v)}
+                  linkLabel={t('legal.privacy')}
+                  prefix={t('auth.register.consentPrefix')}
+                  suffix={t('auth.register.consentSuffix')}
+                  onOpen={() => navigation.navigate('Legal', { doc: 'privacy' })}
+                  styles={styles}
+                />
+              </View>
             </View>
           )}
         </ScrollView>
@@ -206,7 +271,13 @@ export default function RegisterScreen() {
               disabled={step === 0 ? (!email || !password) : step === 1 ? !level : step === 2 ? !position : false}
             />
           ) : (
-            <Button title={t('auth.register.title')} onPress={submit} loading={loading} style={{ flex: 1 }} />
+            <Button
+              title={t('auth.register.title')}
+              onPress={submit}
+              loading={loading}
+              disabled={!acceptedTerms || !acceptedPrivacy}
+              style={{ flex: 1 }}
+            />
           )}
         </View>
       </KeyboardAvoidingView>
@@ -246,6 +317,17 @@ function makeStyles(colors: Colors) {
   },
   optionSelected: { borderColor: colors.accent, backgroundColor: colors.accent + '15' },
   optionTitle: { color: colors.foreground, fontSize: 15, fontWeight: '600' },
+
+  consentBox: { marginTop: 24, gap: 14 },
+  consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center', marginTop: 1,
+  },
+  checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
+  checkboxMark: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  consentText: { flex: 1, color: colors.muted, fontSize: 13, lineHeight: 19 },
+  consentLink: { color: colors.accent, fontWeight: '600', textDecorationLine: 'underline' },
   optionTitleSelected: { color: colors.accent },
   optionDesc: { color: colors.muted, fontSize: 13, marginTop: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },

@@ -6,7 +6,7 @@ import type { Lang } from '../i18n';
 // taraf analitik/reklam SDK'sı yoktur, bildirimler cihaz üzerinde yereldir.
 // İçerik değişirse LAST_UPDATED tarihini de güncelleyin.
 
-export type LegalDocKey = 'kvkk' | 'privacy';
+export type LegalDocKey = 'kvkk' | 'privacy' | 'terms';
 export type LegalSection = { heading: string; body: string };
 export type LegalDoc = { title: string; updated: string; sections: LegalSection[] };
 
@@ -397,9 +397,211 @@ Questions: ${SUPPORT_EMAIL}`,
   ],
 };
 
+// Kullanım Şartları. Fiyatlar bilerek yazılmadı: abonelik bedelleri mağaza
+// tarafından belirlenip paywall'da gösteriliyor, metne gömülürse fiyat
+// değiştiğinde şartlar yanlış hale gelir.
+const TERMS_TR: LegalDoc = {
+  title: 'Kullanım Şartları',
+  updated: LAST_UPDATED_TR,
+  sections: [
+    {
+      heading: '1. Taraflar ve Kapsam',
+      body: `Bu Kullanım Şartları, VoleyPro mobil uygulamasını ("Uygulama") kullanan kişi ("Kullanıcı") ile Uygulamayı sunan VoleyPro arasındaki ilişkiyi düzenler.
+
+Uygulamayı indirip hesap açtığınızda bu şartları kabul etmiş sayılırsınız. Kabul etmiyorsanız Uygulamayı kullanmayın.
+
+İletişim: ${SUPPORT_EMAIL}`,
+    },
+    {
+      heading: '2. Hizmetin Tanımı',
+      body: `VoleyPro, voleybol antrenmanı planlamak ve uygulamak için tasarlanmış bir dijital antrenman platformudur. Hazır antrenman programları, video anlatımlı hareket kütüphanesi, kişiye özel plan oluşturma aracı, antrenman takvimi ve gelişim takibi sunar.
+
+Uygulama bir spor eğitim aracıdır. Antrenör, fizyoterapist veya hekim yerine geçmez.`,
+    },
+    {
+      heading: '3. Hesap ve Kullanıcı Sorumlulukları',
+      body: `Hesap açarken doğru ve güncel bilgi vermeniz gerekir. Hesabınızın ve şifrenizin güvenliğinden siz sorumlusunuz; hesabınız üzerinden yapılan işlemler size ait sayılır.
+
+Hesabınızın izinsiz kullanıldığını düşünüyorsanız ${SUPPORT_EMAIL} adresinden bize bildirin.
+
+18 yaşından küçükseniz Uygulamayı ancak veli veya vasinizin bilgisi ve onayıyla kullanabilirsiniz.`,
+    },
+    {
+      heading: '4. Abonelik ve Ücretlendirme',
+      body: `Uygulamanın içeriğine erişim ücretli aboneliğe tabidir. Aylık ve yıllık seçenekler sunulur; güncel fiyatlar satın alma ekranında, kendi para biriminizde gösterilir.
+
+Yeni kullanıcılar için ücretsiz deneme süresi tanımlanmıştır. Deneme süresi sonunda abonelik, seçtiğiniz plan üzerinden otomatik olarak başlar ve iptal edilmediği sürece her dönem sonunda kendiliğinden yenilenir.
+
+Ödeme, uygulamayı indirdiğiniz mağaza (Apple App Store veya Google Play) üzerinden alınır. VoleyPro kart bilgilerinizi görmez ve saklamaz. Ücretlendirmeye ilişkin kayıtlar mağaza hesabınızda tutulur.`,
+    },
+    {
+      heading: '5. İptal',
+      body: `Aboneliğinizi istediğiniz zaman iptal edebilirsiniz. İptal, mağaza hesabınızın abonelik ayarlarından yapılır:
+
+• iOS: Ayarlar → Apple Kimliği → Abonelikler
+• Android: Google Play → Abonelikler
+
+İptal, mevcut dönemin bitiminde geçerli olur; dönem sonuna kadar erişiminiz devam eder. Ücretsiz deneme süresinde iptal ederseniz ücret alınmaz; iptalin, deneme süresi bitiminden en az 24 saat önce yapılması gerekir.
+
+İade talepleri VoleyPro tarafından değil, ödemeyi aldığı için doğrudan Apple veya Google tarafından değerlendirilir.`,
+    },
+    {
+      heading: '6. Cayma Hakkı (AB / AEA)',
+      body: `Avrupa Birliği veya Avrupa Ekonomik Alanı'nda ikamet eden tüketicilerin, dijital hizmet sözleşmelerinde 14 gün içinde cayma hakkı bulunur.
+
+Dijital içeriğe hemen erişim sağlandığı için, satın alma sırasında hizmetin derhal ifasına onay vermeniz halinde bu hak sona erebilir. Cayma talepleriniz için ${SUPPORT_EMAIL} adresine yazabilir, ayrıca ödemeyi aldığı için doğrudan mağazaya başvurabilirsiniz.`,
+    },
+    {
+      heading: '7. Sağlık ve Güvenlik Uyarısı',
+      body: `Uygulamadaki antrenman programları, hareketler ve öneriler genel bilgi amaçlıdır; tıbbi tavsiye, teşhis veya tedavi değildir.
+
+Fiziksel aktiviteye başlamadan önce, özellikle bilinen bir sağlık sorununuz, sakatlığınız veya şüpheniz varsa hekiminize danışın. Antrenman sırasında ağrı, baş dönmesi, nefes darlığı veya rahatsızlık hissederseniz derhal durun.
+
+Hareketleri kendi fiziksel durumunuza uygun şekilde ve güvenli bir ortamda uygulamak sizin sorumluluğunuzdadır. VoleyPro, Uygulamadaki içeriğin uygulanması sırasında oluşabilecek sakatlanma veya sağlık sorunlarından sorumlu tutulamaz.`,
+    },
+    {
+      heading: '8. Fikri Mülkiyet',
+      body: `Uygulamadaki tüm içerik — antrenman programları, hareket açıklamaları, videolar, görseller, metinler, tasarım ve yazılım — VoleyPro'ya veya lisans verenlerine aittir.
+
+Aboneliğiniz size bu içeriği yalnızca kişisel ve ticari olmayan amaçla kullanma hakkı verir. İçeriği kopyalayamaz, çoğaltamaz, dağıtamaz, yayınlayamaz, satamaz veya kendi hizmetinizin parçası haline getiremezsiniz.`,
+    },
+    {
+      heading: '9. Kullanım Kuralları',
+      body: `Uygulamayı kullanırken şunları yapamazsınız:
+
+• Uygulamanın güvenlik önlemlerini aşmaya veya kaynak koduna erişmeye çalışmak
+• Hesabınızı başkasıyla paylaşmak veya başkasının hesabına erişmeye çalışmak
+• Otomatik araçlarla veri toplamak
+• Uygulamayı yasa dışı bir amaçla veya üçüncü kişilerin haklarını ihlal edecek şekilde kullanmak
+
+Bu kuralların ihlali halinde hesabınız askıya alınabilir veya kapatılabilir.`,
+    },
+    {
+      heading: '10. Hizmette Değişiklik ve Sonlandırma',
+      body: `VoleyPro, Uygulamanın özelliklerini geliştirmek, değiştirmek veya bazı özellikleri kaldırmak hakkını saklı tutar. Aboneliğinizi doğrudan etkileyecek önemli değişiklikler size Uygulama içinden duyurulur.
+
+Hesabınızı istediğiniz zaman Uygulama içinden silebilirsiniz. Hesap silindiğinde verileriniz Gizlilik Politikası'nda açıklandığı şekilde silinir; aboneliğin iptali ayrıca mağaza üzerinden yapılmalıdır.`,
+    },
+    {
+      heading: '11. Sorumluluğun Sınırlandırılması',
+      body: `Uygulama "olduğu gibi" sunulur. Kesintisiz veya hatasız çalışacağı garanti edilmez.
+
+VoleyPro, yürürlükteki mevzuatın izin verdiği ölçüde, dolaylı zararlardan, veri kaybından veya kâr kaybından sorumlu değildir. Tüketici mevzuatından doğan haklarınız bu maddeden etkilenmez.`,
+    },
+    {
+      heading: '12. Uygulanacak Hukuk ve Değişiklikler',
+      body: `Bu şartlar Türkiye Cumhuriyeti hukukuna tabidir. Tüketici olarak, ikamet ettiğiniz ülkenin tüketici mevzuatının size tanıdığı zorunlu haklar saklıdır.
+
+Şartlar zaman zaman güncellenebilir. Güncel sürüm her zaman Uygulama içinde bulunur; önemli bir değişiklik olduğunda Uygulama içinden bilgilendirilirsiniz.
+
+Sorularınız için: ${SUPPORT_EMAIL}`,
+    },
+  ],
+};
+
+const TERMS_EN: LegalDoc = {
+  title: 'Terms of Use',
+  updated: LAST_UPDATED_EN,
+  sections: [
+    {
+      heading: '1. Parties and Scope',
+      body: `These Terms of Use govern the relationship between the person using the VoleyPro mobile application (the "App") and VoleyPro, which provides it.
+
+By downloading the App and creating an account you accept these terms. If you do not accept them, please do not use the App.
+
+Contact: ${SUPPORT_EMAIL}`,
+    },
+    {
+      heading: '2. The Service',
+      body: `VoleyPro is a digital training platform for planning and running volleyball practice. It offers ready-made training programmes, a drill library with instructional videos, a personalised plan builder, a training calendar and progress tracking.
+
+The App is a sports training tool. It does not replace a coach, a physiotherapist or a physician.`,
+    },
+    {
+      heading: '3. Your Account',
+      body: `You must provide accurate and current information when creating an account. You are responsible for keeping your account and password secure; activity carried out through your account is treated as yours.
+
+If you believe your account has been used without your permission, write to ${SUPPORT_EMAIL}.
+
+If you are under 18, you may use the App only with the knowledge and consent of a parent or guardian.`,
+    },
+    {
+      heading: '4. Subscription and Billing',
+      body: `Access to the App's content requires a paid subscription. Monthly and annual options are offered; current prices are shown on the purchase screen in your own currency.
+
+A free trial is offered to new users. At the end of the trial the subscription starts automatically on the plan you selected and renews at the end of each period unless cancelled.
+
+Payment is taken by the store you downloaded the App from (Apple App Store or Google Play). VoleyPro never sees or stores your card details. Billing records are kept in your store account.`,
+    },
+    {
+      heading: '5. Cancellation',
+      body: `You can cancel your subscription at any time from the subscription settings of your store account:
+
+• iOS: Settings → Apple Account → Subscriptions
+• Android: Google Play → Subscriptions
+
+Cancellation takes effect at the end of the current period; your access continues until then. If you cancel during the free trial you are not charged, provided you cancel at least 24 hours before the trial ends.
+
+Refund requests are handled directly by Apple or Google, since they take the payment, not by VoleyPro.`,
+    },
+    {
+      heading: '6. Right of Withdrawal (EU / EEA)',
+      body: `Consumers resident in the European Union or the European Economic Area have a 14-day right of withdrawal for digital service contracts.
+
+Because access to digital content is granted immediately, this right may lapse if you consent to immediate performance at the time of purchase. You may write to ${SUPPORT_EMAIL}, and you may also contact the store directly, as it processes the payment.`,
+    },
+    {
+      heading: '7. Health and Safety Notice',
+      body: `The training programmes, drills and suggestions in the App are for general information. They are not medical advice, diagnosis or treatment.
+
+Consult your physician before starting physical activity, particularly if you have a known health condition, an injury or any doubt. Stop immediately if you feel pain, dizziness, shortness of breath or discomfort during training.
+
+It is your responsibility to perform the drills in a way suited to your physical condition and in a safe environment. VoleyPro cannot be held responsible for injury or health problems arising while following content in the App.`,
+    },
+    {
+      heading: '8. Intellectual Property',
+      body: `All content in the App — training programmes, drill descriptions, videos, images, text, design and software — belongs to VoleyPro or its licensors.
+
+Your subscription grants you the right to use this content for personal, non-commercial purposes only. You may not copy, reproduce, distribute, publish, sell or incorporate the content into a service of your own.`,
+    },
+    {
+      heading: '9. Acceptable Use',
+      body: `While using the App you may not:
+
+• Attempt to circumvent security measures or access the source code
+• Share your account with others or attempt to access someone else's account
+• Collect data using automated tools
+• Use the App for unlawful purposes or in a way that infringes the rights of others
+
+Breaching these rules may result in your account being suspended or closed.`,
+    },
+    {
+      heading: '10. Changes to the Service and Termination',
+      body: `VoleyPro reserves the right to improve, change or remove features of the App. Significant changes that directly affect your subscription will be announced in the App.
+
+You may delete your account at any time from within the App. When the account is deleted your data is erased as described in the Privacy Policy; the subscription must be cancelled separately through the store.`,
+    },
+    {
+      heading: '11. Limitation of Liability',
+      body: `The App is provided "as is". It is not guaranteed to operate without interruption or error.
+
+To the extent permitted by applicable law, VoleyPro is not liable for indirect damage, loss of data or loss of profit. Your rights under consumer law are not affected by this clause.`,
+    },
+    {
+      heading: '12. Governing Law and Changes',
+      body: `These terms are governed by the laws of the Republic of Türkiye. As a consumer, the mandatory rights granted to you by the consumer legislation of your country of residence are reserved.
+
+These terms may be updated from time to time. The current version is always available in the App, and you will be informed in the App of any significant change.
+
+Questions: ${SUPPORT_EMAIL}`,
+    },
+  ],
+};
+
 const DOCS: Record<LegalDocKey, Record<Lang, LegalDoc>> = {
   kvkk: { tr: KVKK_TR, en: KVKK_EN },
   privacy: { tr: PRIVACY_TR, en: PRIVACY_EN },
+  terms: { tr: TERMS_TR, en: TERMS_EN },
 };
 
 export function legalDoc(key: LegalDocKey, lang: Lang): LegalDoc {

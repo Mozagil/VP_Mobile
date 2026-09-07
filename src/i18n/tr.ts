@@ -96,6 +96,10 @@ export const tr = {
   'auth.register.verifyBody':
     '{email} adresine bir doğrulama bağlantısı gönderdik. Hesabınızı tam olarak kullanabilmek için gelen kutunuzu kontrol edip mailinizi doğrulayın.',
   'auth.register.openMail': 'E-postamı Aç',
+  'auth.register.consentPrefix': '',
+  'auth.register.consentSuffix': "'nı okudum ve kabul ediyorum.",
+  'legal.terms': 'Kullanım Şartları',
+  'legal.privacy': 'Gizlilik Politikası',
 
   // ── Levels / positions / goals (profile vocabulary) ────────────────────────
   'level.beginner': 'Başlangıç',
@@ -270,7 +274,7 @@ export const tr = {
   'paywall.restored': 'Aboneliğin geri yüklendi.',
   'paywall.restoreNothing': 'Bu mağaza hesabında geri yüklenecek aktif bir abonelik bulunamadı.',
   'paywall.restoreFailed': 'Geri yükleme başarısız oldu. Lütfen tekrar dene.',
-  'paywall.terms': 'Kullanım Koşulları',
+  'paywall.terms': 'Kullanım Şartları',
   'paywall.privacy': 'Gizlilik Politikası',
   'paywall.loadError': 'Abonelik seçenekleri yüklenemedi. İnternet bağlantını kontrol edip tekrar dene.',
   'paywall.retry': 'Tekrar Dene',

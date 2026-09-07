@@ -99,6 +99,10 @@ export const en: Catalog = {
   'auth.register.verifyBody':
     'We sent a verification link to {email}. Check your inbox and verify your email to use your account fully.',
   'auth.register.openMail': 'Open My Email',
+  'auth.register.consentPrefix': 'I have read and accept the ',
+  'auth.register.consentSuffix': '.',
+  'legal.terms': 'Terms of Use',
+  'legal.privacy': 'Privacy Policy',
 
   // ── Levels / positions / goals (profile vocabulary) ────────────────────────
   'level.beginner': 'Beginner',

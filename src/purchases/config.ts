@@ -34,10 +34,10 @@ export const STORE_SUBSCRIPTIONS_URL = Platform.select({
   android: 'https://play.google.com/store/account/subscriptions',
 }) as string;
 
-/**
- * Kullanım Koşulları (EULA) bağlantısı. Apple, abonelik satan uygulamalarda
- * paywall üzerinde EULA linkini zorunlu tutuyor ve kendi metnin yoksa aşağıdaki
- * standart EULA'yı kabul ediyor. Kendi koşullarını yayınladığında bu adresi
- * değiştir ve App Store Connect'teki "License Agreement" alanını da güncelle.
+/*
+ * Kullanım Koşulları artık uygulamanın içinde: src/data/legalTexts.ts içindeki
+ * `terms` dokümanı, Legal ekranından gösteriliyor. Apple abonelik satan
+ * uygulamalarda paywall üzerinde EULA bağlantısını zorunlu tutuyor; kendi
+ * metnimiz olduğu için Apple'ın standart EULA adresine artık ihtiyaç yok.
+ * App Store Connect'teki "License Agreement" alanı da bu metinle aynı olmalı.
  */
-export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
