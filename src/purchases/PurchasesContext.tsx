@@ -7,7 +7,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import { useAuth } from '../auth/AuthContext';
 import { setPaymentRequiredHandler } from '../api/client';
-import { ENTITLEMENT_ID, PURCHASES_ENABLED, RC_API_KEY, STORE_SUBSCRIPTIONS_URL } from './config';
+import { ENTITLEMENT_ID, PAYWALL_ENABLED, PURCHASES_ENABLED, RC_API_KEY, STORE_SUBSCRIPTIONS_URL } from './config';
 
 export type PurchaseOutcome =
   | { status: 'success' }
@@ -88,8 +88,10 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
     if (!PURCHASES_ENABLED) {
       if (__DEV__) {
         console.warn(
-          '[purchases] EXPO_PUBLIC_RC_IOS_KEY / EXPO_PUBLIC_RC_ANDROID_KEY tanımlı değil — ' +
-            'abonelik kontrolü devre dışı, uygulama kilitsiz açılıyor.',
+          PAYWALL_ENABLED
+            ? '[purchases] EXPO_PUBLIC_RC_IOS_KEY / EXPO_PUBLIC_RC_ANDROID_KEY tanımlı değil — ' +
+                'abonelik kontrolü devre dışı, uygulama kilitsiz açılıyor.'
+            : '[purchases] EXPO_PUBLIC_PAYWALL_ENABLED=false — ücretsiz dönem, paywall kapalı.',
         );
       }
       return;

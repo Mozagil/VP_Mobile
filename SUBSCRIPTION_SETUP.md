@@ -174,6 +174,44 @@ gecikse bile kullanıcı paywall'a geri düşmüyor.
 Premium içerik dönen endpoint'lerde `is_pro` kontrolü yap. Bu yapılmadığı sürece
 paywall yalnızca arayüz seviyesinde bir engeldir.
 
+`require_pro` (backend/app/api/deps.py) `is_pro=false` görürse, `REVENUECAT_SECRET_API_KEY`
+tanımlıysa RevenueCat'e doğrudan sorar ve abonelik aktifse tabloyu günceller.
+Bu, webhook'un kaçırdığı durumları (token uyuşmazlığı, webhook canlıya alınmadan
+önce yapılmış satın alma) kapatır. Anahtar: RevenueCat panel → Project Settings →
+API Keys → **Secret API keys** (`sk_…`); sunucuda `.env` içine yaz.
+Kullanıcı başına en fazla 60 saniyede bir sorgu yapılır ve yalnızca erişim açılır;
+kapatma kararı webhook'un `EXPIRATION` olayında kalır.
+
+Webhook'un sunucuda yapılandırılıp yapılandırılmadığını dışarıdan doğrulamak için:
+
+```
+curl -s -X POST -H "Content-Type: application/json" -d "{}" https://voleypro.com/api/webhooks/revenuecat
+```
+
+`{"detail":"Invalid webhook token"}` → token tanımlı (istek beklendiği gibi reddedildi).
+`{"detail":"Webhook not configured"}` → sunucu `.env` içinde `REVENUECAT_WEBHOOK_TOKEN` boş.
+
+---
+
+## Ücretsiz dönem (şu an aktif)
+
+Apple incelemesi (2.1(b), Eylül 2026) sonrası karar: uygulama bir süre iki mağazada
+da ücretsiz. Abonelik altyapısı silinmedi, iki bayrakla kapatıldı:
+
+| Yer | Bayrak | Ücretsiz | Ücretli |
+|---|---|---|---|
+| Sunucu `.env` | `PREMIUM_GATING_ENABLED` | `false` | `true` (veya satırı sil) |
+| `eas.json` preview + production env | `EXPO_PUBLIC_PAYWALL_ENABLED` | `"false"` | satırı sil |
+
+Sunucu bayrağı kapalıyken `require_pro` herkesi geçirir ve `/auth/me` `is_pro=true`
+döner; bu sayede eski (paywall'lı) build'ler de kilitsiz açılır. Uygulama bayrağı
+kapalıyken RevenueCat SDK başlatılmaz, paywall ve Ayarlar'daki Abonelik bölümü
+görünmez.
+
+Ücretliye dönüş sırası: sunucuda bayrağı aç → eas.json'dan satırı kaldır → yeni
+build → App Store Connect'te abonelikleri sürümle birlikte incelemeye gönder (Google'da
+ürünler aktif kaldığı için ek adım yok).
+
 ---
 
 ## 5. Build ve test

@@ -21,12 +21,21 @@ export const RC_API_KEY =
 export const ENTITLEMENT_ID = 'voleypro_premium';
 
 /**
- * Anahtar yoksa (ör. anahtarlar girilmeden yapılan yerel geliştirme build'i)
- * satın alma katmanı tamamen devre dışı kalır ve paywall gösterilmez.
- * Production build'lerde anahtarların eas.json üzerinden geldiğinden emin ol —
- * aksi halde uygulama herkese ücretsiz açılır.
+ * Ücretsiz dönem anahtarı. eas.json'da `EXPO_PUBLIC_PAYWALL_ENABLED: "false"`
+ * iken RevenueCat SDK hiç başlatılmaz, paywall açılmaz ve Ayarlar'daki
+ * Abonelik bölümü görünmez; anahtarlar yerinde kalır. Ücretliye dönerken bu
+ * değişkeni eas.json'dan kaldırman (veya "true" yapman) yeterli.
+ * Sunucudaki karşılığı: backend .env → PREMIUM_GATING_ENABLED.
  */
-export const PURCHASES_ENABLED = RC_API_KEY.length > 0;
+export const PAYWALL_ENABLED = process.env.EXPO_PUBLIC_PAYWALL_ENABLED !== 'false';
+
+/**
+ * Anahtar yoksa (ör. anahtarlar girilmeden yapılan yerel geliştirme build'i)
+ * veya paywall bayrağı kapalıysa satın alma katmanı tamamen devre dışı kalır
+ * ve paywall gösterilmez. Ücretli döneme dönerken anahtarların eas.json
+ * üzerinden geldiğinden emin ol — aksi halde uygulama herkese ücretsiz açılır.
+ */
+export const PURCHASES_ENABLED = PAYWALL_ENABLED && RC_API_KEY.length > 0;
 
 /** Kullanıcının aboneliğini yönettiği store ekranı (managementURL yoksa yedek). */
 export const STORE_SUBSCRIPTIONS_URL = Platform.select({
