@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { tr } from './tr';
 import { en } from './en';
 import type { Lang, TranslationKey, Catalog } from './types';
+import { detectDeviceLang } from './deviceLang';
 
 const STORAGE_KEY = 'voleypro_language';
 
@@ -36,8 +37,9 @@ function interpolate(template: string, vars?: Record<string, string | number>) {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // Turkish stays the default: existing users see no change until they opt in.
-  const [lang, setLangState] = useState<Lang>('tr');
+  // Until the user picks a language in the profile the app follows the device:
+  // Turkish on a Turkish device, English everywhere else. A saved choice always wins.
+  const [lang, setLangState] = useState<Lang>(detectDeviceLang);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((saved) => {
