@@ -66,7 +66,7 @@ export default function DashboardScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      <StatusBar barStyle="light-content" />
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
