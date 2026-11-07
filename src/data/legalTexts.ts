@@ -3,7 +3,10 @@ import type { Lang } from '../i18n';
 // KVKK Aydınlatma Metni ve Gizlilik Politikası içerikleri.
 // Metinler uygulamanın gerçek veri akışına göre yazılmıştır: veriler
 // voleypro.com altyapısında (Türkiye) tek origin üzerinden işlenir, üçüncü
-// taraf analitik/reklam SDK'sı yoktur, bildirimler cihaz üzerinde yereldir.
+// taraf analitik/reklam SDK'sı yoktur (RevenueCat yalnızca satın alma
+// doğrulaması), bildirimler cihaz üzerinde yereldir. Sunucu, girişte cihaz
+// türünü ve IP'den türetilen ülke/şehri kaydeder; şifreli yedekler e-postayla
+// Hostinger'a gider (30 gün); hesap silme 30 gün bekleme süreli.
 // İçerik değişirse LAST_UPDATED tarihini de güncelleyin.
 
 export type LegalDocKey = 'kvkk' | 'privacy' | 'terms';
@@ -12,8 +15,8 @@ export type LegalDoc = { title: string; updated: string; sections: LegalSection[
 
 export const SUPPORT_EMAIL = 'info@voleypro.com';
 
-const LAST_UPDATED_TR = 'Son güncelleme: 20 Ağustos 2026';
-const LAST_UPDATED_EN = 'Last updated: 20 August 2026';
+const LAST_UPDATED_TR = 'Son güncelleme: 7 Kasım 2026';
+const LAST_UPDATED_EN = 'Last updated: 7 November 2026';
 
 const KVKK_TR: LegalDoc = {
   title: 'KVKK Aydınlatma Metni',
@@ -32,10 +35,12 @@ Uygulama: VoleyPro mobil uygulaması (iOS ve Android)`,
       body: `• Kimlik bilgisi: ad, soyad
 • İletişim bilgisi: e-posta adresi
 • İşlem güvenliği bilgisi: şifrelenmiş (hash'lenmiş) parolanız, oturum anahtarları, hesap oluşturma ve giriş kayıtları
+• Teknik kayıtlar: giriş yaptığınız cihazın türü (işletim sistemi, uygulama sürümü) ve IP adresinizden türetilen yaklaşık konum (ülke ve şehir); IP adresinin kendisi hesabınızla birlikte saklanmaz
+• Sunucu erişim kayıtları: IP adresi, cihaz bilgisi (user-agent), istenen adres ile tarih ve saat (en fazla 14 gün)
 • Spor profili bilgileri: seviye, mevki, antrenman hedefleri, haftalık antrenman sıklığı, tercih ettiğiniz günler, seans süresi ve yoğunluk tercihi
 • Uygulama içi kullanım verileri: oluşturduğunuz antrenman programları, programlara eklediğiniz hareketler ve notlar, tamamladığınız hareket kayıtları, antrenman takvimi ve planladığınız seanslar
 
-Uygulama doğum tarihi, T.C. kimlik numarası, konum, rehber, fotoğraf galerisi, biyometrik veri veya KVKK m.6 anlamında özel nitelikli kişisel veri (sağlık verisi dâhil) toplamamaktadır.`,
+Uygulama doğum tarihi, T.C. kimlik numarası, cihaz konumu (GPS), rehber, fotoğraf galerisi, biyometrik veri veya KVKK m.6 anlamında özel nitelikli kişisel veri (sağlık verisi dâhil) toplamamaktadır.`,
     },
     {
       heading: '3. İşleme Amaçları',
@@ -59,20 +64,25 @@ Uygulama doğum tarihi, T.C. kimlik numarası, konum, rehber, fotoğraf galerisi
     },
     {
       heading: '5. Toplama Yöntemi',
-      body: 'Kişisel verileriniz, tamamen elektronik ortamda ve doğrudan sizden, uygulamaya kayıt olurken ve uygulamayı kullanırken doldurduğunuz formlar aracılığıyla toplanır. Uygulamada üçüncü taraf analitik, reklam veya takip yazılımı (SDK) bulunmamaktadır.',
+      body: 'Kişisel verileriniz tamamen elektronik ortamda toplanır: doğrudan sizden, uygulamaya kayıt olurken ve uygulamayı kullanırken doldurduğunuz formlar aracılığıyla; ayrıca uygulamanın sunucuyla iletişimi sırasında otomatik olarak oluşan teknik kayıtlar (cihaz türü, IP adresinden türetilen ülke/şehir, sunucu erişim kayıtları) aracılığıyla. Uygulamada üçüncü taraf analitik, reklam veya takip yazılımı (SDK) bulunmamaktadır; ücretli abonelik aktif olduğunda yalnızca satın alma doğrulaması için RevenueCat SDK\'sı kullanılır (bkz. 6).',
     },
     {
       heading: '6. Kişisel Verilerin Aktarılması',
       body: `Kişisel verileriniz pazarlama, reklam veya profilleme amacıyla üçüncü kişilere satılmaz, kiralanmaz ve aktarılmaz.
 
-Uygulama, verilerinizi yalnızca VoleyPro altyapısındaki sunucularda (Türkiye) işler; uygulama içindeki video ve içerikler de aynı altyapı üzerinden sunulur. Verileriniz yurt dışına aktarılmamaktadır.
+Uygulama, verilerinizi VoleyPro altyapısındaki sunucularda (İstanbul, Türkiye) işler; uygulama içindeki video ve içerikler de aynı altyapı üzerinden sunulur. Sunucu barındırma hizmetini veren veri merkezi, veri işleyen sıfatıyla yalnızca VoleyPro'nun talimatıyla hareket eder.
+
+Yedekler: Verilerinizin şifreli yedeği her gece alınır. Yedeğin bir kopyası, yalnızca VoleyPro'nun erişebildiği e-posta hesabında (Hostinger) en fazla 30 gün saklanır. Yedekler, e-posta sağlayıcısının okuyamayacağı şekilde güçlü şifrelemeyle (AES-256) korunur; sağlayıcının sunucuları Avrupa Birliği'nde bulunabilir, bu nedenle şifreli yedek kopyası bakımından yurt dışına aktarım söz konusu olabilir.
+
+Abonelik: Ücretli abonelik aktif olduğunda ödeme Apple App Store veya Google Play üzerinden alınır ve satın alma durumu RevenueCat (ABD) hizmetiyle doğrulanır. RevenueCat'e adınız veya e-posta adresiniz değil, yalnızca anonim bir hesap kimliği ve mağaza satın alma bilgileri iletilir; kart bilgileriniz VoleyPro'ya hiçbir zaman ulaşmaz.
 
 Verileriniz yalnızca kanunen yetkili kamu kurum ve kuruluşlarının usulüne uygun talebi hâlinde, ilgili mevzuatın öngördüğü sınırlar içinde paylaşılabilir.`,
     },
     {
       heading: '7. Saklama Süreleri',
       body: `• Hesap ve profil verileriniz, hesabınız aktif olduğu sürece saklanır.
-• Hesabınızı sildiğinizde, hesabınıza bağlı kişisel verileriniz en geç 6 ay içinde silinir, yok edilir veya anonim hâle getirilir.
+• Hesabınızı silmek istediğinizde 30 günlük bekleme süresi başlar; bu sürede hesabınızı kullanmaya devam edebilir ve talebi uygulama içinden iptal edebilirsiniz. Süre sonunda hesabınız ve ona bağlı kişisel verileriniz kalıcı olarak silinir; şifreli yedek kopyalarından da en geç 30 gün içinde düşer.
+• Sunucu erişim kayıtları en fazla 14 gün saklanır.
 • Mevzuat gereği belirli kayıtların daha uzun süre saklanması gerekiyorsa, yalnızca ilgili mevzuatın öngördüğü süre boyunca ve o amaçla sınırlı olarak saklanır.`,
     },
     {
@@ -103,7 +113,7 @@ haklarına sahipsiniz.`,
       heading: '11. Başvuru Yöntemi',
       body: `Haklarınızı kullanmak için taleplerinizi ${SUPPORT_EMAIL} adresine iletebilirsiniz. Başvurularınız en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi hâlinde Kurul tarafından belirlenen tarifedeki ücret talep edilebilir.
 
-Hesabınızı ve verilerinizi uygulama içinden de silebilirsiniz: Ana Sayfa > Profil ve Ayarlar > Hesabı Sil.`,
+Hesabınızı ve verilerinizi uygulama içinden de silebilirsiniz: Ana Sayfa > Profil ve Ayarlar > Hesabı Sil. Silme, 30 günlük bekleme süresinin ardından gerçekleşir; bu sürede aynı ekrandan iptal edebilirsiniz.`,
     },
     {
       heading: '12. Değişiklikler',
@@ -130,13 +140,15 @@ Spor profili: seviyeniz, mevkiniz, antrenman hedefleriniz, haftalık antrenman s
 
 Antrenman verileri: oluşturduğunuz programlar, programlara eklediğiniz hareketler ve notlar, tamamladığınız hareketler ve antrenman takviminiz.
 
-Bu bilgilerin tamamını doğrudan siz girersiniz; arka planda sessizce toplanan bir veri yoktur.`,
+Teknik kayıtlar: giriş yaptığınız cihazın türü (işletim sistemi, uygulama sürümü) ve IP adresinizden türetilen yaklaşık konum (ülke ve şehir). IP adresinin kendisi hesabınızla saklanmaz. Sunucularımız ayrıca her isteğin erişim kaydını (IP adresi, cihaz bilgisi, istenen adres, tarih ve saat) güvenlik amacıyla en fazla 14 gün tutar.
+
+Bunların dışındaki tüm bilgileri doğrudan siz girersiniz; arka planda sessizce toplanan başka bir veri yoktur.`,
     },
     {
       heading: '3. Toplamadığımız Bilgiler',
       body: `Uygulama şunları toplamaz:
 
-• Konum bilgisi
+• Cihazınızın konumu (GPS); yalnızca IP adresinden yaklaşık ülke ve şehir türetilir (bkz. 2)
 • Rehber, çağrı kaydı veya mesajlar
 • Fotoğraf galerisi veya kamera içeriği
 • Biyometrik veri
@@ -144,7 +156,7 @@ Bu bilgilerin tamamını doğrudan siz girersiniz; arka planda sessizce toplanan
 • Doğum tarihi
 • Reklam kimliği (IDFA/GAID)
 
-Uygulamada üçüncü taraf analitik, reklam ağı veya sosyal medya takip SDK'sı bulunmaz; davranışsal reklam amacıyla takip yapılmaz.`,
+Uygulamada üçüncü taraf analitik, reklam ağı veya sosyal medya takip SDK'sı bulunmaz; davranışsal reklam amacıyla takip yapılmaz. Tek üçüncü taraf bileşen, ücretli abonelik aktif olduğunda satın almaları doğrulayan RevenueCat'tir (bkz. 7).`,
     },
     {
       heading: '4. Bilgileri Nasıl Kullanıyoruz',
@@ -173,15 +185,21 @@ Bu veriler cihazınızda kalır. Uygulamayı sildiğinizde bunlar da cihazınız
     },
     {
       heading: '7. Veri Paylaşımı ve Barındırma',
-      body: `Verileriniz VoleyPro altyapısındaki sunucularda (Türkiye) barındırılır. Uygulamanın kullandığı API ve video içerikleri aynı altyapıdan sunulur; verileriniz yurt dışına aktarılmaz.
+      body: `Verileriniz VoleyPro altyapısındaki sunucularda (İstanbul, Türkiye) barındırılır. Uygulamanın kullandığı API ve video içerikleri aynı altyapıdan sunulur.
 
-Verilerinizi üçüncü taraflarla paylaşmayız. Tek istisna, kanunen yetkili kamu kurumlarının usulüne uygun talepleridir.`,
+Yedekler: Verilerinizin şifreli yedeği her gece alınır; bir kopyası yalnızca VoleyPro'nun erişebildiği e-posta hesabında (Hostinger) en fazla 30 gün saklanır. Yedekler, sağlayıcının okuyamayacağı şekilde şifrelidir (AES-256); sağlayıcının sunucuları Avrupa Birliği'nde bulunabilir.
+
+Abonelik: Ücretli abonelik aktif olduğunda ödeme Apple App Store veya Google Play üzerinden alınır; satın alma durumu RevenueCat hizmetiyle doğrulanır. RevenueCat'e adınız veya e-postanız değil, yalnızca anonim bir hesap kimliği ve mağaza satın alma bilgileri gider.
+
+Bunların dışında verilerinizi üçüncü taraflarla paylaşmayız. Tek istisna, kanunen yetkili kamu kurumlarının usulüne uygun talepleridir.`,
     },
     {
       heading: '8. Saklama ve Silme',
       body: `Verileriniz hesabınız aktif olduğu sürece saklanır. Hesabınızı uygulama içinden silebilirsiniz: Ana Sayfa > Profil ve Ayarlar > Hesabı Sil.
 
-Hesap silme talebinizin ardından kişisel verileriniz en geç 6 ay içinde silinir, yok edilir veya anonim hâle getirilir. Verilerinizin bir kopyasını talep etmek için ${SUPPORT_EMAIL} adresine yazabilirsiniz.`,
+Silme talebinizden sonra 30 günlük bekleme süresi başlar: bu sürede hesabınızı kullanmaya devam edebilir ve aynı ekrandan talebi iptal edebilirsiniz. Süre dolunca hesabınız ve kişisel verileriniz kalıcı olarak silinir; şifreli yedek kopyalarından da en geç 30 gün içinde düşer. Sunucu erişim kayıtları en fazla 14 gün tutulur.
+
+Verilerinizin bir kopyasını talep etmek için ${SUPPORT_EMAIL} adresine yazabilirsiniz.`,
     },
     {
       heading: '9. Güvenlik',
@@ -225,10 +243,12 @@ Service: VoleyPro mobile app (iOS and Android)`,
       body: `• Identity data: first name, last name
 • Contact data: email address
 • Security data: your hashed password, session tokens, sign-up and sign-in records
+• Technical records: the type of device you sign in from (operating system, app version) and an approximate location (country and city) derived from your IP address; the IP address itself is not stored with your account
+• Server access logs: IP address, device information (user agent), the address requested, and date and time (kept for at most 14 days)
 • Sports profile: level, position, training goals, weekly training frequency, preferred days, preferred session length and intensity
 • In-app usage data: training programs you create, drills and notes you add to them, drills you complete, and your training calendar
 
-The app does not collect date of birth, national ID, location, contacts, photo library, biometric data, or any special category of personal data (including health data) within the meaning of Article 6 of the KVKK.`,
+The app does not collect date of birth, national ID, device location (GPS), contacts, photo library, biometric data, or any special category of personal data (including health data) within the meaning of Article 6 of the KVKK.`,
     },
     {
       heading: '3. Purposes of Processing',
@@ -250,20 +270,25 @@ The app does not collect date of birth, national ID, location, contacts, photo l
     },
     {
       heading: '5. Method of Collection',
-      body: 'Your personal data is collected electronically and directly from you, through the forms you fill in when you register and while you use the app. The app contains no third-party analytics, advertising or tracking SDKs.',
+      body: 'Your personal data is collected electronically: directly from you, through the forms you fill in when you register and while you use the app, and through technical records created automatically when the app talks to the server (device type, country/city derived from the IP address, server access logs). The app contains no third-party analytics, advertising or tracking SDKs; once paid subscriptions are active, the RevenueCat SDK is used solely to verify purchases (see 6).',
     },
     {
       heading: '6. Transfer of Personal Data',
       body: `Your personal data is never sold, rented or transferred to third parties for marketing, advertising or profiling purposes.
 
-Your data is processed only on VoleyPro infrastructure located in Türkiye, and in-app videos and content are served from the same infrastructure. Your data is not transferred abroad.
+Your data is processed on VoleyPro infrastructure located in Istanbul, Türkiye, and in-app videos and content are served from the same infrastructure. The data centre hosting the servers acts as a data processor solely on VoleyPro's instructions.
+
+Backups: An encrypted backup of your data is taken every night. One copy is kept for at most 30 days in an email account accessible only to VoleyPro (Hostinger). Backups are protected with strong encryption (AES-256) that the email provider cannot read; the provider's servers may be located in the European Union, so the encrypted backup copy may constitute a transfer abroad.
+
+Subscriptions: Once paid subscriptions are active, payment is taken through the Apple App Store or Google Play and the purchase status is verified through RevenueCat (USA). RevenueCat receives only an anonymous account identifier and store purchase details, never your name or email address; your card details never reach VoleyPro.
 
 Data may only be shared with public authorities that are legally competent, upon a duly made request and within the limits set by the applicable legislation.`,
     },
     {
       heading: '7. Retention Periods',
       body: `• Your account and profile data is kept for as long as your account is active.
-• When you delete your account, the personal data linked to it is erased, destroyed or anonymised within 6 months at the latest.
+• When you ask to delete your account, a 30-day waiting period starts; during it you can keep using your account and cancel the request from within the app. When the period ends, your account and the personal data linked to it are permanently erased, and they drop out of the encrypted backup copies within 30 days at the latest.
+• Server access logs are kept for at most 14 days.
 • Where legislation requires certain records to be kept longer, they are retained only for that period and only for that purpose.`,
     },
     {
@@ -292,7 +317,7 @@ Data may only be shared with public authorities that are legally competent, upon
       heading: '11. How to Apply',
       body: `To exercise your rights, send your request to ${SUPPORT_EMAIL}. Requests are answered free of charge within 30 days at the latest; where the process incurs an additional cost, the fee set by the Board may apply.
 
-You can also delete your account and data from within the app: Home > Profile and Settings > Delete Account.`,
+You can also delete your account and data from within the app: Home > Profile and Settings > Delete Account. Deletion takes effect after a 30-day waiting period, during which you can cancel it on the same screen.`,
     },
     {
       heading: '12. Changes',
@@ -319,13 +344,15 @@ Sports profile: your level, position, training goals, weekly training frequency,
 
 Training data: the programs you create, the drills and notes you add to them, the drills you complete and your training calendar.
 
-You enter all of this information yourself; nothing is collected silently in the background.`,
+Technical records: the type of device you sign in from (operating system, app version) and an approximate location (country and city) derived from your IP address. The IP address itself is not stored with your account. Our servers also keep an access log of each request (IP address, device information, address requested, date and time) for security, for at most 14 days.
+
+Everything else you enter yourself; nothing else is collected silently in the background.`,
     },
     {
       heading: '3. Information We Do Not Collect',
       body: `The app does not collect:
 
-• Location data
+• Your device location (GPS); only an approximate country and city is derived from the IP address (see 2)
 • Contacts, call logs or messages
 • Photo library or camera content
 • Biometric data
@@ -333,7 +360,7 @@ You enter all of this information yourself; nothing is collected silently in the
 • Date of birth
 • Advertising identifiers (IDFA/GAID)
 
-The app contains no third-party analytics, ad network or social media tracking SDKs, and does not track you for behavioural advertising.`,
+The app contains no third-party analytics, ad network or social media tracking SDKs, and does not track you for behavioural advertising. The only third-party component is RevenueCat, which verifies purchases once paid subscriptions are active (see 7).`,
     },
     {
       heading: '4. How We Use the Information',
@@ -362,15 +389,21 @@ This data stays on your device and is removed when you uninstall the app.`,
     },
     {
       heading: '7. Sharing and Hosting',
-      body: `Your data is hosted on VoleyPro infrastructure located in Türkiye. The API and video content used by the app are served from the same infrastructure; your data is not transferred abroad.
+      body: `Your data is hosted on VoleyPro infrastructure located in Istanbul, Türkiye. The API and video content used by the app are served from the same infrastructure.
 
-We do not share your data with third parties. The only exception is a duly made request from a legally competent public authority.`,
+Backups: An encrypted backup of your data is taken every night; one copy is kept for at most 30 days in an email account accessible only to VoleyPro (Hostinger). Backups are encrypted (AES-256) so that the provider cannot read them; the provider's servers may be located in the European Union.
+
+Subscriptions: Once paid subscriptions are active, payment is taken through the Apple App Store or Google Play and the purchase status is verified through RevenueCat. RevenueCat receives only an anonymous account identifier and store purchase details, never your name or email address.
+
+Beyond this we do not share your data with third parties. The only exception is a duly made request from a legally competent public authority.`,
     },
     {
       heading: '8. Retention and Deletion',
       body: `Your data is kept for as long as your account is active. You can delete your account from within the app: Home > Profile and Settings > Delete Account.
 
-After a deletion request, your personal data is erased, destroyed or anonymised within 6 months at the latest. To request a copy of your data, write to ${SUPPORT_EMAIL}.`,
+After a deletion request, a 30-day waiting period starts: during it you can keep using your account and cancel the request on the same screen. When the period ends, your account and personal data are permanently erased and drop out of the encrypted backup copies within 30 days at the latest. Server access logs are kept for at most 14 days.
+
+To request a copy of your data, write to ${SUPPORT_EMAIL}.`,
     },
     {
       heading: '9. Security',

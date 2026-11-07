@@ -11,8 +11,9 @@ import Input from '../../components/ui/Input';
 import Icon from '../../components/ui/Icon';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
-import { useI18n } from '../../i18n';
+import { useI18n, LOCALE } from '../../i18n';
 import type { Lang } from '../../i18n';
+import { formatPurgeDate } from '../dashboard/DeleteAccountScreen';
 
 // Surum app.json'dan okunuyor; elle yazilan deger guncellenmeyi unutuldugu
 // icin ekranda 1.0.0 kalmisti.
@@ -250,6 +251,15 @@ export default function SettingsScreen({ navigation }: Props) {
             <Text style={s.rowValue}>{user?.email}</Text>
           </View>
           <LinkRow label={t('settings.changePassword')} onPress={() => setShowPwForm((v) => !v)} s={s} />
+          {user?.deletion && (
+            // Bekleyen silme talebi: tarih + Hesabı Sil ekranına gecis (iptal dugmesi orada).
+            <LinkRow
+              label={t('settings.deletionPending')}
+              value={formatPurgeDate(user.deletion.purge_at, LOCALE[lang])}
+              onPress={() => navigation.navigate('DeleteAccount')}
+              s={s}
+            />
+          )}
         </View>
 
         {showPwForm && (

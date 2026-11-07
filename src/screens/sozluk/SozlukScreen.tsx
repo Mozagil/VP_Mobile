@@ -116,7 +116,7 @@ export default function SozlukScreen({ navigation }: Props) {
         />
       </View>
 
-      <View style={s.chipsRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipsScroll} contentContainerStyle={s.chipsRow}>
         {CATEGORIES.map((c) => {
           const active = quickCategory === c;
           return (
@@ -130,7 +130,7 @@ export default function SozlukScreen({ navigation }: Props) {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       <View style={s.countRow}>
         <Text style={s.count}>{t('sozluk.totalTerms', { n: filtered.length })}</Text>
@@ -214,7 +214,9 @@ function makeStyles(colors: Colors) {
     borderWidth: 1, borderColor: colors.border, fontSize: 14,
   },
 
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, gap: 8, marginBottom: 4 },
+  // One scrolling line: the categories no longer fit on a phone without wrapping to three rows.
+  chipsScroll: { flexGrow: 0, marginBottom: 4 },
+  chipsRow: { flexDirection: 'row', paddingHorizontal: 12, gap: 8 },
   chip: {
     borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card,
     paddingHorizontal: 12, paddingVertical: 6,

@@ -107,6 +107,9 @@ export const SOZLUK_CATEGORY_EN: Record<string, string> = {
   'Servis': 'Serve',
   'Pas': 'Pass',
   'Blok': 'Block',
+  'Taktik': 'Tactics',
+  'Pozisyon': 'Positions',
+  'Saha': 'Court',
   'Kural': 'Rules',
   'Diğer': 'Other',
 };
@@ -136,6 +139,8 @@ export const SOZLUK_KEYWORD_EN: Record<string, string> = {
   'gövde pozisyonu': 'body position',
   'platform': 'platform',
   'istatistik': 'statistics',
+  'saha': 'court',
+  'taktik': 'tactics',
 };
 export const sozlukKeywordLabel = make(SOZLUK_KEYWORD_EN);
 

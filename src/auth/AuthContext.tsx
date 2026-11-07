@@ -16,6 +16,8 @@ export type UserProfile = {
   language: string;
   /** Sunucu tarafında doğrulanmış abonelik durumu — RevenueCat webhook'u yazar. */
   is_pro?: boolean;
+  /** Bekleyen hesap silme talebi (30 gün bekleme); yoksa null. */
+  deletion?: { requested_at: string; purge_at: string } | null;
 };
 
 type AuthContextType = {
