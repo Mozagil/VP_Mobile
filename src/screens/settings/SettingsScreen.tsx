@@ -120,6 +120,35 @@ export default function SettingsScreen({ navigation }: Props) {
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // KVKK m.11 / GDPR tasinabilirlik: sunucu hesabin tamamini tek JSON olarak
+  // verir (backend/app/services/data_export.py). Uygulamada dosya yazma modulu
+  // olmadigi icin paylasim menusune metin olarak veriyoruz; kullanici oradan
+  // Dosyalar'a, e-postaya ya da notlara kaydeder.
+  const exportData = () => {
+    if (exporting) return;
+    Alert.alert(t('settings.exportInfoTitle'), t('settings.exportInfoBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('settings.exportContinue'),
+        onPress: async () => {
+          setExporting(true);
+          try {
+            const { data } = await apiClient.get('/auth/me/export');
+            await Share.share(
+              { title: t('settings.exportShareTitle'), message: JSON.stringify(data, null, 2) },
+              { dialogTitle: t('settings.exportShareTitle'), subject: t('settings.exportShareTitle') },
+            );
+          } catch {
+            Alert.alert(t('common.error'), t('settings.exportFailed'));
+          } finally {
+            setExporting(false);
+          }
+        },
+      },
+    ]);
+  };
 
   const changePassword = async () => {
     if (!currentPw || !newPw || !confirmPw) {
@@ -251,6 +280,7 @@ export default function SettingsScreen({ navigation }: Props) {
             <Text style={s.rowValue}>{user?.email}</Text>
           </View>
           <LinkRow label={t('settings.changePassword')} onPress={() => setShowPwForm((v) => !v)} s={s} />
+          <LinkRow label={t('settings.exportData')} value={exporting ? '…' : undefined} onPress={exportData} s={s} />
           {user?.deletion && (
             // Bekleyen silme talebi: tarih + Hesabı Sil ekranına gecis (iptal dugmesi orada).
             <LinkRow

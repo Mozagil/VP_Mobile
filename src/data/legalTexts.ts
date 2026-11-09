@@ -15,8 +15,8 @@ export type LegalDoc = { title: string; updated: string; sections: LegalSection[
 
 export const SUPPORT_EMAIL = 'info@voleypro.com';
 
-const LAST_UPDATED_TR = 'Son güncelleme: 7 Kasım 2026';
-const LAST_UPDATED_EN = 'Last updated: 7 November 2026';
+const LAST_UPDATED_TR = 'Son güncelleme: 8 Kasım 2026';
+const LAST_UPDATED_EN = 'Last updated: 8 November 2026';
 
 const KVKK_TR: LegalDoc = {
   title: 'KVKK Aydınlatma Metni',
@@ -111,7 +111,7 @@ haklarına sahipsiniz.`,
     },
     {
       heading: '11. Başvuru Yöntemi',
-      body: `Haklarınızı kullanmak için taleplerinizi ${SUPPORT_EMAIL} adresine iletebilirsiniz. Başvurularınız en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi hâlinde Kurul tarafından belirlenen tarifedeki ücret talep edilebilir.
+      body: `Verilerinizin bir kopyasını beklemeden, uygulama içinden alabilirsiniz: Ayarlar > Hesap > Verilerimi indir (makine tarafından okunabilir JSON biçiminde). Diğer haklarınızı kullanmak için taleplerinizi ${SUPPORT_EMAIL} adresine iletebilirsiniz. Başvurularınız en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi hâlinde Kurul tarafından belirlenen tarifedeki ücret talep edilebilir.
 
 Hesabınızı ve verilerinizi uygulama içinden de silebilirsiniz: Ana Sayfa > Profil ve Ayarlar > Hesabı Sil. Silme, 30 günlük bekleme süresinin ardından gerçekleşir; bu sürede aynı ekrandan iptal edebilirsiniz.`,
     },
@@ -199,7 +199,7 @@ Bunların dışında verilerinizi üçüncü taraflarla paylaşmayız. Tek istis
 
 Silme talebinizden sonra 30 günlük bekleme süresi başlar: bu sürede hesabınızı kullanmaya devam edebilir ve aynı ekrandan talebi iptal edebilirsiniz. Süre dolunca hesabınız ve kişisel verileriniz kalıcı olarak silinir; şifreli yedek kopyalarından da en geç 30 gün içinde düşer. Sunucu erişim kayıtları en fazla 14 gün tutulur.
 
-Verilerinizin bir kopyasını talep etmek için ${SUPPORT_EMAIL} adresine yazabilirsiniz.`,
+Verilerinizin bir kopyasını uygulama içinden alabilirsiniz: Ayarlar > Hesap > Verilerimi indir (JSON biçiminde). Dilerseniz ${SUPPORT_EMAIL} adresine de yazabilirsiniz.`,
     },
     {
       heading: '9. Güvenlik',
@@ -207,13 +207,13 @@ Verilerinizin bir kopyasını talep etmek için ${SUPPORT_EMAIL} adresine yazabi
     },
     {
       heading: '10. Çocukların Gizliliği',
-      body: 'VoleyPro her yaştan sporcuya yöneliktir. 18 yaşından küçükseniz uygulamayı veli veya vasinizin izniyle kullanmalısınız. Çocuğunuzun izniniz olmadan hesap oluşturduğunu düşünüyorsanız ' + SUPPORT_EMAIL + ' adresine yazın; hesabı ve ilgili verileri sileriz.',
+      body: 'VoleyPro her yaştan sporcuya yöneliktir. 18 yaşından küçükseniz uygulamayı veli veya vasinizin izniyle kullanmalısınız. Bir takıma davetle katılan sporculardan katılırken yaş beyanı alınır; 18 yaşından küçükler yalnızca veli onayıyla katılabilir ve bu beyan hesapla birlikte saklanır. Çocuğunuzun izniniz olmadan hesap oluşturduğunu düşünüyorsanız ' + SUPPORT_EMAIL + ' adresine yazın; hesabı ve ilgili verileri sileriz.',
     },
     {
       heading: '11. Avrupa Birliği / AEA Kullanıcıları',
       body: `Avrupa Birliği veya Avrupa Ekonomik Alanı'nda bulunuyorsanız, GDPR kapsamında verilerinize erişme, düzeltme, silme, işlemeyi kısıtlama, işlemeye itiraz etme ve verilerinizi taşınabilir bir formatta alma haklarına sahipsiniz.
 
-Bu haklarınızı kullanmak için ${SUPPORT_EMAIL} adresine yazabilirsiniz; talebinize en geç bir ay içinde yanıt veririz. Ayrıca bulunduğunuz ülkenin veri koruma otoritesine şikâyette bulunma hakkınız saklıdır.
+Verilerinizin taşınabilir bir kopyasını uygulama içinden alabilirsiniz (Ayarlar > Hesap > Verilerimi indir). Diğer haklarınızı kullanmak için ${SUPPORT_EMAIL} adresine yazabilirsiniz; talebinize en geç bir ay içinde yanıt veririz. Ayrıca bulunduğunuz ülkenin veri koruma otoritesine şikâyette bulunma hakkınız saklıdır.
 
 Verileriniz Türkiye'deki sunucularda işlendiği için, AB'den yapılan bir aktarımda uygun güvencelerin sağlanması gerekir; bu konudaki uygulamamız güncellendikçe bu politika da güncellenecektir.`,
     },
@@ -315,7 +315,7 @@ Data may only be shared with public authorities that are legally competent, upon
     },
     {
       heading: '11. How to Apply',
-      body: `To exercise your rights, send your request to ${SUPPORT_EMAIL}. Requests are answered free of charge within 30 days at the latest; where the process incurs an additional cost, the fee set by the Board may apply.
+      body: `You can obtain a copy of your data right away, from within the app: Settings > Account > Download my data (machine-readable JSON). To exercise your other rights, send your request to ${SUPPORT_EMAIL}. Requests are answered free of charge within 30 days at the latest; where the process incurs an additional cost, the fee set by the Board may apply.
 
 You can also delete your account and data from within the app: Home > Profile and Settings > Delete Account. Deletion takes effect after a 30-day waiting period, during which you can cancel it on the same screen.`,
     },
@@ -403,7 +403,7 @@ Beyond this we do not share your data with third parties. The only exception is 
 
 After a deletion request, a 30-day waiting period starts: during it you can keep using your account and cancel the request on the same screen. When the period ends, your account and personal data are permanently erased and drop out of the encrypted backup copies within 30 days at the latest. Server access logs are kept for at most 14 days.
 
-To request a copy of your data, write to ${SUPPORT_EMAIL}.`,
+You can obtain a copy of your data from within the app: Settings > Account > Download my data (JSON format). You may also write to ${SUPPORT_EMAIL}.`,
     },
     {
       heading: '9. Security',
@@ -411,13 +411,13 @@ To request a copy of your data, write to ${SUPPORT_EMAIL}.`,
     },
     {
       heading: '10. Children’s Privacy',
-      body: 'VoleyPro is intended for athletes of all ages. If you are under 18, you should use the app with the permission of your parent or legal guardian. If you believe your child created an account without your permission, write to ' + SUPPORT_EMAIL + ' and we will delete the account and related data.',
+      body: 'VoleyPro is intended for athletes of all ages. If you are under 18, you should use the app with the permission of your parent or legal guardian. Athletes who join a team by invitation state their age when joining; those under 18 may join only with parental consent, and this statement is stored with the account. If you believe your child created an account without your permission, write to ' + SUPPORT_EMAIL + ' and we will delete the account and related data.',
     },
     {
       heading: '11. Users in the EU / EEA',
       body: `If you are located in the European Union or the European Economic Area, you have the right under the GDPR to access, rectify and erase your data, to restrict or object to processing, and to receive your data in a portable format.
 
-To exercise these rights, write to ${SUPPORT_EMAIL}; we respond within one month at the latest. You also have the right to lodge a complaint with the data protection authority in your country.
+A portable copy of your data is available in the app (Settings > Account > Download my data). To exercise your other rights, write to ${SUPPORT_EMAIL}; we respond within one month at the latest. You also have the right to lodge a complaint with the data protection authority in your country.
 
 Because your data is processed on servers in Türkiye, a transfer from the EU requires appropriate safeguards; this policy will be updated as our practice in this area develops.`,
     },
@@ -457,7 +457,9 @@ Uygulama bir spor eğitim aracıdır. Antrenör, fizyoterapist veya hekim yerine
 
 Hesabınızın izinsiz kullanıldığını düşünüyorsanız ${SUPPORT_EMAIL} adresinden bize bildirin.
 
-18 yaşından küçükseniz Uygulamayı ancak veli veya vasinizin bilgisi ve onayıyla kullanabilirsiniz.`,
+18 yaşından küçükseniz Uygulamayı ancak veli veya vasinizin bilgisi ve onayıyla kullanabilirsiniz.
+
+Bir kulüp veya antrenörün davetiyle takıma katılan sporculardan katılırken yaş beyanı alınır; 18 yaşından küçük sporcular yalnızca veli veya vasilerinin onayıyla katılabilir. Bu onayın alınması ve belgelenmesi takımı kuran kulüp/antrenörün sorumluluğundadır; VoleyPro bu konuda antrenörün ve sporcunun beyanına dayanır.`,
     },
     {
       heading: '4. Abonelik ve Ücretlendirme',
@@ -556,7 +558,9 @@ The App is a sports training tool. It does not replace a coach, a physiotherapis
 
 If you believe your account has been used without your permission, write to ${SUPPORT_EMAIL}.
 
-If you are under 18, you may use the App only with the knowledge and consent of a parent or guardian.`,
+If you are under 18, you may use the App only with the knowledge and consent of a parent or guardian.
+
+Athletes who join a team at the invitation of a club or coach state their age when joining; athletes under 18 may join only with the consent of a parent or guardian. Obtaining and documenting that consent is the responsibility of the club/coach who creates the team; VoleyPro relies on the coach's and the athlete's statements.`,
     },
     {
       heading: '4. Subscription and Billing',
