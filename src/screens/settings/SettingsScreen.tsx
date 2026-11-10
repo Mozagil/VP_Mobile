@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Share, Linking, Platform } from 'react-native';
-import Constants from 'expo-constants';
+import { getBuildLabel } from '../../utils/buildInfo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthContext';
@@ -17,7 +17,7 @@ import { formatPurgeDate } from '../dashboard/DeleteAccountScreen';
 
 // Surum app.json'dan okunuyor; elle yazilan deger guncellenmeyi unutuldugu
 // icin ekranda 1.0.0 kalmisti.
-const APP_VERSION = Constants.expoConfig?.version ?? '—';
+const APP_VERSION = getBuildLabel();
 
 // Degerlendirme baglantisi. iOS'ta uygulama kimligi App Store Connect'ten,
 // Android'de paket adi app.json'dan geliyor.

@@ -16,10 +16,10 @@ import Input from '../../components/ui/Input';
 import { useTheme } from '../../theme/ThemeContext';
 import { Colors } from '../../theme/palettes';
 import { useI18n } from '../../i18n';
+import { getBuildLabel } from '../../utils/buildInfo';
 
-// Bump this string with every new EAS build so testers (and we) can confirm
-// which build is actually running on a device, without ambiguity.
-const BUILD_LABEL = 'v19';
+// Derlemeden ve çalışan OTA güncellemesinden okunur; elle değiştirmek gerekmez.
+const BUILD_LABEL = getBuildLabel();
 
 // Validation messages are built from the active catalog, so the schema is
 // created inside the component rather than at module scope.
